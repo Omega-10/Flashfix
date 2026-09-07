@@ -1,0 +1,395 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS — CSS custom properties (runtime-switchable)
+   Both Flashfix and Fortix share the same token namespace.
+   Personality is expressed through HOW tokens are combined, not different tokens.
+────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Base surfaces */
+  --surface-bg:        #0D0D0D;
+  --surface-elevated:  #1A1A1A;
+  --surface-border:    rgba(255, 255, 255, 0.06);
+  --surface-divider:   rgba(255, 255, 255, 0.08);
+
+  /* Text hierarchy */
+  --text-primary:      #F5F0EB;
+  --text-secondary:    #A8A09A;
+  --text-muted:        #6B6460;
+  --text-inverse:      #0D0D0D;
+
+  /* Brand accent — amber/ember core */
+  --accent-amber:      #F59E0B;
+  --accent-ember:      #EA580C;
+  --accent-amber-soft: rgba(245, 158, 11, 0.12);
+  --accent-ember-soft: rgba(234, 88, 12, 0.10);
+
+  /* Component-level */
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
+  --radius-xl:   32px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    150ms;
+  --dur-mid:     300ms;
+  --dur-slow:    600ms;
+}
+
+/* Light mode overrides */
+.light {
+  --surface-bg:        #F5F0EB;
+  --surface-elevated:  #E8E0D5;
+  --surface-border:    rgba(0, 0, 0, 0.06);
+  --surface-divider:   rgba(0, 0, 0, 0.08);
+  --text-primary:      #0D0D0D;
+  --text-secondary:    #4A4440;
+  --text-muted:        #8A807A;
+  --text-inverse:      #F5F0EB;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   BASE LAYER
+────────────────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--surface-bg);
+    color: var(--text-primary);
+    font-family: "Inter", sans-serif;
+    line-height: 1.6;
+    transition: background-color 350ms var(--ease-expo), color 350ms var(--ease-expo);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(245, 158, 11, 0.3);
+    color: var(--text-primary);
+  }
+
+  /* Scrollbar — minimal, brand-consistent */
+  ::-webkit-scrollbar        { width: 4px; }
+  ::-webkit-scrollbar-track  { background: var(--surface-bg); }
+  ::-webkit-scrollbar-thumb  { background: var(--accent-amber-soft); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-amber); }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   COMPONENT LAYER — reusable patterns
+────────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+
+  /* ─── Surface cards ───────────────────────────────── */
+  .card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-lg);
+    transition: transform var(--dur-mid) var(--ease-expo),
+                box-shadow var(--dur-mid) var(--ease-expo);
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ─── Amber glow card (Flashfix hero) ─────────────── */
+  .card-amber {
+    @apply card;
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15);
+  }
+  .card-amber:hover {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4), 0 8px 40px rgba(245, 158, 11, 0.15);
+  }
+
+  /* ─── Buttons ──────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    border: none;
+    transition: all var(--dur-mid) var(--ease-expo);
+    white-space: nowrap;
+    user-select: none;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible {
+    outline: 2px solid var(--accent-amber);
+    outline-offset: 3px;
+  }
+
+  .btn-primary {
+    @apply btn;
+    background: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
+    color: #0D0D0D;
+    padding: 14px 28px;
+    font-size: 0.9375rem;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    @apply btn;
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--surface-border);
+    padding: 13px 27px;
+    font-size: 0.9375rem;
+  }
+  .btn-ghost:hover {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: var(--accent-amber-soft);
+  }
+
+  .btn-amber-outline {
+    @apply btn;
+    background: transparent;
+    color: var(--accent-amber);
+    border: 1px solid var(--accent-amber);
+    padding: 13px 27px;
+    font-size: 0.9375rem;
+  }
+  .btn-amber-outline:hover {
+    background: var(--accent-amber);
+    color: #0D0D0D;
+  }
+
+  /* ─── Section container ────────────────────────────── */
+  .section-container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ─── Section heading — Flashfix style (condensed, industrial) ─ */
+  .heading-flashfix {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 0.92;
+  }
+
+  /* ─── Section heading — Fortix style (DM Sans, rounded) ─────── */
+  .heading-fortix {
+    font-family: "DM Sans", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  /* ─── Amber gradient text ──────────────────────────── */
+  .text-amber-gradient {
+    background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 40%, #EA580C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ─── Platform badge ───────────────────────────────── */
+  .platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--surface-border);
+    color: var(--text-muted);
+  }
+
+  /* ─── Flash radius badges ──────────────────────────── */
+  .badge-flash {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #F59E0B, #EA580C);
+    color: #0D0D0D;
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 800;
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    animation: flashPulse 2s ease-in-out infinite;
+  }
+
+  .badge-next-day {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--accent-amber);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+  }
+
+  .badge-out-of-range {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(107, 100, 96, 0.15);
+    color: var(--text-muted);
+    border: 1px solid rgba(107, 100, 96, 0.2);
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+  }
+
+  /* ─── Divider ──────────────────────────────────────── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--surface-divider);
+  }
+
+  /* ─── Nav link ─────────────────────────────────────── */
+  .nav-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-expo);
+    position: relative;
+  }
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--accent-amber);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-mid) var(--ease-expo);
+  }
+  .nav-link:hover, .nav-link.active {
+    color: var(--text-primary);
+  }
+  .nav-link:hover::after, .nav-link.active::after {
+    transform: scaleX(1);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   UTILITY LAYER — one-off helpers
+────────────────────────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Gradient overlays */
+  .overlay-bottom {
+    background: linear-gradient(to top, var(--surface-bg) 0%, transparent 100%);
+  }
+  .overlay-top {
+    background: linear-gradient(to bottom, var(--surface-bg) 0%, transparent 100%);
+  }
+
+  /* Glass effect — for modals, overlays */
+  .glass {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(13, 13, 13, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .light .glass {
+    background: rgba(245, 240, 235, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  /* Text balance */
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+
+  /* Clip — for section reveals */
+  .clip-inset { clip-path: inset(0); }
+
+  /* Amber gradient background — used broadly across both platforms */
+  .bg-amber-gradient {
+    background: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
+  }
+
+  /* Accent soft backgrounds */
+  .bg-accent-soft {
+    background: rgba(245, 158, 11, 0.08);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   LEAFLET MAP OVERRIDES — match brand
+────────────────────────────────────────────────────────────────────────────── */
+
+.leaflet-container {
+  background: var(--surface-elevated) !important;
+  border-radius: var(--radius-lg);
+}
+.leaflet-tile {
+  filter: brightness(0.8) contrast(1.1) saturate(0.9);
+}
+.leaflet-popup-content-wrapper {
+  background: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5) !important;
+}
+.leaflet-popup-tip {
+  background: var(--surface-elevated) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   PAGE TRANSITION HELPERS
+────────────────────────────────────────────────────────────────────────────── */
+
+.page-enter {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 400ms var(--ease-expo), transform 400ms var(--ease-expo);
+}
+.page-exit {
+  opacity: 1;
+}
+.page-exit-active {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
