@@ -16,10 +16,32 @@ export default function FortixProducts() {
     if (brand !== "All") params.set("brand", brand);
     if (category !== "All") params.set("category", category);
     setLoading(true);
+    
+    // Fallback mock data for Vercel deployment demo
+    const fallbackProducts: Product[] = [
+      { id: "p001", name: "MagSafe Compatible Case — Frosted Obsidian", brand: "Apple", category: "Case", compatibleWith: ["iPhone 16 Pro"], price: 2499, originalPrice: 3299, rating: 4.9, reviews: 1203, badge: "Bestseller", description: "Military-grade drop protection.", color: "#1A1A1A", image: "case-obsidian" },
+      { id: "p002", name: "Ceramic Shield Screen Guard", brand: "Apple", category: "Screen Guard", compatibleWith: ["iPhone 16"], price: 999, rating: 4.7, reviews: 892, badge: "New", description: "10x drop resistance.", color: "#E8E0D5", image: "screen-guard-ceramic" },
+      { id: "p003", name: "S Series Armor Case — Midnight", brand: "Samsung", category: "Case", compatibleWith: ["Galaxy S25 Ultra"], price: 1999, originalPrice: 2799, rating: 4.8, reviews: 678, badge: "Bestseller", description: "Precision S-Pen slot preserved.", color: "#0D0D0D", image: "case-s-armor" },
+      { id: "p004", name: "45W GaN Fast Charger", brand: "Universal", category: "Charger", compatibleWith: ["Universal"], price: 1799, rating: 4.6, reviews: 2341, badge: "Bestseller", description: "GaN III technology.", color: "#F5F0EB", image: "charger-gan-45w" },
+      { id: "p005", name: "AirPods Pro Case — Woven Amber", brand: "Apple", category: "Earbud Case", compatibleWith: ["AirPods Pro 2"], price: 899, rating: 4.5, reviews: 445, badge: "New", description: "Premium woven microfiber.", color: "#F59E0B", image: "airpods-case-woven" },
+      { id: "p006", name: "Galaxy Watch Band — Milanese", brand: "Samsung", category: "Watch Band", compatibleWith: ["Galaxy Watch 7"], price: 1299, rating: 4.7, reviews: 312, description: "316L stainless steel mesh.", color: "#6B6460", image: "watch-band-milanese" },
+      { id: "p008", name: "Pixel 9 Pro Clear Case", brand: "Google", category: "Case", compatibleWith: ["Pixel 9 Pro"], price: 1599, rating: 4.6, reviews: 203, badge: "New", description: "Anti-yellowing UV coating.", color: "#E8E0D5", image: "case-pixel-clear" }
+    ];
+
     fetch(`/api/products?${params}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("API not available");
+        return r.json();
+      })
       .then((data) => { setProducts(data as Product[]); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        // Fallback to mock data if backend isn't hosted
+        let filtered = fallbackProducts;
+        if (brand !== "All") filtered = filtered.filter(p => p.brand === brand);
+        if (category !== "All") filtered = filtered.filter(p => p.category === category);
+        setProducts(filtered);
+        setLoading(false);
+      });
   }, [brand, category]);
 
   return (
