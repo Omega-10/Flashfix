@@ -109,7 +109,7 @@ export default function Navbar() {
           </div>
 
           {/* ── Center: Nav links ── */}
-          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+          <nav className="hidden lg:flex items-center gap-8">
             {links.map((link) => (
               <Magnetic strength={0.2} key={link.to}>
                 <NavLink
