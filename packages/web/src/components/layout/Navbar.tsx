@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import Magnetic from "@/components/ui/Magnetic";
 
 const flashfixLinks = [
   { to: "/flashfix", label: "Home" },
@@ -58,9 +59,17 @@ export default function Navbar() {
           <div className="flex items-center gap-6">
             {/* Story Link */}
             {platform !== "hub" && (
-              <Link to="/story" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-sm">
-                ← Story
-              </Link>
+              <Magnetic strength={0.3}>
+                <Link
+                  to="/story"
+                  className="hidden md:flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-xs font-mono uppercase tracking-widest"
+                >
+                  <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current">
+                    <path d="M12.5 7H4.9l3.1-3.1L7 2.9 2.4 7.5 7 12.1l1-1-3.1-3.1h7.6v-1z" />
+                  </svg>
+                  Story
+                </Link>
+              </Magnetic>
             )}
 
             {/* Platform logos */}
@@ -100,18 +109,19 @@ export default function Navbar() {
           </div>
 
           {/* ── Center: Nav links ── */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
             {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.to === "/flashfix" || link.to === "/fortix"}
-                className={({ isActive }) =>
-                  `nav-link text-sm ${isActive ? "active text-[var(--text-primary)]" : ""}`
-                }
-              >
-                {link.label}
-              </NavLink>
+              <Magnetic strength={0.2} key={link.to}>
+                <NavLink
+                  to={link.to}
+                  className={({ isActive }) =>
+                    `nav-link ${isActive ? "active" : ""}`
+                  }
+                  end={link.to === "/flashfix" || link.to === "/fortix"}
+                >
+                  {link.label}
+                </NavLink>
+              </Magnetic>
             ))}
             {platform === "hub" && (
               <>

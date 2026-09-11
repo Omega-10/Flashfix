@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Hero3D from "@/components/fortix/Hero3D";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -103,29 +104,14 @@ export default function FortixHome() {
               </motion.div>
             </div>
 
-            {/* Right: Typographic Hero Graphic */}
+            {/* Right: 3D Interactive WebGL */}
             <motion.div
-              className="h-[400px] lg:h-[600px] flex items-center justify-center relative"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.3 }}
             >
-              <div className="absolute inset-0 bg-amber-500 opacity-5 blur-[120px] rounded-full" />
-              <motion.div 
-                className="relative z-10 flex items-center select-none"
-                animate={{ y: [-10, 10, -10] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <span className="heading-fortix text-[clamp(80px,12vw,140px)] tracking-wider text-[var(--text-primary)] uppercase drop-shadow-2xl">
-                  FORTI
-                </span>
-                <span 
-                  className="heading-fortix text-[clamp(100px,14vw,160px)] text-[var(--accent-amber)] -ml-2 leading-none" 
-                  style={{ textShadow: "0 0 40px rgba(245,158,11,0.5)" }}
-                >
-                  ×
-                </span>
-              </motion.div>
+              <Hero3D />
             </motion.div>
           </div>
         </div>

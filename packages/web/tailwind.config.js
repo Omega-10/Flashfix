@@ -12,8 +12,8 @@ export default {
           stone:   "#E8E0D5",
           offwhite:"#F5F0EB",
           muted:   "#6B6460",
-          amber:   "#F59E0B",
-          ember:   "#EA580C",
+          amber:   "#f3910c",
+          ember:   "#f3910c",
           // amber gradient stops
           "amber-light": "#FBBF24",
           "amber-dark":  "#D97706",
@@ -21,11 +21,11 @@ export default {
       },
       fontFamily: {
         // Flashfix display — industrial, compressed
-        condensed: ["Barlow Condensed", "sans-serif"],
+        condensed: ["Space Grotesk", "sans-serif"],
         // Fortix display — rounded, product-forward  
-        display: ["DM Sans", "sans-serif"],
+        display: ["Space Grotesk", "sans-serif"],
         // Body — both platforms
-        sans: ["Inter", "sans-serif"],
+        sans: ["Space Grotesk", "sans-serif"],
         // Specs, pricing, code
         mono: ["JetBrains Mono", "monospace"],
       },
@@ -58,7 +58,7 @@ export default {
         },
       },
       backgroundImage: {
-        "amber-gradient":  "linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)",
+        "amber-gradient":  "linear-gradient(135deg, #f3910c 0%, #f3910c 100%)",
         "dark-surface":    "linear-gradient(180deg, #0D0D0D 0%, #1A1A1A 100%)",
         "light-surface":   "linear-gradient(180deg, #F5F0EB 0%, #E8E0D5 100%)",
         "mesh-dark":       "radial-gradient(ellipse at 20% 50%, rgba(245,158,11,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(234,88,12,0.06) 0%, transparent 50%)",
