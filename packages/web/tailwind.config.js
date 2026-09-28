@@ -21,11 +21,11 @@ export default {
       },
       fontFamily: {
         // Flashfix display — industrial, compressed
-        condensed: ["Space Grotesk", "sans-serif"],
+        condensed: ["Lexend Exa", "sans-serif"],
         // Fortix display — rounded, product-forward  
-        display: ["Space Grotesk", "sans-serif"],
+        display: ["Lexend Exa", "sans-serif"],
         // Body — both platforms
-        sans: ["Space Grotesk", "sans-serif"],
+        sans: ["Inter", "sans-serif"],
         // Specs, pricing, code
         mono: ["JetBrains Mono", "monospace"],
       },

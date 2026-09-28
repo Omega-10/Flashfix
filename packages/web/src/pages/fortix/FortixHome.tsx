@@ -4,261 +4,160 @@ import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Hero3D from "@/components/fortix/Hero3D";
+import Magnetic from "@/components/ui/Magnetic";
 
 gsap.registerPlugin(ScrollTrigger);
-
-// Removed placeholder PhoneModel as requested
-
-const FEATURED_CATEGORIES = [
-  { label: "Cases", count: 24, icon: "📱" },
-  { label: "Screen Guards", count: 18, icon: "🛡" },
-  { label: "Chargers", count: 8, icon: "⚡" },
-  { label: "Watch Bands", count: 12, icon: "⌚" },
-  { label: "Earbud Cases", count: 9, icon: "🎧" },
-  { label: "Cables", count: 6, icon: "🔌" },
-];
-
-const BRANDS = ["Apple", "Samsung", "Google Pixel", "OnePlus"];
 
 export default function FortixHome() {
   const sectionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // Cinematic fade-in for all fx-reveal elements
       gsap.utils.toArray<HTMLElement>(".fx-reveal").forEach((el) => {
         gsap.fromTo(el,
-          { opacity: 0, y: 44 },
-          { opacity: 1, y: 0, duration: 0.75, ease: "power3.out",
-            scrollTrigger: { trigger: el, start: "top 88%", toggleActions: "play none none reverse" }
+          { opacity: 0, y: 40 },
+          { opacity: 1, y: 0, duration: 1, ease: "power3.out",
+            scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }
           }
         );
+      });
+      
+      // Parallax text
+      gsap.to(".parallax-bg", {
+        yPercent: 30,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".parallax-container",
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true
+        }
       });
     }, sectionsRef);
     return () => ctx.revert();
   }, []);
 
   return (
-    <div ref={sectionsRef} className="pt-16">
+    <div ref={sectionsRef} className="bg-[#050505] min-h-screen text-[var(--text-primary)] font-sans">
 
-      {/* ─── HERO: 3D product + headline ─── */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-mesh-dark opacity-70" />
+      {/* ─── ACT I: THE HOOK ─── */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#f3910c] opacity-[0.04] blur-[150px] rounded-full pointer-events-none" />
+        
+        <div className="section-container relative z-10 w-full h-full flex flex-col items-center justify-center pt-20">
+          
+          <motion.div
+            className="w-full h-[55vh] flex items-center justify-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+          >
+            <Hero3D />
+          </motion.div>
 
-        <div className="section-container relative z-10 py-24">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left: Text */}
-            <div>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-              >
-                <span className="platform-badge">◆ Premium Accessories</span>
-              </motion.div>
-
-              <motion.h1
-                className="heading-fortix text-[clamp(48px,6vw,80px)] mt-6 mb-4"
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              >
-                Gear up your<br />
-                <span className="text-amber-gradient">premium device.</span>
-              </motion.h1>
-
-              <motion.p
-                className="text-[var(--text-secondary)] text-base mb-8 max-w-md leading-relaxed"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.35 }}
-              >
-                Curated accessories for Apple, Samsung S-series, Pixel, and OnePlus.
-                Premium materials. Precision fit. Nothing generic.
-              </motion.p>
-
-              {/* Brand pills */}
-              <motion.div
-                className="flex flex-wrap gap-2 mb-8"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                {BRANDS.map((brand) => (
-                  <span key={brand} className="badge-out-of-range text-xs">{brand}</span>
-                ))}
-              </motion.div>
-
-              <motion.div
-                className="flex gap-3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <Link to="/fortix/products" className="btn-primary">
-                  Shop Collection
-                </Link>
-                <Link to="/fortix/about" className="btn-ghost">
-                  Our Story
-                </Link>
-              </motion.div>
-            </div>
-
-            {/* Right: 3D Interactive WebGL */}
-            <motion.div
-              className="relative"
+          <div className="text-center mt-[-40px] md:mt-[-80px] z-20 pointer-events-none">
+            <motion.h1
+              className="font-display font-bold text-[clamp(40px,8vw,120px)] leading-[0.9] tracking-tighter"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              ARMOR FOR <br />
+              <span className="text-[#f3910c]">THE EVERYDAY.</span>
+            </motion.h1>
+            
+            <motion.p
+              className="mt-6 text-[var(--text-secondary)] font-mono text-sm md:text-base tracking-widest uppercase"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.3 }}
+              transition={{ duration: 1, delay: 0.8 }}
             >
-              <Hero3D />
-            </motion.div>
+              0.33mm High-Aluminosilicate Glass // Engineered for Impact
+            </motion.p>
           </div>
         </div>
       </section>
 
-      {/* ─── CATEGORIES ─── */}
-      <section className="py-24 border-t border-[var(--surface-border)]">
+      {/* ─── ACT II: THE ANATOMY OF TRUST ─── */}
+      <section className="py-32 md:py-48 relative border-t border-white/5 parallax-container">
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" />
+        
         <div className="section-container">
-          <div className="fx-reveal flex items-end justify-between mb-10">
-            <div>
-              <span className="platform-badge mb-3 inline-flex">Collections</span>
-              <h2 className="heading-fortix text-4xl mt-2">
-                Shop by <span className="text-amber-gradient">category</span>
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+            <div className="order-2 lg:order-1">
+              <span className="text-[#f3910c] font-mono text-sm tracking-widest uppercase mb-4 block fx-reveal">
+                Material Science
+              </span>
+              <h2 className="font-display font-bold text-[clamp(32px,5vw,64px)] leading-[1] mb-8 fx-reveal">
+                9H HARDNESS. <br />
+                ZERO COMPROMISE.
               </h2>
-            </div>
-            <Link to="/fortix/products" className="btn-ghost text-sm">
-              View All →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {FEATURED_CATEGORIES.map((cat) => (
-              <motion.div
-                key={cat.label}
-                className="fx-reveal card p-5 text-center cursor-pointer group"
-                whileHover={{ y: -4, boxShadow: "0 8px 30px rgba(245,158,11,0.15)" }}
-                transition={{ duration: 0.25 }}
-              >
-                <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-200">
-                  {cat.icon}
+              <div className="space-y-8 fx-reveal font-sans">
+                <div className="relative pl-6 border-l border-white/10">
+                  <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-[#f3910c]" />
+                  <h4 className="text-lg font-bold mb-1">Oleophobic Plasma Coating</h4>
+                  <p className="text-[var(--text-muted)] text-sm">Industrial-grade smudge and fingerprint resistance. Crystal clarity maintained.</p>
                 </div>
-                <p className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-amber)] transition-colors">
-                  {cat.label}
-                </p>
-                <p className="text-[10px] font-mono text-[var(--text-muted)] mt-1">{cat.count} items</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── FEATURED PRODUCTS ─── */}
-      <section className="py-24">
-        <div className="section-container">
-          <div className="fx-reveal flex items-end justify-between mb-10">
-            <div>
-              <span className="platform-badge mb-3 inline-flex">Trending</span>
-              <h2 className="heading-fortix text-4xl mt-2">
-                Featured <span className="text-amber-gradient">gear</span>
-              </h2>
-            </div>
-            <Link to="/fortix/products" className="btn-ghost text-sm hidden sm:inline-flex">
-              Explore Collection →
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { id: "1", name: "MagSafe Silicone Case", brand: "Apple", price: 1999, originalPrice: 2499, color: "#EA580C" },
-              { id: "2", name: "Armor Grip S24 Ultra", brand: "Samsung", price: 1499, color: "#1E293B" },
-              { id: "3", name: "Edge-to-Edge Glass", brand: "Universal", price: 899, originalPrice: 1299, badge: "Bestseller", color: "#64748B" },
-              { id: "4", name: "65W GaN Fast Charger", brand: "Universal", price: 2999, badge: "New", color: "#F59E0B" }
-            ].map((p, i) => (
-              <motion.div
-                key={p.id}
-                className="fx-reveal card group cursor-pointer overflow-hidden"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -6, boxShadow: "0 12px 40px rgba(245,158,11,0.12)" }}
-                onClick={() => window.open("/fortix/products", "_self")}
-              >
-                <div className="aspect-square flex items-center justify-center relative overflow-hidden" style={{ background: `${p.color}18` }}>
-                  <div className="w-20 h-20 rounded-2xl transition-transform duration-500 group-hover:scale-110" style={{ background: `linear-gradient(135deg, ${p.color}40, ${p.color}80)`, boxShadow: `0 8px 30px ${p.color}30` }} />
-                  {p.badge && (
-                    <div className="absolute top-3 left-3">
-                      <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-[var(--surface-elevated)] text-[var(--text-primary)] border border-[var(--surface-border)]">
-                        {p.badge}
-                      </span>
-                    </div>
-                  )}
+                <div className="relative pl-6 border-l border-white/10">
+                  <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-[#f3910c]" />
+                  <h4 className="text-lg font-bold mb-1">Impact Distribution Layer</h4>
+                  <p className="text-[var(--text-muted)] text-sm">Absorbs and dissipates kinetic energy upon corner or face drops.</p>
                 </div>
-                <div className="p-4">
-                  <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider mb-1">{p.brand}</div>
-                  <h3 className="text-sm font-medium text-[var(--text-primary)] leading-tight mb-2 line-clamp-1">{p.name}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-semibold text-[var(--text-primary)] font-mono">₹{p.price.toLocaleString("en-IN")}</span>
-                    {p.originalPrice && <span className="text-[var(--text-muted)] text-xs line-through font-mono">₹{p.originalPrice.toLocaleString("en-IN")}</span>}
-                  </div>
+                <div className="relative pl-6 border-l border-white/10">
+                  <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-[#f3910c]" />
+                  <h4 className="text-lg font-bold mb-1">Anti-Static Adhesive</h4>
+                  <p className="text-[var(--text-muted)] text-sm">Bubble-free, flawless installation with 280/380AB tech.</p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <div className="mt-8 text-center sm:hidden">
-            <Link to="/fortix/products" className="btn-ghost text-sm">Explore Collection →</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── USP FEATURE STRIP ─── */}
-      <section className="py-20 bg-[var(--surface-elevated)] border-y border-[var(--surface-border)]">
-        <div className="section-container">
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: "◆",
-                title: "Only premium brands",
-                desc: "Apple, Samsung S-series, Pixel, OnePlus. We don't stock generic.",
-              },
-              {
-                icon: "⚡",
-                title: "Precision fit, always",
-                desc: "Every accessory is device-specific. Buttons line up. Ports breathe.",
-              },
-              {
-                icon: "✦",
-                title: "Certified & tested",
-                desc: "MFi certified for Apple. Drop-tested. No corners cut.",
-              },
-            ].map((item) => (
-              <div key={item.title} className="fx-reveal">
-                <div className="text-[var(--accent-amber)] text-2xl mb-4 font-mono">{item.icon}</div>
-                <h3 className="heading-fortix text-xl mb-2">{item.title}</h3>
-                <p className="text-[var(--text-muted)] text-sm leading-relaxed">{item.desc}</p>
               </div>
-            ))}
+            </div>
+            
+            {/* Minimalist Graphic Representation */}
+            <div className="order-1 lg:order-2 flex justify-center parallax-bg fx-reveal">
+              <div className="relative w-full max-w-sm aspect-[4/5] border border-white/10 rounded-3xl bg-gradient-to-b from-white/5 to-transparent overflow-hidden backdrop-blur-sm">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {/* Abstract Glass Layers */}
+                  <div className="w-3/4 h-3/4 border border-[#f3910c]/30 rounded-2xl transform rotate-6 absolute transition-all hover:rotate-12 hover:scale-105 duration-700" />
+                  <div className="w-3/4 h-3/4 border border-white/20 rounded-2xl transform -rotate-3 absolute transition-all hover:-rotate-6 hover:scale-105 duration-700" />
+                  <div className="w-3/4 h-3/4 bg-gradient-to-br from-white/10 to-transparent rounded-2xl absolute backdrop-blur-md" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ─── CTA ─── */}
-      <section className="py-28 text-center">
-        <div className="section-container">
-          <div className="fx-reveal">
-            <h2 className="heading-fortix text-[clamp(36px,5vw,64px)] mb-4">
-              Your device deserves{" "}
-              <span className="text-amber-gradient">what it wears.</span>
-            </h2>
-            <p className="text-[var(--text-muted)] mb-10 max-w-md mx-auto">
-              Browse the full collection — cases, guards, cables, and more.
-            </p>
-            <Link to="/fortix/products" className="btn-primary text-base px-10 py-4">
-              Shop Now →
-            </Link>
+      {/* ─── ACT III: THE VELOCITY (Flashfix Integration) ─── */}
+      <section className="py-32 relative bg-[#0D0D0D] overflow-hidden">
+        <div className="absolute inset-0 bg-mesh-dark opacity-50" />
+        <div className="section-container relative z-10 text-center">
+          <span className="text-[#f3910c] font-mono text-sm tracking-widest uppercase mb-4 block fx-reveal">
+            White-Glove Service
+          </span>
+          <h2 className="font-display font-bold text-[clamp(40px,7vw,90px)] leading-[0.9] mb-8 fx-reveal">
+            BROKEN TO <span className="text-white/20">BRILLIANT.</span><br />
+            IN 60 MINUTES.
+          </h2>
+          <p className="text-[var(--text-secondary)] font-sans max-w-xl mx-auto mb-12 fx-reveal">
+            Don't trust premium devices to mall kiosks. Get Fortix armor installed at your door with Flashfix precision routing.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 fx-reveal pointer-events-auto">
+            <Magnetic strength={0.4}>
+              <Link to="/fortix/products" className="btn-primary w-full sm:w-auto text-lg px-8 py-4 z-20 relative">
+                Shop Premium Gear
+              </Link>
+            </Magnetic>
+            <Magnetic strength={0.4}>
+              <Link to="/flashfix/book" className="btn-ghost w-full sm:w-auto text-lg px-8 py-4 z-20 relative">
+                Book Flashfix Install
+              </Link>
+            </Magnetic>
           </div>
         </div>
       </section>
+
     </div>
   );
 }
