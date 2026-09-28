@@ -1,10 +1,8 @@
-import { useParams, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Product360Viewer from "@/components/fortix/Product360Viewer";
 import { ArrowLeft, ShieldCheck, Zap } from "lucide-react";
 
 export default function FortixProductDetail() {
-  const { id } = useParams();
-
   // In a real app, you'd fetch the product details by ID here.
   
   return (
