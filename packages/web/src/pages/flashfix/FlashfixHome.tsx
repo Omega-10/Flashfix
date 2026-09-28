@@ -61,107 +61,98 @@ export default function FlashfixHome() {
     <div ref={sectionsRef} className="pt-16 bg-[#0A0A0A] text-[var(--text-primary)] min-h-screen font-sans">
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden border-b border-[var(--surface-border)]">
-        {/* Subtle Background */}
-        <div className="absolute inset-0 bg-mesh-dark opacity-40" />
-        <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-[#ef8f0b] opacity-[0.04] blur-[150px] rounded-full pointer-events-none" />
+      <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden border-b border-[var(--surface-border)]">
+        {/* Cinematic Lighting */}
+        <div className="absolute inset-0 bg-mesh-dark opacity-30 pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] bg-[var(--accent-amber)] opacity-[0.05] blur-[100px] rounded-full pointer-events-none" />
 
-        <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none" aria-hidden>
-          <motion.span
-            className="font-display font-bold text-[clamp(140px,22vw,320px)] text-[var(--text-primary)]/[0.015] leading-none"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        <div className="section-container relative z-10 py-32 flex flex-col items-center text-center">
+          
+          {/* Platform label */}
+          <motion.div
+            className="flex items-center justify-center gap-2 mb-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
           >
-            FLASH
-          </motion.span>
-        </div>
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/20">
+              <Zap className="w-4 h-4 text-[var(--accent-amber)]" />
+            </div>
+            <span className="text-[var(--accent-amber)] font-mono text-sm uppercase tracking-widest font-semibold">Premium Repair Engine</span>
+          </motion.div>
 
-        <div className="section-container relative z-10 py-24 flex flex-col lg:flex-row items-center gap-12">
-          <div className="max-w-2xl flex-1">
+          {/* Headline */}
+          <motion.h1
+            className="font-display font-extrabold text-[clamp(60px,10vw,160px)] leading-[0.85] tracking-tighter text-[var(--text-primary)] mb-8"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            YOUR PHONE.<br />
+            <span className="text-[var(--accent-amber)]">FIXED.</span><br />
+            <span className="text-[var(--text-muted)]">TODAY.</span>
+          </motion.h1>
 
-            {/* Platform label */}
-            <motion.div
-              className="flex items-center gap-2 mb-6"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              <Zap className="w-5 h-5 text-[#ef8f0b]" />
-              <span className="text-[#ef8f0b] font-mono text-xs uppercase tracking-widest">Premium Repair Engine</span>
-            </motion.div>
+          {/* USP line */}
+          <motion.p
+            className="text-[var(--text-secondary)] text-lg md:text-2xl max-w-2xl font-light leading-relaxed mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.35 }}
+          >
+            Same-day pickup, certified technicians, and flawless execution. <strong className="text-[var(--text-primary)] font-medium">This is Flashfix.</strong>
+          </motion.p>
 
-            {/* Headline */}
-            <motion.h1
-              className="font-display font-bold text-[clamp(56px,8vw,120px)] leading-[0.9] tracking-tight text-[var(--text-primary)]"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            >
-              YOUR PHONE.<br />
-              <span className="text-[#ef8f0b]">FIXED.</span><br />
-              <span className="text-[var(--text-primary)]/20">TODAY.</span>
-            </motion.h1>
+          {/* Location CTA */}
+          <motion.div
+            className="flex flex-col items-center justify-center w-full"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.5 }}
+          >
+            {step === "prompt" && (
+              <LocationGate onEnable={handleEnableLocation} error={error} />
+            )}
 
-            {/* USP line */}
-            <motion.p
-              className="text-[var(--text-secondary)] text-lg md:text-xl mt-6 mb-10 max-w-lg font-light leading-relaxed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.35 }}
-            >
-              Same-day pickup, certified technicians, and flawless execution. <strong className="text-[var(--text-primary)] font-medium">This is Flashfix.</strong>
-            </motion.p>
+            {step === "loading" && (
+              <div className="flex items-center gap-3 bg-[var(--surface-elevated)] border border-[var(--surface-border)] px-6 py-4 rounded-2xl shadow-lg">
+                <div className="w-5 h-5 border-2 border-[var(--accent-amber)] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[var(--text-primary)] text-sm font-medium">Triangulating nearest facility...</span>
+              </div>
+            )}
 
-            {/* Location CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.5 }}
-            >
-              {step === "prompt" && (
-                <LocationGate onEnable={handleEnableLocation} error={error} />
-              )}
-
-              {step === "loading" && (
-                <div className="flex items-center gap-3 bg-[#111] border border-[var(--surface-border)] p-4 rounded-xl w-fit">
-                  <div className="w-5 h-5 border-2 border-[#ef8f0b] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[var(--text-muted)] text-sm font-medium">Triangulating nearest facility...</span>
+            {step === "results" && closest && (
+              <div className="flex flex-col items-center gap-8 w-full max-w-md">
+                <AnimatePresence>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex items-center gap-4 bg-[var(--surface-elevated)] border border-[var(--accent-amber)]/30 p-2 pr-6 rounded-full shadow-lg w-full"
+                  >
+                    <div className="w-12 h-12 bg-[var(--accent-amber)] rounded-full flex items-center justify-center shrink-0">
+                      <MapPin className="w-6 h-6 text-black" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-[var(--text-primary)] text-sm font-bold">{closest.name}</span>
+                      <span className="text-[var(--accent-amber)] text-xs font-mono">{closest.distanceKm}km away · Operational</span>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+                
+                <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                  <Link to="/flashfix/book" className="flex-1 flex items-center justify-center gap-2 bg-[var(--accent-amber)] hover:bg-[#d87c09] text-black font-semibold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-[0_0_20px_rgba(239,143,11,0.2)]">
+                    <Zap className="w-5 h-5" />
+                    Book Repair
+                  </Link>
+                  <Link to="/flashfix/services" className="flex-1 flex items-center justify-center gap-2 bg-transparent hover:bg-[var(--surface-elevated)] border border-[var(--surface-border)] text-[var(--text-primary)] font-medium px-8 py-4 rounded-xl transition-all duration-300">
+                    View Services
+                  </Link>
                 </div>
-              )}
+              </div>
+            )}
+          </motion.div>
 
-              {step === "results" && closest && (
-                <div className="space-y-6">
-                  <AnimatePresence>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5 }}
-                      className="inline-flex items-center gap-3 bg-[#1A1A1A] border border-[#ef8f0b]/30 p-2 pr-6 rounded-full"
-                    >
-                      <div className="w-10 h-10 bg-[#ef8f0b] rounded-full flex items-center justify-center">
-                        <MapPin className="w-5 h-5 text-black" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[var(--text-primary)] text-sm font-bold">{closest.name}</span>
-                        <span className="text-[#ef8f0b] text-xs font-mono">{closest.distanceKm}km away · Ready</span>
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-                  
-                  <div className="flex gap-4">
-                    <Link to="/flashfix/book" className="flex items-center gap-2 bg-[#ef8f0b] hover:bg-[#d87c09] text-black font-semibold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105">
-                      <Zap className="w-5 h-5" />
-                      Book Repair
-                    </Link>
-                    <Link to="/flashfix/services" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-[var(--surface-border)] text-[var(--text-primary)] font-medium px-8 py-4 rounded-xl transition-all duration-300">
-                      View Services
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
         </div>
       </section>
 
