@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MapPin, Zap, Smartphone, CheckCircle, Truck, Clock } from "lucide-react";
 import { useGeolocation, type NearbyStore } from "@/hooks/useGeolocation";
 import { useAppStore } from "@/store/appStore";
 import LocationGate from "@/components/flashfix/LocationGate";
 import StoreBadge from "@/components/flashfix/StoreBadge";
 import StoreMap from "@/components/flashfix/StoreMap";
-import LightningBolt from "@/components/ui/LightningBolt";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -22,7 +22,6 @@ export default function FlashfixHome() {
 
   useEffect(() => {
     if (!userLocation) return;
-    // If location already granted (persisted), fetch immediately
     fetchNearbyStores(userLocation.lat, userLocation.lng)
       .then((data) => { setStores(data); setStep("results"); })
       .catch(() => {});
@@ -56,22 +55,20 @@ export default function FlashfixHome() {
     }
   }
 
-  // Best nearby store for hero display
   const closest = stores[0];
 
   return (
-    <div ref={sectionsRef} className="pt-16">
+    <div ref={sectionsRef} className="pt-16 bg-[#0A0A0A] text-[var(--text-primary)] min-h-screen font-sans">
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-mesh-dark" />
-        <div className="absolute inset-0 bg-[var(--surface-bg)] opacity-60" />
+      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden border-b border-[var(--surface-border)]">
+        {/* Subtle Background */}
+        <div className="absolute inset-0 bg-mesh-dark opacity-40" />
+        <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-[#ef8f0b] opacity-[0.04] blur-[150px] rounded-full pointer-events-none" />
 
-        {/* Big background type */}
         <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none" aria-hidden>
           <motion.span
-            className="heading-flashfix text-[clamp(140px,22vw,320px)] text-white/[0.025] leading-none"
+            className="font-display font-bold text-[clamp(140px,22vw,320px)] text-[var(--text-primary)]/[0.015] leading-none"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
@@ -85,34 +82,35 @@ export default function FlashfixHome() {
 
             {/* Platform label */}
             <motion.div
+              className="flex items-center gap-2 mb-6"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <span className="platform-badge">⚡ Repair as a Service</span>
+              <Zap className="w-5 h-5 text-[#ef8f0b]" />
+              <span className="text-[#ef8f0b] font-mono text-xs uppercase tracking-widest">Premium Repair Engine</span>
             </motion.div>
 
             {/* Headline */}
             <motion.h1
-              className="heading-flashfix text-[clamp(56px,8vw,120px)] mt-6 leading-[0.9]"
+              className="font-display font-bold text-[clamp(56px,8vw,120px)] leading-[0.9] tracking-tight text-[var(--text-primary)]"
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               YOUR PHONE.<br />
-              <span className="text-amber-gradient">FIXED.</span><br />
-              <span className="text-[var(--text-muted)]">TODAY.</span>
+              <span className="text-[#ef8f0b]">FIXED.</span><br />
+              <span className="text-[var(--text-primary)]/20">TODAY.</span>
             </motion.h1>
 
             {/* USP line */}
             <motion.p
-              className="text-[var(--text-secondary)] text-lg mt-6 mb-10 max-w-lg"
+              className="text-[var(--text-secondary)] text-lg md:text-xl mt-6 mb-10 max-w-lg font-light leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.35 }}
             >
-              Same-day pickup & delivery within 3km.
-              That's why we're called <strong className="text-[var(--accent-amber)]">Flash</strong>Fix.
+              Same-day pickup, certified technicians, and flawless execution. <strong className="text-[var(--text-primary)] font-medium">This is Flashfix.</strong>
             </motion.p>
 
             {/* Location CTA */}
@@ -126,47 +124,45 @@ export default function FlashfixHome() {
               )}
 
               {step === "loading" && (
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 border-2 border-[var(--accent-amber)] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[var(--text-muted)] text-sm">Finding stores near you…</span>
+                <div className="flex items-center gap-3 bg-[#111] border border-[var(--surface-border)] p-4 rounded-xl w-fit">
+                  <div className="w-5 h-5 border-2 border-[#ef8f0b] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[var(--text-muted)] text-sm font-medium">Triangulating nearest facility...</span>
                 </div>
               )}
 
               {step === "results" && closest && (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <AnimatePresence>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.5 }}
-                      className="inline-flex items-center gap-3"
+                      className="inline-flex items-center gap-3 bg-[#1A1A1A] border border-[#ef8f0b]/30 p-2 pr-6 rounded-full"
                     >
-                      <StoreBadge store={closest} size="lg" />
-                      <span className="text-[var(--text-muted)] text-sm">
-                        {closest.name} · {closest.distanceKm}km away
-                      </span>
+                      <div className="w-10 h-10 bg-[#ef8f0b] rounded-full flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-black" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[var(--text-primary)] text-sm font-bold">{closest.name}</span>
+                        <span className="text-[#ef8f0b] text-xs font-mono">{closest.distanceKm}km away · Ready</span>
+                      </div>
                     </motion.div>
                   </AnimatePresence>
-                  <div className="flex gap-3 flex-wrap">
-                    <Link to="/flashfix/book" className="btn-primary">
-                      Book Repair ⚡
+                  
+                  <div className="flex gap-4">
+                    <Link to="/flashfix/book" className="flex items-center gap-2 bg-[#ef8f0b] hover:bg-[#d87c09] text-black font-semibold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105">
+                      <Zap className="w-5 h-5" />
+                      Book Repair
                     </Link>
-                    <Link to="/flashfix/services" className="btn-ghost">
-                      See Services
+                    <Link to="/flashfix/services" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-[var(--surface-border)] text-[var(--text-primary)] font-medium px-8 py-4 rounded-xl transition-all duration-300">
+                      View Services
                     </Link>
                   </div>
                 </div>
               )}
             </motion.div>
           </div>
-
-          <div className="flex-1 hidden lg:block">
-            <LightningBolt />
-          </div>
         </div>
-
-        {/* Amber bottom gradient */}
-        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-amber)] to-transparent opacity-20" />
       </section>
 
       {/* ─── STORE MAP (visible after location granted) ─── */}
@@ -176,43 +172,46 @@ export default function FlashfixHome() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="py-20"
+            className="py-24 border-b border-[var(--surface-border)] bg-[#0D0D0D]"
           >
             <div className="section-container">
-              <div className="ff-reveal mb-8">
-                <h2 className="heading-flashfix text-4xl mb-2">
-                  STORES <span className="text-amber-gradient">NEAR YOU</span>
-                </h2>
-                <p className="text-[var(--text-muted)] text-sm">
-                  {stores.filter((s) => s.tier === "flash").length} Flash-eligible ·{" "}
-                  {stores.filter((s) => s.tier === "next-day").length} Next-Day ·{" "}
-                  {stores.length} total
-                </p>
+              <div className="ff-reveal mb-12 flex flex-col md:flex-row md:items-end justify-between">
+                <div>
+                  <h2 className="font-display font-bold text-4xl md:text-5xl mb-2">
+                    ACTIVE <span className="text-[#ef8f0b]">HUBS</span>
+                  </h2>
+                  <p className="text-[var(--text-muted)] text-sm font-mono uppercase tracking-widest">
+                    {stores.filter((s) => s.tier === "flash").length} Flash · {stores.filter((s) => s.tier === "next-day").length} Standard
+                  </p>
+                </div>
               </div>
-              <StoreMap stores={stores} />
+              
+              <div className="rounded-2xl overflow-hidden border border-[var(--surface-border)]">
+                <StoreMap stores={stores} />
+              </div>
 
               {/* Store list */}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
                 {stores.map((store, i) => (
                   <motion.div
                     key={store.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.07, duration: 0.5 }}
-                    className="card p-5"
+                    className="bg-[#1A1A1A] p-6 rounded-xl border border-[var(--surface-border)] hover:border-[#ef8f0b]/30 transition-colors group"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-[var(--text-primary)] leading-tight">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[#ef8f0b] transition-colors">
                         {store.name}
                       </h3>
                       <StoreBadge store={store} size="sm" />
                     </div>
-                    <p className="text-[var(--text-muted)] text-xs mb-2">{store.address}</p>
-                    <p className="text-[var(--text-muted)] text-xs mb-3">{store.hours}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[var(--accent-amber)] text-xs">★ {store.rating}</span>
+                    <p className="text-[var(--text-muted)] text-sm mb-2">{store.address}</p>
+                    <p className="text-[#ef8f0b] text-xs font-mono mb-4">{store.hours}</p>
+                    <div className="flex items-center gap-3 pt-4 border-t border-[var(--surface-border)]">
+                      <span className="text-[var(--text-primary)] text-sm font-bold flex items-center gap-1"><span className="text-[#ef8f0b]">★</span> {store.rating}</span>
                       <span className="text-[var(--text-muted)] text-xs">({store.reviews})</span>
-                      <span className="text-[var(--text-muted)] text-xs ml-auto">{store.distanceKm}km</span>
+                      <span className="text-[var(--text-primary)] bg-[#ef8f0b]/10 text-[#ef8f0b] px-2 py-1 rounded text-xs ml-auto font-mono">{store.distanceKm}km</span>
                     </div>
                   </motion.div>
                 ))}
@@ -222,65 +221,36 @@ export default function FlashfixHome() {
         )}
       </AnimatePresence>
 
-      {/* ─── HOW IT WORKS ─── */}
-      <section className="py-24 border-t border-[var(--surface-border)]">
+      {/* ─── HOW IT WORKS (Premium Story) ─── */}
+      <section className="py-32">
         <div className="section-container">
-          <div className="ff-reveal text-center mb-16">
-            <span className="platform-badge mb-4 inline-flex">Process</span>
-            <h2 className="heading-flashfix text-[clamp(36px,5vw,60px)] mt-3">
-              HOW IT <span className="text-amber-gradient">WORKS</span>
+          <div className="ff-reveal text-center mb-20">
+            <span className="text-[#ef8f0b] font-mono text-sm tracking-widest uppercase mb-4 block">The Protocol</span>
+            <h2 className="font-display font-bold text-[clamp(36px,5vw,60px)] leading-[1]">
+              SURGICAL <span className="text-[var(--text-primary)]/20">PRECISION.</span><br />
+              <span className="text-[#ef8f0b]">ZERO DOWNTIME.</span>
             </h2>
           </div>
-          <div className="grid md:grid-cols-4 gap-6">
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { step: "01", title: "LOCATE", desc: "Share your location. We find the nearest Flashfix in seconds." },
-              { step: "02", title: "BOOK", desc: "Pick your device, issue, and slot. Takes 60 seconds." },
-              { step: "03", title: "WE COME", desc: "Our tech picks up your device from your doorstep." },
-              { step: "04", title: "FIXED", desc: "Repaired and back in your hands — same day if you're within 3km." },
-            ].map((item) => (
-              <div key={item.step} className="ff-reveal bg-[var(--surface-elevated)] p-6 relative overflow-hidden border-l-4 border-l-[var(--accent-amber)] border-y border-r border-[var(--surface-border)] rounded-r-xl shadow-lg hover:shadow-amber-sm transition-all duration-300 group">
-                <div
-                  className="absolute top-0 right-0 w-16 h-16 bg-amber-gradient opacity-10 rounded-bl-full group-hover:opacity-20 transition-opacity"
-                  aria-hidden
-                />
-                <div className="font-mono text-xs text-[var(--text-muted)] mb-3 uppercase tracking-widest">
-                  Step {item.step}
+              { icon: MapPin, title: "TRIANGULATE", desc: "Share coordinates. We pinpoint the optimal repair hub." },
+              { icon: Smartphone, title: "DIAGNOSE", desc: "Select hardware. Instant transparent pricing." },
+              { icon: Truck, title: "EXTRACT", desc: "Our operative secures the device from your location." },
+              { icon: CheckCircle, title: "RESTORE", desc: "100% functionality returned. Delivered same day." },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="ff-reveal relative p-8 bg-[#111] rounded-2xl border border-[var(--surface-border)] hover:border-[#ef8f0b]/50 hover:bg-[#151515] transition-all duration-300 group">
+                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-[#ef8f0b] text-black font-bold font-mono rounded-full flex items-center justify-center text-lg z-10 shadow-[0_0_20px_rgba(239,143,11,0.3)]">
+                    0{i + 1}
+                  </div>
+                  <Icon className="w-8 h-8 text-[#ef8f0b] mb-6 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
+                  <h3 className="font-display font-semibold text-xl mb-3 text-[var(--text-primary)]">{item.title}</h3>
+                  <p className="text-[var(--text-muted)] text-sm leading-relaxed">{item.desc}</p>
                 </div>
-                <h3 className="heading-flashfix text-xl mb-2 group-hover:text-[var(--accent-amber)] transition-colors">{item.title}</h3>
-                <p className="text-[var(--text-muted)] text-sm leading-relaxed relative z-10">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SERVICES PREVIEW ─── */}
-      <section className="py-24">
-        <div className="section-container">
-          <div className="ff-reveal flex items-end justify-between mb-10">
-            <h2 className="heading-flashfix text-4xl">
-              WHAT WE <span className="text-amber-gradient">FIX</span>
-            </h2>
-            <Link to="/flashfix/services" className="btn-ghost text-sm">
-              All Services →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {[
-              { icon: "📱", label: "Screen" },
-              { icon: "🔋", label: "Battery" },
-              { icon: "💧", label: "Water Damage" },
-              { icon: "🔌", label: "Charging Port" },
-              { icon: "📸", label: "Camera" },
-              { icon: "🔊", label: "Speaker" },
-            ].map((s) => (
-              <div key={s.label} className="ff-reveal card p-4 text-center cursor-pointer group">
-                <div className="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200">{s.icon}</div>
-                <span className="text-xs font-medium text-[var(--text-secondary)] group-hover:text-[var(--accent-amber)] transition-colors">
-                  {s.label}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

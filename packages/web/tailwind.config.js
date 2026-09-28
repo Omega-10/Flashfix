@@ -12,8 +12,8 @@ export default {
           stone:   "#E8E0D5",
           offwhite:"#F5F0EB",
           muted:   "#6B6460",
-          amber:   "#f3910c",
-          ember:   "#f3910c",
+          amber:   "#ef8f0b",
+          ember:   "#ef8f0b",
           // amber gradient stops
           "amber-light": "#FBBF24",
           "amber-dark":  "#D97706",
@@ -45,7 +45,7 @@ export default {
           "50%":       { opacity: "0.75", transform: "scale(1.05)" },
         },
         emberGlow: {
-          "0%, 100%": { boxShadow: "0 0 20px 4px rgba(245,158,11,0.3)" },
+          "0%, 100%": { boxShadow: "0 0 20px 4px rgba(239,143,11,0.3)" },
           "50%":      { boxShadow: "0 0 40px 8px rgba(234,88,12,0.5)" },
         },
         float: {
@@ -58,16 +58,16 @@ export default {
         },
       },
       backgroundImage: {
-        "amber-gradient":  "linear-gradient(135deg, #f3910c 0%, #f3910c 100%)",
+        "amber-gradient":  "linear-gradient(135deg, #ef8f0b 0%, #ef8f0b 100%)",
         "dark-surface":    "linear-gradient(180deg, #0D0D0D 0%, #1A1A1A 100%)",
         "light-surface":   "linear-gradient(180deg, #F5F0EB 0%, #E8E0D5 100%)",
-        "mesh-dark":       "radial-gradient(ellipse at 20% 50%, rgba(245,158,11,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(234,88,12,0.06) 0%, transparent 50%)",
-        "mesh-light":      "radial-gradient(ellipse at 20% 50%, rgba(245,158,11,0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(234,88,12,0.08) 0%, transparent 50%)",
+        "mesh-dark":       "radial-gradient(ellipse at 20% 50%, rgba(239,143,11,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(234,88,12,0.06) 0%, transparent 50%)",
+        "mesh-light":      "radial-gradient(ellipse at 20% 50%, rgba(239,143,11,0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(234,88,12,0.08) 0%, transparent 50%)",
       },
       boxShadow: {
-        "amber-sm":  "0 2px 8px rgba(245,158,11,0.25)",
-        "amber-md":  "0 4px 20px rgba(245,158,11,0.35)",
-        "amber-lg":  "0 8px 40px rgba(245,158,11,0.4)",
+        "amber-sm":  "0 2px 8px rgba(239,143,11,0.25)",
+        "amber-md":  "0 4px 20px rgba(239,143,11,0.35)",
+        "amber-lg":  "0 8px 40px rgba(239,143,11,0.4)",
         "ember-md":  "0 4px 20px rgba(234,88,12,0.35)",
         "card-dark": "0 1px 0 rgba(255,255,255,0.04), 0 20px 60px rgba(0,0,0,0.6)",
         "card-light":"0 1px 0 rgba(0,0,0,0.04), 0 20px 60px rgba(0,0,0,0.08)",
