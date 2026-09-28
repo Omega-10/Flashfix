@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { MapPin, Zap, Smartphone, CheckCircle, Truck, Clock } from "lucide-react";
+import { MapPin, Zap, Smartphone, CheckCircle, Truck } from "lucide-react";
 import { useGeolocation, type NearbyStore } from "@/hooks/useGeolocation";
 import { useAppStore } from "@/store/appStore";
 import LocationGate from "@/components/flashfix/LocationGate";
