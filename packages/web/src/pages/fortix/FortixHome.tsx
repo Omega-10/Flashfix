@@ -97,7 +97,7 @@ export default function FortixHome() {
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 0.6 }}
             >
-              Engineered for absolute impact. Minimalist design, military-grade durability. We build the gear that protects your premium devices.
+              Engineered for absolute impact. Minimalist design, military-grade durability. We build the gear that protects your devices.
             </motion.p>
 
             <motion.div 

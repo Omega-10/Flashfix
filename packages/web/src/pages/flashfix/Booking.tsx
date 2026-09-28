@@ -1,39 +1,109 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ArrowRight, CheckCircle, Search } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-interface Step1Data { device: string; issue: string }
-interface Step2Data { name: string; phone: string; address: string }
-interface Step3Data { date: string; time: string; storeId: string }
+interface Step1Data { brand: string; device: string }
+interface Step2Data { issue: string }
+interface Step3Data { name: string; phone: string; address: string; lat: number; lng: number }
+interface Step4Data { date: string; time: string; storeId: string }
 
-const DEVICES = ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 series", "Samsung Galaxy S25", "Samsung Galaxy S24", "Pixel 9 Pro", "Other"];
+const BRANDS = ["Apple", "Samsung", "Google", "OnePlus"];
+const DEVICES: Record<string, string[]> = {
+  Apple: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 15 Pro", "iPhone 14 series", "iPhone 13 series"],
+  Samsung: ["Galaxy S25 Ultra", "Galaxy S24 Ultra", "Galaxy S23 Ultra", "Galaxy Z Fold 6", "Galaxy Z Flip 6"],
+  Google: ["Pixel 9 Pro XL", "Pixel 9 Pro", "Pixel 8 Pro", "Pixel 7a"],
+  OnePlus: ["OnePlus 13", "OnePlus 12", "OnePlus Open", "Nord 4"],
+};
+
 const ISSUES = ["Screen Replacement", "Battery Replacement", "Water Damage", "Charging Port", "Camera Fix", "Back Glass", "Speaker", "Software Issue"];
 const TIMES = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"];
 
 export default function BookingWizard() {
   const [step, setStep] = useState(1);
-  const [step1, setStep1] = useState<Step1Data>({ device: "", issue: "" });
-  const [step2, setStep2] = useState<Step2Data>({ name: "", phone: "", address: "" });
-  const [step3, setStep3] = useState<Step3Data>({ date: "", time: "", storeId: "store-001" });
+  const [step1, setStep1] = useState<Step1Data>({ brand: "", device: "" });
+  const [step2, setStep2] = useState<Step2Data>({ issue: "" });
+  const [step3, setStep3] = useState<Step3Data>({ name: "", phone: "", address: "", lat: 17.3850, lng: 78.4867 });
+  const [step4, setStep4] = useState<Step4Data>({ date: "", time: "", storeId: "store-001" });
+  
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<{ id: string } | null>(null);
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMap = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Initialize Map when Step 3 mounts
+  useEffect(() => {
+    if (step === 3 && mapRef.current && !leafletMap.current) {
+      leafletMap.current = L.map(mapRef.current, {
+        center: [step3.lat, step3.lng],
+        zoom: 13,
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(leafletMap.current);
+
+      const customIcon = L.divIcon({
+        className: "",
+        html: `<div style="width:16px; height:16px; background:#ef8f0b; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+
+      markerRef.current = L.marker([step3.lat, step3.lng], { icon: customIcon, draggable: true })
+        .addTo(leafletMap.current)
+        .on("dragend", (e) => {
+          const marker = e.target;
+          const position = marker.getLatLng();
+          setStep3(p => ({ ...p, lat: position.lat, lng: position.lng }));
+        });
+
+      leafletMap.current.on("click", (e: any) => {
+        markerRef.current?.setLatLng(e.latlng);
+        setStep3(p => ({ ...p, lat: e.latlng.lat, lng: e.latlng.lng }));
+      });
+    }
+
+    return () => {
+      if (step !== 3 && leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, [step]);
+
+  async function handleSearch() {
+    if (!searchQuery) return;
+    setIsSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const { lat, lon, display_name } = data[0];
+        const newLat = parseFloat(lat);
+        const newLng = parseFloat(lon);
+        leafletMap.current?.setView([newLat, newLng], 15);
+        markerRef.current?.setLatLng([newLat, newLng]);
+        setStep3(p => ({ ...p, lat: newLat, lng: newLng, address: display_name }));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSearching(false);
+    }
+  }
 
   async function submit() {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storeId: step3.storeId,
-          service: step1.issue,
-          name: step2.name,
-          phone: step2.phone,
-          date: step3.date,
-          time: step3.time,
-        }),
-      });
-      const data = (await res.json()) as { booking: { id: string } };
-      setConfirmed({ id: data.booking.id });
+      // Mock API delay
+      await new Promise(r => setTimeout(r, 1500));
+      setConfirmed({ id: "BKG-" + Math.floor(Math.random() * 1000000) });
     } finally {
       setSubmitting(false);
     }
@@ -41,33 +111,33 @@ export default function BookingWizard() {
 
   if (confirmed) {
     return (
-      <div className="pt-32 pb-20">
+      <div className="pt-32 pb-20 min-h-screen bg-[var(--surface-bg)] text-[var(--text-primary)]">
         <div className="section-container max-w-xl">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="card-amber p-10 text-center"
+            className="bg-[var(--surface-elevated)] rounded-2xl border border-[var(--surface-border)] p-10 text-center shadow-lg"
           >
             <motion.div
-              className="w-16 h-16 bg-amber-gradient rounded-full flex items-center justify-center mx-auto mb-6"
+              className="w-16 h-16 bg-[var(--accent-amber)]/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-[var(--accent-amber)]/30"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
             >
-              <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none">
-                <path d="M5 13l4 4L19 7" stroke="#0D0D0D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <CheckCircle className="w-8 h-8 text-[var(--accent-amber)]" />
             </motion.div>
-            <h2 className="heading-flashfix text-4xl mb-2">BOOKED!</h2>
-            <p className="text-[var(--text-muted)] text-sm mb-4">Your repair has been scheduled.</p>
-            <div className="bg-[var(--surface-elevated)] rounded-xl p-4 mb-6">
-              <p className="font-mono text-xs text-[var(--text-muted)] mb-1">Booking ID</p>
-              <p className="font-mono text-[var(--accent-amber)] font-bold">{confirmed.id}</p>
-            </div>
-            <p className="text-[var(--text-muted)] text-xs">
-              Our technician will contact you shortly. Keep this ID for reference.
+            <h2 className="font-display font-bold text-3xl mb-2">Request Confirmed</h2>
+            <p className="text-[var(--text-secondary)] mb-6 text-sm">
+              Your service request is securely logged in our protocol. ID: <strong className="text-[var(--text-primary)] font-mono">{confirmed.id}</strong>
             </p>
+            <div className="bg-[var(--surface-bg)] rounded-xl p-4 text-left border border-[var(--surface-border)] mb-8">
+              <p className="text-sm text-[var(--text-primary)] font-medium mb-1">Operative Dispatch</p>
+              <p className="text-xs text-[var(--text-muted)]">Our technician will arrive at {step3.address} on {step4.date} at {step4.time}.</p>
+            </div>
+            <button onClick={() => window.location.href = "/"} className="inline-flex items-center justify-center bg-[var(--accent-amber)] text-black font-semibold rounded-xl px-8 py-3 transition-colors hover:bg-[#d87c09]">
+              Return Home
+            </button>
           </motion.div>
         </div>
       </div>
@@ -75,50 +145,19 @@ export default function BookingWizard() {
   }
 
   return (
-    <div className="pt-24 pb-20">
+    <div className="pt-24 pb-20 min-h-screen bg-[var(--surface-bg)] text-[var(--text-primary)]">
       <div className="section-container max-w-2xl">
-
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <span className="platform-badge mb-4 inline-flex">Book Repair</span>
-          <h1 className="heading-flashfix text-[clamp(40px,5vw,60px)] mt-3">
-            LET'S <span className="text-amber-gradient">FIX</span> IT.
-          </h1>
-        </motion.div>
-
-        {/* Step indicator */}
-        <div className="flex items-center gap-3 mb-10">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center gap-3">
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                  step > s
-                    ? "bg-amber-gradient text-[#0D0D0D]"
-                    : step === s
-                    ? "bg-[var(--surface-elevated)] border border-[var(--accent-amber)] text-[var(--accent-amber)]"
-                    : "bg-[var(--surface-elevated)] border border-[var(--surface-border)] text-[var(--text-muted)]"
-                }`}
-              >
-                {step > s ? (
-                  <svg viewBox="0 0 12 12" className="w-3 h-3" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                ) : s}
-              </div>
-              {s < 3 && (
-                <div
-                  className="h-px w-12 transition-all duration-500"
-                  style={{ background: step > s ? "var(--accent-amber)" : "var(--surface-border)" }}
-                />
-              )}
+        <div className="mb-12 flex justify-between items-center px-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex flex-col items-center flex-1">
+              <div className={`w-3 h-3 rounded-full mb-2 transition-colors ${step >= i ? "bg-[var(--accent-amber)]" : "bg-[var(--surface-border)]"}`} />
+              <span className={`text-[10px] font-mono tracking-widest uppercase ${step >= i ? "text-[var(--accent-amber)]" : "text-[var(--text-muted)]"}`}>
+                Step {i}
+              </span>
             </div>
           ))}
-          <span className="font-mono text-[10px] text-[var(--text-muted)] ml-2 uppercase tracking-widest">
-            Step {step} of 3
-          </span>
         </div>
 
-        {/* Step content */}
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -126,57 +165,62 @@ export default function BookingWizard() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-[var(--surface-elevated)] p-8 rounded-2xl border border-[var(--surface-border)] shadow-sm"
             >
-              <div className="card p-8 space-y-6">
+              <div className="space-y-8">
+                {/* Brand Selection */}
                 <div>
-                  <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-3">
-                    Your Device
+                  <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-4">
+                    1. Select Manufacturer
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {DEVICES.map((d) => (
+                  <div className="flex gap-2 flex-wrap">
+                    {BRANDS.map((b) => (
                       <button
-                        key={d}
-                        onClick={() => setStep1((p) => ({ ...p, device: d }))}
-                        className={`text-sm text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
-                          step1.device === d
-                            ? "border-[var(--accent-amber)] bg-[rgba(245,158,11,0.08)] text-[var(--accent-amber)]"
-                            : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[rgba(245,158,11,0.3)] hover:text-[var(--text-primary)]"
+                        key={b}
+                        onClick={() => setStep1({ brand: b, device: "" })}
+                        className={`text-sm px-5 py-2.5 rounded-full border transition-all duration-200 ${
+                          step1.brand === b
+                            ? "border-[var(--accent-amber)] bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] font-medium"
+                            : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[var(--accent-amber)]/30 hover:text-[var(--text-primary)]"
                         }`}
                       >
-                        {d}
+                        {b}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-3">
-                    What's broken?
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {ISSUES.map((issue) => (
-                      <button
-                        key={issue}
-                        onClick={() => setStep1((p) => ({ ...p, issue }))}
-                        className={`text-sm text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
-                          step1.issue === issue
-                            ? "border-[var(--accent-amber)] bg-[rgba(245,158,11,0.08)] text-[var(--accent-amber)]"
-                            : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[rgba(245,158,11,0.3)] hover:text-[var(--text-primary)]"
-                        }`}
-                      >
-                        {issue}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* Device Selection */}
+                {step1.brand && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-4">
+                      2. Select Device Model
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {DEVICES[step1.brand].map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setStep1(p => ({ ...p, device: d }))}
+                          className={`text-sm text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
+                            step1.device === d
+                              ? "border-[var(--accent-amber)] bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] font-medium"
+                              : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[var(--accent-amber)]/30 hover:text-[var(--text-primary)]"
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
 
                 <button
                   onClick={() => setStep(2)}
-                  disabled={!step1.device || !step1.issue}
-                  className="btn-primary w-full disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={!step1.device}
+                  className="w-full flex items-center justify-center gap-2 bg-[var(--text-primary)] hover:bg-[var(--text-secondary)] text-[var(--surface-bg)] font-semibold rounded-xl px-6 py-4 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Next: Your Details →
+                  Next Step
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>
@@ -188,36 +232,41 @@ export default function BookingWizard() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-[var(--surface-elevated)] p-8 rounded-2xl border border-[var(--surface-border)] shadow-sm"
             >
-              <div className="card p-8 space-y-5">
-                {[
-                  { key: "name" as const, label: "Full Name", type: "text", placeholder: "John Doe" },
-                  { key: "phone" as const, label: "Phone Number", type: "tel", placeholder: "+91 98765 43210" },
-                  { key: "address" as const, label: "Pickup Address", type: "text", placeholder: "Your full address" },
-                ].map((field) => (
-                  <div key={field.key}>
-                    <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">
-                      {field.label}
-                    </label>
-                    <input
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      value={step2[field.key]}
-                      onChange={(e) => setStep2((p) => ({ ...p, [field.key]: e.target.value }))}
-                      className="w-full bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none focus:border-[var(--accent-amber)] transition-colors"
-                    />
+              <div className="space-y-8">
+                <div>
+                  <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-4">
+                    What needs to be fixed?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {ISSUES.map((issue) => (
+                      <button
+                        key={issue}
+                        onClick={() => setStep2({ issue })}
+                        className={`text-sm text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
+                          step2.issue === issue
+                            ? "border-[var(--accent-amber)] bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] font-medium"
+                            : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[var(--accent-amber)]/30 hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        {issue}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button onClick={() => setStep(1)} className="btn-ghost flex-1">← Back</button>
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(1)} className="flex items-center justify-center px-6 py-4 rounded-xl border border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => setStep(3)}
-                    disabled={!step2.name || !step2.phone || !step2.address}
-                    className="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={!step2.issue}
+                    className="flex-1 flex items-center justify-center gap-2 bg-[var(--text-primary)] hover:bg-[var(--text-secondary)] text-[var(--surface-bg)] font-semibold rounded-xl px-6 py-4 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Next: Schedule →
+                    Set Location
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -230,17 +279,96 @@ export default function BookingWizard() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-[var(--surface-elevated)] p-8 rounded-2xl border border-[var(--surface-border)] shadow-sm"
             >
-              <div className="card p-8 space-y-6">
+              <div className="space-y-6">
+                <div>
+                  <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Location Pinpoint</label>
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="text"
+                      placeholder="Search area (e.g. Miyapur, Hyderabad)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      className="flex-1 bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
+                    />
+                    <button onClick={handleSearch} disabled={isSearching} className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-4 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center">
+                      <Search className="w-4 h-4 text-[var(--text-primary)]" />
+                    </button>
+                  </div>
+                  <div ref={mapRef} className="w-full h-[250px] rounded-xl overflow-hidden border border-[var(--surface-border)] relative z-0" />
+                  <p className="text-[10px] text-[var(--text-muted)] mt-2 italic">Drag the pin or click on the map to set exact coordinates.</p>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-[var(--surface-border)]">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Full Name</label>
+                      <input
+                        type="text"
+                        value={step3.name}
+                        onChange={(e) => setStep3(p => ({ ...p, name: e.target.value }))}
+                        className="w-full bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Phone</label>
+                      <input
+                        type="tel"
+                        value={step3.phone}
+                        onChange={(e) => setStep3(p => ({ ...p, phone: e.target.value }))}
+                        className="w-full bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
+                        placeholder="+91..."
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Full Address</label>
+                    <textarea
+                      value={step3.address}
+                      onChange={(e) => setStep3(p => ({ ...p, address: e.target.value }))}
+                      className="w-full bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors resize-none h-20"
+                      placeholder="Flat No, Building, Street..."
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(2)} className="flex items-center justify-center px-6 py-4 rounded-xl border border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setStep(4)}
+                    disabled={!step3.name || !step3.phone || !step3.address}
+                    className="flex-1 flex items-center justify-center gap-2 bg-[var(--text-primary)] hover:bg-[var(--text-secondary)] text-[var(--surface-bg)] font-semibold rounded-xl px-6 py-4 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Schedule Pickup
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 4 && (
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              className="bg-[var(--surface-elevated)] p-8 rounded-2xl border border-[var(--surface-border)] shadow-sm"
+            >
+              <div className="space-y-6">
                 <div>
                   <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Date</label>
                   <input
                     type="date"
-                    value={step3.date}
+                    value={step4.date}
                     min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setStep3((p) => ({ ...p, date: e.target.value }))}
-                    className="w-full bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-amber)] transition-colors"
+                    onChange={(e) => setStep4((p) => ({ ...p, date: e.target.value }))}
+                    className="w-full bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-3 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
                   />
                 </div>
 
@@ -250,11 +378,11 @@ export default function BookingWizard() {
                     {TIMES.map((t) => (
                       <button
                         key={t}
-                        onClick={() => setStep3((p) => ({ ...p, time: t }))}
+                        onClick={() => setStep4((p) => ({ ...p, time: t }))}
                         className={`text-xs py-2.5 rounded-xl border transition-all ${
-                          step3.time === t
-                            ? "border-[var(--accent-amber)] bg-[rgba(245,158,11,0.08)] text-[var(--accent-amber)]"
-                            : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[rgba(245,158,11,0.3)]"
+                          step4.time === t
+                            ? "border-[var(--accent-amber)] bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] font-medium"
+                            : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[var(--accent-amber)]/30"
                         }`}
                       >
                         {t}
@@ -264,34 +392,40 @@ export default function BookingWizard() {
                 </div>
 
                 {/* Summary */}
-                <div className="bg-[var(--surface-elevated)] rounded-xl p-4 space-y-2">
-                  <p className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest mb-3">Summary</p>
+                <div className="bg-[var(--surface-bg)] rounded-xl p-5 space-y-2 border border-[var(--surface-border)]">
+                  <p className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest mb-4">Protocol Summary</p>
                   {[
                     ["Device", step1.device],
-                    ["Issue", step1.issue],
-                    ["Name", step2.name],
-                    ["Phone", step2.phone],
+                    ["Issue", step2.issue],
+                    ["Address", step3.address],
                   ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between">
-                      <span className="text-xs text-[var(--text-muted)]">{k}</span>
-                      <span className="text-xs text-[var(--text-primary)] font-medium">{v}</span>
+                    <div key={k} className="flex justify-between gap-4 mb-2">
+                      <span className="text-xs text-[var(--text-muted)] shrink-0">{k}</span>
+                      <span className="text-xs text-[var(--text-primary)] font-medium text-right truncate">{v}</span>
                     </div>
                   ))}
                 </div>
 
                 <div className="flex gap-3">
-                  <button onClick={() => setStep(2)} className="btn-ghost flex-1">← Back</button>
+                  <button onClick={() => setStep(3)} className="flex items-center justify-center px-6 py-4 rounded-xl border border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={submit}
-                    disabled={!step3.date || !step3.time || submitting}
-                    className="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={!step4.date || !step4.time || submitting}
+                    className="flex-1 flex items-center justify-center gap-2 bg-[var(--accent-amber)] hover:bg-[#d87c09] text-black font-semibold rounded-xl px-6 py-4 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {submitting ? (
                       <span className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-[#0D0D0D] border-t-transparent rounded-full animate-spin" />
-                        Booking…
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        Initiating...
                       </span>
-                    ) : "Confirm Booking ⚡"}
+                    ) : (
+                      <>
+                        Confirm Protocol
+                        <CheckCircle className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

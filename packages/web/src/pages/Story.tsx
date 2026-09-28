@@ -52,7 +52,7 @@ export default function Story() {
               We were tired of repair shops telling us it takes 3 days to fix a screen. 
               Or forcing you to drive across town during rush hour. 
             </p>
-            <div className="w-16 h-1 bg-amber-gradient" />
+            <div className="w-16 h-1 bg-[var(--accent-amber)]" />
           </div>
           
           <div className="absolute bottom-10 right-10 flex items-center gap-2 opacity-50 animate-pulse">
@@ -69,7 +69,7 @@ export default function Story() {
             </p>
             <h1 className="heading-flashfix text-[clamp(48px,6vw,80px)] mb-6 leading-tight">
               WE COME TO YOU.<br/>
-              <span className="text-amber-gradient">SAME DAY.</span>
+              <span className="text-[var(--accent-amber)]">SAME DAY.</span>
             </h1>
             <p className="text-[var(--text-secondary)] text-lg mb-8 leading-relaxed max-w-xl font-light">
               Flashfix was built for speed. If you are within 3km of our hubs, we pick it up, 
@@ -90,11 +90,11 @@ export default function Story() {
             </p>
             <h1 className="heading-fortix text-[clamp(40px,5vw,70px)] mb-6 leading-tight">
               Protect it after<br/>
-              <span className="text-amber-gradient">we fix it.</span>
+              <span className="text-[var(--accent-amber)]">we fix it.</span>
             </h1>
             <p className="text-[var(--text-secondary)] text-lg mb-8 leading-relaxed max-w-xl font-light">
               We noticed our customers buying cheap cases that caused their screens to break again. 
-              So we built <strong className="text-[var(--text-primary)]">Fortix</strong> — a curated collection of premium accessories that actually protect your device.
+              So we built <strong className="text-[var(--text-primary)]">Fortix</strong> — a curated collection of engineered accessories that actually protect your device.
             </p>
             <Link to="/fortix" className="btn-primary inline-flex items-center gap-2">
               Explore Fortix ×

@@ -16,7 +16,7 @@ export default function FortixContact() {
           >
             <span className="platform-badge mb-4 inline-flex">◆ Contact</span>
             <h1 className="heading-fortix text-[clamp(40px,5vw,64px)] mt-4">
-              Let's <span className="text-amber-gradient">talk.</span>
+              Let's <span className="text-[var(--accent-amber)]">talk.</span>
             </h1>
             <p className="text-[var(--text-secondary)] mt-4 mb-8 max-w-sm leading-relaxed">
               Bulk orders, partnerships, or just a question about what fits your device — we're here.

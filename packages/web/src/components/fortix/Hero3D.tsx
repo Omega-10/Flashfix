@@ -16,7 +16,7 @@ function AbstractAccessory() {
 
   return (
     <group ref={group}>
-      {/* Main geometric core - representing a premium block/case */}
+      {/* Main geometric core - representing a precision block/case */}
       <RoundedBox args={[2, 3.5, 0.4]} radius={0.15} smoothness={4} position={[0, 0.5, 0]} castShadow receiveShadow>
         <meshPhysicalMaterial 
           color="#1A1A1A" 

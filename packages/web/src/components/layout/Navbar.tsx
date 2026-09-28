@@ -88,7 +88,7 @@ export default function Navbar() {
                   to="/flashfix"
                   className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
                     platform === "flashfix"
-                      ? "bg-amber-gradient text-[#0D0D0D]"
+                      ? "bg-[var(--accent-amber)] text-[#0D0D0D]"
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
@@ -98,7 +98,7 @@ export default function Navbar() {
                   to="/fortix"
                   className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
                     platform === "fortix"
-                      ? "bg-amber-gradient text-[#0D0D0D]"
+                      ? "bg-[var(--accent-amber)] text-[#0D0D0D]"
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >

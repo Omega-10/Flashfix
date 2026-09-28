@@ -204,7 +204,7 @@
   }
 
   /* ─── Amber gradient text ──────────────────────────── */
-  .text-amber-gradient {
+  .text-[var(--accent-amber)] {
     background: linear-gradient(135deg, #FBBF24 0%, #ef8f0b 40%, #e28509 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -341,7 +341,7 @@
   .clip-inset { clip-path: inset(0); }
 
   /* Amber gradient background — used broadly across both platforms */
-  .bg-amber-gradient {
+  .bg-[var(--accent-amber)] {
     background: linear-gradient(135deg, #ef8f0b 0%, #e28509 100%);
   }
 

@@ -13,7 +13,7 @@ export default function ThemeToggle() {
       whileTap={{ scale: 0.94 }}
     >
       {/* Track shimmer */}
-      <div className="absolute inset-0 bg-amber-gradient opacity-0 transition-opacity duration-300"
+      <div className="absolute inset-0 bg-[var(--accent-amber)] opacity-0 transition-opacity duration-300"
         style={{ opacity: isDark ? 0 : 0.15 }} />
 
       {/* Thumb */}

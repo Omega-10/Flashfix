@@ -21,7 +21,7 @@ export default function FortixProductDetail() {
 
           {/* Product Info Right Side */}
           <div className="flex flex-col justify-center">
-            <span className="text-[var(--accent-amber)] font-mono text-sm tracking-widest uppercase mb-4 block">Premium Accessory</span>
+            <span className="text-[var(--accent-amber)] font-mono text-sm tracking-widest uppercase mb-4 block">Engineered Accessory</span>
             <h1 className="font-display font-bold text-[clamp(40px,5vw,64px)] leading-[1.1] mb-4">
               Fortix Armor
             </h1>

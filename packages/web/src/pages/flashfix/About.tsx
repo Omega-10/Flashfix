@@ -31,7 +31,7 @@ export default function FlashfixAbout() {
         >
           <span className="platform-badge mb-4 inline-flex">Our Story</span>
           <h1 className="heading-flashfix text-[clamp(48px,7vw,96px)] mt-4 leading-[0.9]">
-            WHY<br /><span className="text-amber-gradient">FLASH?</span>
+            WHY<br /><span className="text-[var(--accent-amber)]">FLASH?</span>
           </h1>
           <p className="text-[var(--text-secondary)] text-lg mt-6 max-w-xl leading-relaxed">
             Because nobody should spend a day without their phone waiting for a repair that takes 45 minutes.
@@ -57,7 +57,7 @@ export default function FlashfixAbout() {
             { value: "4.8★", label: "Average rating" },
           ].map((stat) => (
             <div key={stat.label} className="card p-6 text-center">
-              <p className="heading-flashfix text-4xl text-amber-gradient mb-1">{stat.value}</p>
+              <p className="heading-flashfix text-4xl text-[var(--accent-amber)] mb-1">{stat.value}</p>
               <p className="text-[var(--text-muted)] text-xs font-mono">{stat.label}</p>
             </div>
           ))}
@@ -65,7 +65,7 @@ export default function FlashfixAbout() {
 
         {/* How we're different */}
         <div className="about-reveal mb-20">
-          <h2 className="heading-flashfix text-4xl mb-8">HOW WE'RE <span className="text-amber-gradient">DIFFERENT</span></h2>
+          <h2 className="heading-flashfix text-4xl mb-8">HOW WE'RE <span className="text-[var(--accent-amber)]">DIFFERENT</span></h2>
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { q: "Traditional repair shops", a: "You drop it off. Wait 3 days. Hope for the best.", bad: true },

@@ -23,7 +23,7 @@ export default function FortixProducts() {
       { id: "p002", name: "Ceramic Shield Screen Guard", brand: "Apple", category: "Screen Guard", compatibleWith: ["iPhone 16"], price: 999, rating: 4.7, reviews: 892, badge: "New", description: "10x drop resistance.", color: "#E8E0D5", image: "screen-guard-ceramic" },
       { id: "p003", name: "S Series Armor Case — Midnight", brand: "Samsung", category: "Case", compatibleWith: ["Galaxy S25 Ultra"], price: 1999, originalPrice: 2799, rating: 4.8, reviews: 678, badge: "Bestseller", description: "Precision S-Pen slot preserved.", color: "#0D0D0D", image: "case-s-armor" },
       { id: "p004", name: "45W GaN Fast Charger", brand: "Universal", category: "Charger", compatibleWith: ["Universal"], price: 1799, rating: 4.6, reviews: 2341, badge: "Bestseller", description: "GaN III technology.", color: "#F5F0EB", image: "charger-gan-45w" },
-      { id: "p005", name: "AirPods Pro Case — Woven Amber", brand: "Apple", category: "Earbud Case", compatibleWith: ["AirPods Pro 2"], price: 899, rating: 4.5, reviews: 445, badge: "New", description: "Premium woven microfiber.", color: "#F59E0B", image: "airpods-case-woven" },
+      { id: "p005", name: "AirPods Pro Case — Woven Amber", brand: "Apple", category: "Earbud Case", compatibleWith: ["AirPods Pro 2"], price: 899, rating: 4.5, reviews: 445, badge: "New", description: "Woven microfiber.", color: "#F59E0B", image: "airpods-case-woven" },
       { id: "p006", name: "Galaxy Watch Band — Milanese", brand: "Samsung", category: "Watch Band", compatibleWith: ["Galaxy Watch 7"], price: 1299, rating: 4.7, reviews: 312, description: "316L stainless steel mesh.", color: "#6B6460", image: "watch-band-milanese" },
       { id: "p008", name: "Pixel 9 Pro Clear Case", brand: "Google", category: "Case", compatibleWith: ["Pixel 9 Pro"], price: 1599, rating: 4.6, reviews: 203, badge: "New", description: "Anti-yellowing UV coating.", color: "#E8E0D5", image: "case-pixel-clear" }
     ];
@@ -60,7 +60,7 @@ export default function FortixProducts() {
             The Collection
           </h1>
           <p className="text-[var(--text-muted)] mt-2 max-w-md">
-            Premium accessories, precisely made for the devices you care about.
+            Engineered accessories, precisely made for the devices you care about.
           </p>
         </motion.div>
 
@@ -74,7 +74,7 @@ export default function FortixProducts() {
                 onClick={() => setBrand(b)}
                 className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                   brand === b
-                    ? "bg-amber-gradient text-[#0D0D0D]"
+                    ? "bg-[var(--accent-amber)] text-[#0D0D0D]"
                     : "bg-[var(--surface-elevated)] border border-[var(--surface-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[rgba(245,158,11,0.3)]"
                 }`}
               >
@@ -162,7 +162,7 @@ function ProductCard({ product }: { product: Product }) {
           <div className="absolute top-3 left-3">
             <span className={`text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full ${
               product.badge === "Bestseller"
-                ? "bg-amber-gradient text-[#0D0D0D]"
+                ? "bg-[var(--accent-amber)] text-[#0D0D0D]"
                 : product.badge === "New"
                 ? "bg-[var(--surface-elevated)] text-[var(--accent-amber)] border border-[rgba(245,158,11,0.3)]"
                 : "bg-[var(--surface-elevated)] text-[var(--text-muted)] border border-[var(--surface-border)]"

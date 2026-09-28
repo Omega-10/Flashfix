@@ -78,7 +78,7 @@ export default function FlashfixHome() {
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/20">
               <Zap className="w-4 h-4 text-[var(--accent-amber)]" />
             </div>
-            <span className="text-[var(--accent-amber)] font-mono text-sm uppercase tracking-widest font-semibold">Premium Repair Engine</span>
+            <span className="text-[var(--accent-amber)] font-mono text-sm uppercase tracking-widest font-semibold">Precision Repair Protocol</span>
           </motion.div>
 
           {/* Headline */}

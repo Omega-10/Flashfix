@@ -23,7 +23,7 @@ export default function FlashfixContact() {
           >
             <span className="platform-badge mb-4 inline-flex">Get in Touch</span>
             <h1 className="heading-flashfix text-[clamp(40px,5vw,72px)] mt-4">
-              TALK TO <span className="text-amber-gradient">FLASHFIX</span>
+              TALK TO <span className="text-[var(--accent-amber)]">FLASHFIX</span>
             </h1>
             <p className="text-[var(--text-secondary)] mt-4 mb-8 max-w-sm leading-relaxed">
               Questions about a repair? Partnership? Franchise inquiry? We're fast offline too.

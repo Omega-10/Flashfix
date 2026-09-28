@@ -14,7 +14,7 @@ export default function FortixAbout() {
           <span className="platform-badge mb-4 inline-flex">◆ Our Story</span>
           <h1 className="heading-fortix text-[clamp(48px,6vw,84px)] mt-4">
             Accessories deserve{" "}
-            <span className="text-amber-gradient">better curation.</span>
+            <span className="text-[var(--accent-amber)]">better curation.</span>
           </h1>
           <p className="text-[var(--text-secondary)] text-lg mt-6 max-w-xl leading-relaxed">
             Fortix was born from one frustration: you spend ₹90,000 on an iPhone and then 
@@ -36,7 +36,7 @@ export default function FortixAbout() {
           {[
             { title: "Only what fits", desc: "Every accessory is verified for precise fit on the specific device model. No 'compatible with most' vagueness." },
             { title: "Certified materials", desc: "MFi certified for Apple. Tested cases. Screen guards with verified hardness ratings. No shortcuts." },
-            { title: "Premium only", desc: "We curate, not collect. Apple, Samsung S-series, Pixel, OnePlus. The best devices get the best gear." },
+            { title: "Exact standards", desc: "We curate, not collect. Apple, Samsung S-series, Pixel, OnePlus. The best devices get the best gear." },
           ].map((item, i) => (
             <motion.div
               key={item.title}
@@ -45,7 +45,7 @@ export default function FortixAbout() {
               transition={{ delay: i * 0.1 + 0.3 }}
               className="card p-6"
             >
-              <div className="w-8 h-px bg-amber-gradient mb-4" />
+              <div className="w-8 h-px bg-[var(--accent-amber)] mb-4" />
               <h3 className="heading-fortix text-xl mb-3">{item.title}</h3>
               <p className="text-[var(--text-muted)] text-sm leading-relaxed">{item.desc}</p>
             </motion.div>
