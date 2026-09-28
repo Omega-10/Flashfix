@@ -62,7 +62,7 @@ export default function Story() {
         </div>
 
         {/* Panel 2: The Solution (Flashfix) */}
-        <div className="story-panel w-screen h-full flex flex-col justify-center px-12 md:px-24 relative bg-[#111]">
+        <div className="story-panel w-screen h-full flex flex-col justify-center px-12 md:px-24 relative bg-[var(--surface-elevated)]">
           <div className="relative z-10 max-w-2xl">
             <p className="font-mono text-[var(--accent-amber)] uppercase tracking-widest mb-4">
               The Solution
@@ -82,7 +82,7 @@ export default function Story() {
         </div>
 
         {/* Panel 3: The Next Step (Fortix) */}
-        <div className="story-panel w-screen h-full flex flex-col justify-center px-12 md:px-24 relative bg-[#151515]">
+        <div className="story-panel w-screen h-full flex flex-col justify-center px-12 md:px-24 relative bg-[var(--surface-elevated)]">
           <div className="absolute inset-0 bg-mesh-dark opacity-50" />
           <div className="relative z-10 max-w-2xl">
             <p className="font-mono text-[var(--accent-amber)] uppercase tracking-widest mb-4">

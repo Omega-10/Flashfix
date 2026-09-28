@@ -57,7 +57,7 @@ export default function FortixHome() {
   }, []);
 
   return (
-    <div ref={sectionsRef} className="bg-[#0D0D0D] min-h-screen text-[var(--text-primary)] font-sans">
+    <div ref={sectionsRef} className="bg-[var(--surface-bg)] min-h-screen text-[var(--text-primary)] font-sans">
 
       {/* ─── ACT I: THE TYPOGRAPHIC HERO ─── */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -156,7 +156,7 @@ export default function FortixHome() {
       </section>
 
       {/* ─── ACT III: PRODUCT LISTING (Spigen/Cashify Inspired) ─── */}
-      <section id="products" className="py-32 relative bg-[#111111]">
+      <section id="products" className="py-32 relative bg-[var(--surface-elevated)]">
         <div className="section-container">
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 fx-reveal">
             <div>
@@ -174,8 +174,8 @@ export default function FortixHome() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 fx-reveal">
             {FORTIX_PRODUCTS.map((product) => (
-              <Link to={`/fortix/product/${product.id}`} key={product.id} className="group block bg-[#1A1A1A] rounded-2xl overflow-hidden border border-[var(--surface-border)] hover:border-[#ef8f0b]/30 transition-all duration-300">
-                <div className="relative aspect-[4/5] bg-[#0D0D0D] overflow-hidden">
+              <Link to={`/fortix/product/${product.id}`} key={product.id} className="group block bg-[var(--surface-elevated)] rounded-2xl overflow-hidden border border-[var(--surface-border)] hover:border-[#ef8f0b]/30 transition-all duration-300">
+                <div className="relative aspect-[4/5] bg-[var(--surface-bg)] overflow-hidden">
                   {product.tag && (
                     <span className="absolute top-4 left-4 bg-[#ef8f0b] text-black text-xs font-bold px-3 py-1 rounded-full z-10">
                       {product.tag}

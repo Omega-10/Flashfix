@@ -58,7 +58,7 @@ export default function FlashfixHome() {
   const closest = stores[0];
 
   return (
-    <div ref={sectionsRef} className="pt-16 bg-[#0A0A0A] text-[var(--text-primary)] min-h-screen font-sans">
+    <div ref={sectionsRef} className="pt-16 bg-[var(--surface-bg)] text-[var(--text-primary)] min-h-screen font-sans">
 
       {/* ─── HERO ─── */}
       <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden border-b border-[var(--surface-border)]">
@@ -163,7 +163,7 @@ export default function FlashfixHome() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="py-24 border-b border-[var(--surface-border)] bg-[#0D0D0D]"
+            className="py-24 border-b border-[var(--surface-border)] bg-[var(--surface-bg)]"
           >
             <div className="section-container">
               <div className="ff-reveal mb-12 flex flex-col md:flex-row md:items-end justify-between">
@@ -189,7 +189,7 @@ export default function FlashfixHome() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.07, duration: 0.5 }}
-                    className="bg-[#1A1A1A] p-6 rounded-xl border border-[var(--surface-border)] hover:border-[#ef8f0b]/30 transition-colors group"
+                    className="bg-[var(--surface-elevated)] p-6 rounded-xl border border-[var(--surface-border)] hover:border-[#ef8f0b]/30 transition-colors group"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[#ef8f0b] transition-colors">
@@ -232,7 +232,7 @@ export default function FlashfixHome() {
             ].map((item, i) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="ff-reveal relative p-8 bg-[#111] rounded-2xl border border-[var(--surface-border)] hover:border-[#ef8f0b]/50 hover:bg-[#151515] transition-all duration-300 group">
+                <div key={item.title} className="ff-reveal relative p-8 bg-[var(--surface-elevated)] rounded-2xl border border-[var(--surface-border)] hover:border-[#ef8f0b]/50 hover:bg-[var(--surface-elevated)] transition-all duration-300 group">
                   <div className="absolute -top-4 -left-4 w-12 h-12 bg-[#ef8f0b] text-black font-bold font-mono rounded-full flex items-center justify-center text-lg z-10 shadow-[0_0_20px_rgba(239,143,11,0.3)]">
                     0{i + 1}
                   </div>
