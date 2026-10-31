@@ -198,7 +198,7 @@ export default function FlashfixHome() {
         )}
       </AnimatePresence>
 
-      {/* ─── HOW IT WORKS (Premium Story) ─── */}
+      {/* ─── HOW IT WORKS (Story) ─── */}
       <section className="py-32">
         <div className="section-container">
           <div className="ff-reveal text-center mb-20">

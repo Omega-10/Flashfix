@@ -252,15 +252,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         </button>
 
         {/* Brand Accent Tag */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/30 flex items-center justify-center text-[var(--accent-amber)]">
-            <span className="font-bold text-sm">⚡</span>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-9 h-9 rounded-xl bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/30 flex items-center justify-center text-[var(--accent-amber)]">
+            <span className="font-bold text-base">⚡</span>
           </div>
           <div>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--accent-amber)] font-semibold block">
-              Flashfix Security Gateway
-            </span>
-            <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">
+            <h3 className="font-display font-bold text-xl text-[var(--text-primary)]">
               {step === "EMAIL" ? "Sign In to Proceed" : "Enter Verification Code"}
             </h3>
           </div>

@@ -1,13 +1,16 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { User, LogIn } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import Magnetic from "@/components/ui/Magnetic";
+import { useAuthStore } from "@/store/authStore";
 
 const flashfixLinks = [
   { to: "/flashfix", label: "Home" },
   { to: "/flashfix/services", label: "Services" },
   { to: "/flashfix/book", label: "Book Repair" },
+  { to: "/flashfix/profile", label: "Profile" },
   { to: "/flashfix/about", label: "About" },
   { to: "/flashfix/contact", label: "Contact" },
 ];
@@ -23,6 +26,7 @@ export default function Navbar() {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
 
   // Determine active platform from URL
   const platform = location.pathname.startsWith("/flashfix")
@@ -109,13 +113,13 @@ export default function Navbar() {
           </div>
 
           {/* ── Center: Nav links ── */}
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-7">
             {links.map((link) => (
               <Magnetic strength={0.2} key={link.to}>
                 <NavLink
                   to={link.to}
                   className={({ isActive }) =>
-                    `nav-link ${isActive ? "active" : ""}`
+                    `nav-link ${isActive ? "active text-[var(--accent-amber)] font-semibold" : ""}`
                   }
                   end={link.to === "/flashfix" || link.to === "/fortix"}
                 >
@@ -131,9 +135,32 @@ export default function Navbar() {
             )}
           </nav>
 
-          {/* ── Right: CTA + Theme Toggle ── */}
+          {/* ── Right: Auth + CTA + Theme Toggle ── */}
           <div className="flex items-center gap-3">
             <ThemeToggle />
+
+            {/* User Account / Sign In */}
+            {isAuthenticated ? (
+              <Link
+                to="/flashfix/profile"
+                className="flex items-center gap-2 bg-[var(--surface-elevated)] hover:border-[var(--accent-amber)] border border-[var(--surface-border)] px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-primary)] transition-all"
+                title="View Profile & Bookings"
+              >
+                <div className="w-6 h-6 rounded-full bg-[var(--accent-amber)] text-black flex items-center justify-center font-bold text-xs">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
+                </div>
+                <span className="hidden sm:inline-block max-w-[100px] truncate">{user?.name || "Profile"}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/flashfix/login"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-full border border-[var(--surface-border)] hover:border-[var(--accent-amber)] text-[var(--text-primary)] hover:text-[var(--accent-amber)] transition-all bg-[var(--surface-elevated)]/60"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[var(--accent-amber)]" />
+                <span>Sign In</span>
+              </Link>
+            )}
+
             {platform === "flashfix" && (
               <Link to="/flashfix/book" className="btn-primary text-sm px-5 py-2.5 hidden md:inline-flex">
                 Book Repair
@@ -188,20 +215,40 @@ export default function Navbar() {
                   end={link.to === "/flashfix" || link.to === "/fortix"}
                   className={({ isActive }) =>
                     `text-sm font-medium py-2 border-b border-[var(--surface-border)] ${
-                      isActive ? "text-[var(--accent-amber)]" : "text-[var(--text-secondary)]"
+                      isActive ? "text-[var(--accent-amber)] font-semibold" : "text-[var(--text-secondary)]"
                     }`
                   }
                 >
                   {link.label}
                 </NavLink>
               ))}
+
+              {/* Mobile Auth button */}
+              {isAuthenticated ? (
+                <Link
+                  to="/flashfix/profile"
+                  className="flex items-center gap-2 py-2 text-sm text-[var(--text-primary)] border-b border-[var(--surface-border)]"
+                >
+                  <User className="w-4 h-4 text-[var(--accent-amber)]" />
+                  <span>My Profile ({user?.name || user?.email})</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/flashfix/login"
+                  className="flex items-center gap-2 py-2 text-sm text-[var(--accent-amber)] font-medium border-b border-[var(--surface-border)]"
+                >
+                  <LogIn className="w-4 h-4 text-[var(--accent-amber)]" />
+                  <span>Sign In</span>
+                </Link>
+              )}
+
               {platform === "flashfix" && (
-                <Link to="/flashfix/book" className="btn-primary text-sm mt-2">
+                <Link to="/flashfix/book" className="btn-primary text-sm mt-2 text-center">
                   Book Repair
                 </Link>
               )}
               {platform === "fortix" && (
-                <Link to="/fortix/products" className="btn-primary text-sm mt-2">
+                <Link to="/fortix/products" className="btn-primary text-sm mt-2 text-center">
                   Shop Now
                 </Link>
               )}
