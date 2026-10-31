@@ -490,10 +490,11 @@ export async function seed() {
   console.log('Seeding Neon Postgres with Flashfix initial data...');
   const db = createDb();
 
-  // 1. Seed Stores
+  // 1. Seed Stores (without adminId initially to satisfy foreign key constraint)
   console.log(`Inserting ${SEED_DATA.stores.length} stores...`);
   for (const s of SEED_DATA.stores) {
-    await db.insert(stores).values(s).onConflictDoNothing();
+    const { adminId, ...storeData } = s;
+    await db.insert(stores).values({ ...storeData, adminId: null }).onConflictDoNothing();
   }
 
   // 2. Seed Users

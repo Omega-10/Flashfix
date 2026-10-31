@@ -31,8 +31,8 @@ export function createApp() {
   const emailAdapter = useBrevo
     ? new BrevoEmailAdapter({
         apiKey: brevoApiKey!,
-        senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@flashfix.in',
-        senderName: 'Flashfix Support',
+        senderEmail: process.env.BREVO_SENDER_EMAIL || 'nexusprojects03@gmail.com',
+        senderName: process.env.BREVO_SENDER_NAME || 'Flashfix',
       })
     : consoleMockEmailAdapter;
 
