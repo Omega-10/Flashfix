@@ -18,7 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@flashfix/shared": ["../shared/dist/index.d.ts"]
+      "@flashfix/shared": ["../shared/src/index.ts"]
     }
   },
   "include": ["src"],

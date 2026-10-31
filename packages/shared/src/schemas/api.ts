@@ -3,10 +3,6 @@ import {
   UserSchema,
   BookingSchema,
   BookingTrailSchema,
-  NearbyStoreSchema,
-  StoreSchema,
-  InventoryItemSchema,
-  SavedAddressSchema,
 } from './entities.js';
 import { USER_ROLES, BOOKING_STATUSES } from '../constants/index.js';
 
