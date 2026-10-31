@@ -6,6 +6,8 @@ import Services from "@/pages/flashfix/Services";
 import Booking from "@/pages/flashfix/Booking";
 import FlashfixAbout from "@/pages/flashfix/About";
 import FlashfixContact from "@/pages/flashfix/Contact";
+import Profile from "@/pages/flashfix/Profile";
+import TrackRepair from "@/pages/flashfix/TrackRepair";
 import FortixHome from "@/pages/fortix/FortixHome";
 import FortixProducts from "@/pages/fortix/FortixProducts";
 import FortixProductDetail from "@/pages/fortix/FortixProductDetail";
@@ -23,6 +25,8 @@ const router = createBrowserRouter([
       { path: "flashfix", element: <FlashfixHome /> },
       { path: "flashfix/services", element: <Services /> },
       { path: "flashfix/book", element: <Booking /> },
+      { path: "flashfix/profile", element: <Profile /> },
+      { path: "flashfix/track/:id", element: <TrackRepair /> },
       { path: "flashfix/about", element: <FlashfixAbout /> },
       { path: "flashfix/contact", element: <FlashfixContact /> },
       // Fortix routes

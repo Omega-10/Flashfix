@@ -1,0 +1,270 @@
+# Render Blueprint Specification — Flashfix Platform
+# Deployment specification for 6 microservices, gateway, frontends, and managed database.
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. API Gateway / Nginx Reverse Proxy
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-gateway
+    runtime: docker
+    dockerfilePath: infra/nginx/Dockerfile
+    plan: starter
+    region: singapore
+    envVars:
+      - key: PORT
+        value: "80"
+      - key: AUTH_SERVICE_URL
+        fromService:
+          type: web
+          name: flashfix-auth-service
+          property: host
+      - key: BOOKING_SERVICE_URL
+        fromService:
+          type: web
+          name: flashfix-booking-service
+          property: host
+      - key: STORE_SERVICE_URL
+        fromService:
+          type: web
+          name: flashfix-store-service
+          property: host
+      - key: ADMIN_API_URL
+        fromService:
+          type: web
+          name: flashfix-admin-api
+          property: host
+      - key: INVENTORY_SERVICE_URL
+        fromService:
+          type: web
+          name: flashfix-inventory-service
+          property: host
+      - key: NOTIFY_SERVICE_URL
+        fromService:
+          type: pserv
+          name: flashfix-notify-service
+          property: hostport
+      - key: WEB_URL
+        fromService:
+          type: web
+          name: flashfix-web
+          property: host
+      - key: ADMIN_PANEL_URL
+        fromService:
+          type: web
+          name: flashfix-admin-panel
+          property: host
+
+  # ---------------------------------------------------------------------------
+  # 2. Auth Service (Port 3001)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-auth-service
+    runtime: docker
+    dockerfilePath: services/auth-service/Dockerfile
+    plan: starter
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3001"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flashfix-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_SECRET
+        generateValue: true
+      - key: NOTIFY_SERVICE_URL
+        fromService:
+          type: pserv
+          name: flashfix-notify-service
+          property: hostport
+      - key: NOTIFY_URL
+        fromService:
+          type: pserv
+          name: flashfix-notify-service
+          property: hostport
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # 3. Booking Service (Port 3002)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-booking-service
+    runtime: docker
+    dockerfilePath: services/booking-service/Dockerfile
+    plan: starter
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3002"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flashfix-db
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: flashfix-auth-service
+          envVarKey: JWT_SECRET
+      - key: NOTIFY_SERVICE_URL
+        fromService:
+          type: pserv
+          name: flashfix-notify-service
+          property: hostport
+      - key: NOTIFY_URL
+        fromService:
+          type: pserv
+          name: flashfix-notify-service
+          property: hostport
+
+  # ---------------------------------------------------------------------------
+  # 4. Notify Service (Internal Private Service - Port 3005)
+  # ---------------------------------------------------------------------------
+  - type: pserv
+    name: flashfix-notify-service
+    runtime: docker
+    dockerfilePath: services/notify-service/Dockerfile
+    plan: starter
+    region: singapore
+    envVars:
+      - key: PORT
+        value: "3005"
+      - key: NODE_ENV
+        value: production
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        value: noreply@flashfix.in
+
+  # ---------------------------------------------------------------------------
+  # 5. Store Service (Port 3006)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-store-service
+    runtime: docker
+    dockerfilePath: services/store-service/Dockerfile
+    plan: starter
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3006"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flashfix-db
+          property: connectionString
+
+  # ---------------------------------------------------------------------------
+  # 6. Admin API (Port 3007)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-admin-api
+    runtime: docker
+    dockerfilePath: services/admin-api/Dockerfile
+    plan: starter
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3007"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flashfix-db
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: flashfix-auth-service
+          envVarKey: JWT_SECRET
+      - key: NOTIFY_SERVICE_URL
+        fromService:
+          type: pserv
+          name: flashfix-notify-service
+          property: hostport
+      - key: NOTIFY_URL
+        fromService:
+          type: pserv
+          name: flashfix-notify-service
+          property: hostport
+      - key: BOOKING_SERVICE_URL
+        fromService:
+          type: web
+          name: flashfix-booking-service
+          property: hostport
+
+  # ---------------------------------------------------------------------------
+  # 7. Inventory Service (Port 3008)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-inventory-service
+    runtime: docker
+    dockerfilePath: services/inventory-service/Dockerfile
+    plan: starter
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3008"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flashfix-db
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: flashfix-auth-service
+          envVarKey: JWT_SECRET
+
+  # ---------------------------------------------------------------------------
+  # 8. Web Frontend (Consumer SPA)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-web
+    runtime: docker
+    dockerfilePath: packages/web/Dockerfile
+    plan: starter
+    region: singapore
+    envVars:
+      - key: PORT
+        value: "80"
+
+  # ---------------------------------------------------------------------------
+  # 9. Admin Panel (Operations SPA)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: flashfix-admin-panel
+    runtime: docker
+    dockerfilePath: apps/admin-panel/Dockerfile
+    plan: starter
+    region: singapore
+    envVars:
+      - key: PORT
+        value: "80"
+
+# -----------------------------------------------------------------------------
+# Managed PostgreSQL Database Instance
+# -----------------------------------------------------------------------------
+databases:
+  - name: flashfix-db
+    databaseName: flashfix
+    user: flashfix
+    plan: starter
+    region: singapore
+    postgresMajorVersion: "16"

@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@flashfix/shared": "*",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.17.14",
     "framer-motion": "^11.18.2",

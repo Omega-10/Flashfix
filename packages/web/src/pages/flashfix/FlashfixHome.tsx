@@ -67,20 +67,6 @@ export default function FlashfixHome() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] bg-[var(--accent-amber)] opacity-[0.05] blur-[100px] rounded-full pointer-events-none" />
 
         <div className="section-container relative z-10 py-32 flex flex-col items-center text-center">
-          
-          {/* Platform label */}
-          <motion.div
-            className="flex items-center justify-center gap-2 mb-8"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/20">
-              <Zap className="w-4 h-4 text-[var(--accent-amber)]" />
-            </div>
-            <span className="text-[var(--accent-amber)] font-mono text-sm uppercase tracking-widest font-semibold">Precision Repair Protocol</span>
-          </motion.div>
-
           {/* Headline */}
           <motion.h1
             className="font-display font-extrabold text-[clamp(60px,10vw,160px)] leading-[0.85] tracking-tighter text-[var(--text-primary)] mb-8"

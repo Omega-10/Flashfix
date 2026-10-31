@@ -3,14 +3,14 @@ import { motion } from "framer-motion";
 import { Smartphone, Battery, Droplets, Plug2, Camera, AppWindow, Speaker, Cpu, Zap } from "lucide-react";
 
 const SERVICES = [
-  { name: "Screen Replacement", time: "45–60 min", icon: Smartphone, desc: "Cracked or dead display? We replace with OEM-grade panels.", brands: ["iPhone", "Samsung", "Pixel"] },
-  { name: "Battery Replacement", time: "30–45 min", icon: Battery, desc: "Swollen, draining fast, or not charging? New battery, old phone feels new.", brands: ["All brands"] },
-  { name: "Water Damage", time: "1–2 hrs", icon: Droplets, desc: "Don't wait. Bring it in as fast as you can for best recovery odds.", brands: ["All brands"] },
-  { name: "Charging Port", time: "45 min", icon: Plug2, desc: "Loose or non-functional charging port replaced with precision parts.", brands: ["iPhone", "Samsung", "OnePlus"] },
-  { name: "Camera Repair", time: "60 min", icon: Camera, desc: "Blurry, black screen, or shattered lens — we fix or replace.", brands: ["iPhone", "Samsung", "Pixel"] },
-  { name: "Back Glass", time: "45–75 min", icon: AppWindow, desc: "Shattered back? Restored to smooth and professional.", brands: ["iPhone", "Samsung"] },
-  { name: "Speaker / Mic", time: "30–45 min", icon: Speaker, desc: "Muffled calls or no sound? We diagnose and replace.", brands: ["All brands"] },
-  { name: "Software Fix", time: "30–60 min", icon: Cpu, desc: "Boot loops, factory reset recovery, software reinstall.", brands: ["All brands"] },
+  { name: "Screen Replacement", icon: Smartphone, desc: "Cracked or dead display? We replace with OEM-grade panels." },
+  { name: "Battery Replacement", icon: Battery, desc: "Swollen, draining fast, or not charging? New battery, old phone feels new." },
+  { name: "Water Damage", icon: Droplets, desc: "Don't wait. Bring it in as fast as you can for best recovery odds." },
+  { name: "Charging Port", icon: Plug2, desc: "Loose or non-functional charging port replaced with precision parts." },
+  { name: "Camera Repair", icon: Camera, desc: "Blurry, black screen, or shattered lens — we fix or replace." },
+  { name: "Back Glass", icon: AppWindow, desc: "Shattered back? Restored to smooth and professional." },
+  { name: "Speaker / Mic", icon: Speaker, desc: "Muffled calls or no sound? We diagnose and replace." },
+  { name: "Software Fix", icon: Cpu, desc: "Boot loops, factory reset recovery, software reinstall." },
 ];
 
 export default function FlashfixServices() {
@@ -44,25 +44,13 @@ export default function FlashfixServices() {
                 transition={{ delay: i * 0.06, duration: 0.5 }}
                 className="bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-2xl p-6 group hover:border-[var(--accent-amber)]/30 transition-all duration-300"
               >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-12 h-12 bg-[#ef8f0b]/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="w-6 h-6 text-[#ef8f0b]" />
-                  </div>
-                  <span className="font-mono text-xs text-[var(--text-muted)] bg-[var(--surface-bg)] px-3 py-1 rounded-full border border-[var(--surface-border)]">
-                    {service.time}
-                  </span>
+                <div className="w-12 h-12 bg-[#ef8f0b]/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mb-8">
+                  <Icon className="w-6 h-6 text-[#ef8f0b]" />
                 </div>
                 <h3 className="font-display font-semibold text-lg mb-3 text-[var(--text-primary)] group-hover:text-[var(--accent-amber)] transition-colors">
                   {service.name.toUpperCase()}
                 </h3>
-                <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-6 h-10">{service.desc}</p>
-                <div className="flex flex-wrap gap-2">
-                  {service.brands.map((b) => (
-                    <span key={b} className="text-xs font-medium text-[var(--text-muted)] bg-[var(--surface-bg)] px-3 py-1 rounded border border-[var(--surface-border)]">
-                      {b}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-[var(--text-muted)] text-sm leading-relaxed">{service.desc}</p>
               </motion.div>
             );
           })}

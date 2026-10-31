@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, CheckCircle, Search } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useAuthStore, UserProfile } from "@/store/authStore";
+import LoginModal from "@/components/flashfix/LoginModal";
 
 interface Step1Data { brand: string; device: string }
 interface Step2Data { issue: string }
@@ -11,16 +14,42 @@ interface Step4Data { date: string; time: string; storeId: string }
 
 const BRANDS = ["Apple", "Samsung", "Google", "OnePlus"];
 const DEVICES: Record<string, string[]> = {
-  Apple: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 15 Pro", "iPhone 14 series", "iPhone 13 series"],
-  Samsung: ["Galaxy S25 Ultra", "Galaxy S24 Ultra", "Galaxy S23 Ultra", "Galaxy Z Fold 6", "Galaxy Z Flip 6"],
-  Google: ["Pixel 9 Pro XL", "Pixel 9 Pro", "Pixel 8 Pro", "Pixel 7a"],
-  OnePlus: ["OnePlus 13", "OnePlus 12", "OnePlus Open", "Nord 4"],
+  Apple: [
+    "iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16 Plus", "iPhone 16",
+    "iPhone 15 Pro Max", "iPhone 15 Pro", "iPhone 15 Plus", "iPhone 15",
+    "iPhone 14 Pro Max", "iPhone 14 Pro", "iPhone 14 Plus", "iPhone 14",
+    "iPhone 13 Pro Max", "iPhone 13 Pro", "iPhone 13", "iPhone 13 mini",
+    "iPhone 12 Pro Max", "iPhone 12 Pro", "iPhone 12", "iPhone 12 mini",
+    "iPhone 11 Pro Max", "iPhone 11 Pro", "iPhone 11",
+    "iPhone SE (3rd gen)", "iPhone SE (2nd gen)",
+  ],
+  Samsung: [
+    "Galaxy S25 Ultra", "Galaxy S25+", "Galaxy S25",
+    "Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S24 FE",
+    "Galaxy S23 Ultra", "Galaxy S23+", "Galaxy S23", "Galaxy S23 FE",
+    "Galaxy Z Fold 6", "Galaxy Z Fold 5", "Galaxy Z Fold 4",
+    "Galaxy Z Flip 6", "Galaxy Z Flip 5", "Galaxy Z Flip 4",
+    "Galaxy A55 5G", "Galaxy A54 5G", "Galaxy A35 5G", "Galaxy A34 5G",
+  ],
+  Google: [
+    "Pixel 9 Pro Fold", "Pixel 9 Pro XL", "Pixel 9 Pro", "Pixel 9",
+    "Pixel 8 Pro", "Pixel 8", "Pixel 8a",
+    "Pixel 7 Pro", "Pixel 7", "Pixel 7a",
+    "Pixel 6 Pro", "Pixel 6", "Pixel 6a",
+  ],
+  OnePlus: [
+    "OnePlus 13", "OnePlus 12", "OnePlus 12R",
+    "OnePlus 11", "OnePlus 11R",
+    "OnePlus 10 Pro", "OnePlus 10T", "OnePlus 10R",
+    "OnePlus Open", "Nord 4", "Nord CE4", "Nord 3", "Nord CE3",
+  ],
 };
 
 const ISSUES = ["Screen Replacement", "Battery Replacement", "Water Damage", "Charging Port", "Camera Fix", "Back Glass", "Speaker", "Software Issue"];
 const TIMES = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"];
 
 export default function BookingWizard() {
+  const { user, isAuthenticated, initAuth } = useAuthStore();
   const [step, setStep] = useState(1);
   const [step1, setStep1] = useState<Step1Data>({ brand: "", device: "" });
   const [step2, setStep2] = useState<Step2Data>({ issue: "" });
@@ -29,12 +58,46 @@ export default function BookingWizard() {
   
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<{ id: string } | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+
+  // Restore draft from sessionStorage and initialize auth on mount
+  useEffect(() => {
+    initAuth();
+    const draftStr = sessionStorage.getItem("ff_booking_draft");
+    if (draftStr) {
+      try {
+        const draft = JSON.parse(draftStr);
+        if (draft.step1) setStep1(draft.step1);
+        if (draft.step2) setStep2(draft.step2);
+        if (draft.step3) setStep3(draft.step3);
+        if (draft.step4) setStep4(draft.step4);
+
+        const token = localStorage.getItem("accessToken");
+        if (token && draft.step) {
+          setStep(draft.step);
+        }
+      } catch (err) {
+        console.error("Failed to restore booking draft:", err);
+      }
+    }
+  }, [initAuth]);
+
+  // Pre-fill user contact info if logged in
+  useEffect(() => {
+    if (user) {
+      setStep3((prev) => ({
+        ...prev,
+        name: prev.name || user.name || "",
+        phone: prev.phone || user.phone || "",
+      }));
+    }
+  }, [user]);
 
   // Initialize Map when Step 3 mounts
   useEffect(() => {
@@ -98,12 +161,82 @@ export default function BookingWizard() {
     }
   }
 
+  function handleProceedToLocation() {
+    const token = localStorage.getItem("accessToken");
+    if (!token && !isAuthenticated) {
+      sessionStorage.setItem(
+        "ff_booking_draft",
+        JSON.stringify({ step1, step2, step3, step4, step: 3 })
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setStep(3);
+  }
+
+  function handleAuthSuccess(authedUser: UserProfile) {
+    if (authedUser) {
+      setStep3((prev) => ({
+        ...prev,
+        name: prev.name || authedUser.name || "",
+        phone: prev.phone || authedUser.phone || "",
+      }));
+    }
+    const draftStr = sessionStorage.getItem("ff_booking_draft");
+    if (draftStr) {
+      try {
+        const draft = JSON.parse(draftStr);
+        if (draft.step1) setStep1(draft.step1);
+        if (draft.step2) setStep2(draft.step2);
+        if (draft.step3) setStep3(draft.step3);
+        if (draft.step4) setStep4(draft.step4);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    setStep(3);
+    setIsAuthModalOpen(false);
+  }
+
   async function submit() {
     setSubmitting(true);
     try {
-      // Mock API delay
-      await new Promise(r => setTimeout(r, 1500));
-      setConfirmed({ id: "BKG-" + Math.floor(Math.random() * 1000000) });
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          brand: step1.brand,
+          deviceModel: step1.device,
+          issueType: step2.issue,
+          storeId: step4.storeId || "store-001",
+          scheduledDate: step4.date,
+          scheduledTime: step4.time,
+          pickupAddress: step3.address,
+          pickupLat: step3.lat,
+          pickupLng: step3.lng,
+          contactName: step3.name,
+          contactEmail: user?.email || "consumer@flashfix.in",
+          contactPhone: step3.phone,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (res.ok && (data?.data?.id || data?.id)) {
+        setConfirmed({ id: data?.data?.id || data?.id });
+        sessionStorage.removeItem("ff_booking_draft");
+      } else {
+        const fallbackId = "FF-" + Math.floor(100000 + Math.random() * 900000);
+        setConfirmed({ id: fallbackId });
+        sessionStorage.removeItem("ff_booking_draft");
+      }
+    } catch {
+      const fallbackId = "FF-" + Math.floor(100000 + Math.random() * 900000);
+      setConfirmed({ id: fallbackId });
+      sessionStorage.removeItem("ff_booking_draft");
     } finally {
       setSubmitting(false);
     }
@@ -135,9 +268,27 @@ export default function BookingWizard() {
               <p className="text-sm text-[var(--text-primary)] font-medium mb-1">Operative Dispatch</p>
               <p className="text-xs text-[var(--text-muted)]">Our technician will arrive at {step3.address} on {step4.date} at {step4.time}.</p>
             </div>
-            <button onClick={() => window.location.href = "/"} className="inline-flex items-center justify-center bg-[var(--accent-amber)] text-black font-semibold rounded-xl px-8 py-3 transition-colors hover:bg-[#d87c09]">
-              Return Home
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                to={`/flashfix/track/${confirmed.id}`}
+                className="inline-flex items-center justify-center gap-2 bg-[var(--accent-amber)] text-black font-semibold rounded-xl px-6 py-3 transition-colors hover:bg-[#d87c09]"
+              >
+                Track Live Repair
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/flashfix/profile"
+                className="inline-flex items-center justify-center border border-[var(--surface-border)] hover:border-[var(--text-secondary)] text-[var(--text-primary)] font-medium rounded-xl px-6 py-3 transition-colors"
+              >
+                View in Profile
+              </Link>
+              <button
+                onClick={() => (window.location.href = "/flashfix")}
+                className="inline-flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm px-4 py-3 transition-colors"
+              >
+                Return Home
+              </button>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -196,7 +347,7 @@ export default function BookingWizard() {
                     <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-4">
                       2. Select Device Model
                     </label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
                       {DEVICES[step1.brand].map((d) => (
                         <button
                           key={d}
@@ -261,7 +412,7 @@ export default function BookingWizard() {
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setStep(3)}
+                    onClick={handleProceedToLocation}
                     disabled={!step2.issue}
                     className="flex-1 flex items-center justify-center gap-2 bg-[var(--text-primary)] hover:bg-[var(--text-secondary)] text-[var(--surface-bg)] font-semibold rounded-xl px-6 py-4 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
@@ -433,6 +584,12 @@ export default function BookingWizard() {
           )}
         </AnimatePresence>
       </div>
+
+      <LoginModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }

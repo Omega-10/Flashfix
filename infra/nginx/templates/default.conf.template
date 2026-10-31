@@ -1,0 +1,34 @@
+# Flashfix Gateway Upstreams Template
+# Allows dynamic upstream resolution via environment variables with Compose defaults.
+
+upstream auth_backend {
+    server ${AUTH_UPSTREAM:-auth-service:3001};
+}
+
+upstream booking_backend {
+    server ${BOOKING_UPSTREAM:-booking-service:3002};
+}
+
+upstream store_backend {
+    server ${STORE_UPSTREAM:-store-service:3006};
+}
+
+upstream admin_backend {
+    server ${ADMIN_UPSTREAM:-admin-api:3007};
+}
+
+upstream inventory_backend {
+    server ${INVENTORY_UPSTREAM:-inventory-service:3008};
+}
+
+upstream notify_backend {
+    server ${NOTIFY_UPSTREAM:-notify-service:3005};
+}
+
+upstream admin_frontend {
+    server ${ADMIN_PANEL_UPSTREAM:-admin-panel:80};
+}
+
+upstream web_frontend {
+    server ${WEB_UPSTREAM:-web:80};
+}

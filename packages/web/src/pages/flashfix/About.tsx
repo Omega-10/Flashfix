@@ -45,7 +45,6 @@ export default function FlashfixAbout() {
             You drop your phone off, wait 3 days, and pay more than expected.{" "}
             <span className="text-[var(--accent-amber)] font-medium">We come to you. We fix it. Same day.</span>"
           </p>
-          <p className="text-[var(--text-muted)] text-sm mt-4 font-mono">— JP, Founder</p>
         </div>
 
         {/* Stats */}

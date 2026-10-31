@@ -1,0 +1,267 @@
+networks:
+  flashfix-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
+
+services:
+  # ---------------------------------------------------------------------------
+  # Database: PostgreSQL 16 (Neon Postgres local equivalent)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: flashfix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-flashfix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flashfix_password}
+      POSTGRES_DB: ${POSTGRES_DB:-flashfix}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flashfix -d flashfix"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Notification Service (Internal Transactional Email & Mock Adapter)
+  # ---------------------------------------------------------------------------
+  notify-service:
+    build:
+      context: ..
+      dockerfile: services/notify-service/Dockerfile
+    container_name: flashfix-notify
+    restart: unless-stopped
+    environment:
+      - PORT=3005
+      - NODE_ENV=${NODE_ENV:-development}
+      - BREVO_API_KEY=${BREVO_API_KEY:-}
+      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL:-noreply@flashfix.in}
+    ports:
+      - "3005:3005"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3005/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Auth Service (OTP, Google OAuth, JWT, User Management)
+  # ---------------------------------------------------------------------------
+  auth-service:
+    build:
+      context: ..
+      dockerfile: services/auth-service/Dockerfile
+    container_name: flashfix-auth
+    restart: unless-stopped
+    environment:
+      - PORT=3001
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgres://flashfix:flashfix_password@postgres:5432/flashfix}
+      - JWT_SECRET=${JWT_SECRET:-flashfix_jwt_secret_dev_32bytes_long_min}
+      - REFRESH_SECRET=${REFRESH_SECRET:-flashfix_refresh_secret_dev_32bytes_long}
+      - NOTIFY_SERVICE_URL=http://notify-service:3005
+      - NOTIFY_URL=http://notify-service:3005
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-mock-google-client-id}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-mock-google-client-secret}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      notify-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3001/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Store Service (Geo Proximity, Haversine Calculation, ⚡ Flash Badges)
+  # ---------------------------------------------------------------------------
+  store-service:
+    build:
+      context: ..
+      dockerfile: services/store-service/Dockerfile
+    container_name: flashfix-store
+    restart: unless-stopped
+    environment:
+      - PORT=3006
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgres://flashfix:flashfix_password@postgres:5432/flashfix}
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3006/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Booking Service (Lifecycle Management, Handover OTP Verification, Trail)
+  # ---------------------------------------------------------------------------
+  booking-service:
+    build:
+      context: ..
+      dockerfile: services/booking-service/Dockerfile
+    container_name: flashfix-booking
+    restart: unless-stopped
+    environment:
+      - PORT=3002
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgres://flashfix:flashfix_password@postgres:5432/flashfix}
+      - JWT_SECRET=${JWT_SECRET:-flashfix_jwt_secret_dev_32bytes_long_min}
+      - NOTIFY_SERVICE_URL=http://notify-service:3005
+      - NOTIFY_URL=http://notify-service:3005
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      notify-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3002/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Admin API (Operations BFF, Team Management, Job Assignment)
+  # ---------------------------------------------------------------------------
+  admin-api:
+    build:
+      context: ..
+      dockerfile: services/admin-api/Dockerfile
+    container_name: flashfix-admin-api
+    restart: unless-stopped
+    environment:
+      - PORT=3007
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgres://flashfix:flashfix_password@postgres:5432/flashfix}
+      - JWT_SECRET=${JWT_SECRET:-flashfix_jwt_secret_dev_32bytes_long_min}
+      - NOTIFY_SERVICE_URL=http://notify-service:3005
+      - NOTIFY_URL=http://notify-service:3005
+      - BOOKING_SERVICE_URL=http://booking-service:3002
+    ports:
+      - "3007:3007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+      notify-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3007/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Inventory Service (Parts Catalog & Stock Tracking Skeleton)
+  # ---------------------------------------------------------------------------
+  inventory-service:
+    build:
+      context: ..
+      dockerfile: services/inventory-service/Dockerfile
+    container_name: flashfix-inventory
+    restart: unless-stopped
+    environment:
+      - PORT=3008
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgres://flashfix:flashfix_password@postgres:5432/flashfix}
+      - JWT_SECRET=${JWT_SECRET:-flashfix_jwt_secret_dev_32bytes_long_min}
+    ports:
+      - "3008:3008"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3008/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Consumer Web Application (React Vite Frontend)
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ..
+      dockerfile: packages/web/Dockerfile
+    container_name: flashfix-web
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Admin Panel Dashboard (React Vite Admin Frontend)
+  # ---------------------------------------------------------------------------
+  admin-panel:
+    build:
+      context: ..
+      dockerfile: apps/admin-panel/Dockerfile
+    container_name: flashfix-admin-panel
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    networks:
+      - flashfix-net
+
+  # ---------------------------------------------------------------------------
+  # Nginx API Gateway & Reverse Proxy (Rate Limiting & Routing on Port 80)
+  # ---------------------------------------------------------------------------
+  gateway:
+    build:
+      context: ..
+      dockerfile: infra/nginx/Dockerfile
+    container_name: flashfix-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - booking-service
+      - store-service
+      - admin-api
+      - inventory-service
+      - notify-service
+      - web
+      - admin-panel
+    networks:
+      - flashfix-net

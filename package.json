@@ -3,15 +3,39 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "services/*",
+    "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w packages/server\" \"npm run dev -w packages/web\"",
-    "build": "npm run build -w packages/server && npm run build -w packages/web",
+    "dev": "concurrently \"npm run dev -w packages/shared\" \"npm run dev -w packages/web\"",
+    "build": "npm run build -w packages/shared && npm run build -w packages/web",
+    "build:services": "npm run build -w services/notify-service -w services/auth-service -w services/store-service -w services/booking-service -w services/admin-api -w services/inventory-service",
+    "test:services": "tsx --test services/*/test/**/*.test.ts",
+    "test:e2e": "tsx tests/e2e/run-all-tests.ts",
     "lint": "npm run lint -w packages/web",
-    "typecheck": "npm run typecheck -w packages/web && npm run typecheck -w packages/server"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx infra/db/migrate.ts",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx infra/db/seed.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.10",
+    "concurrently": "^9.1.0",
+    "dotenv": "^16.4.7",
+    "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.1",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.38.4",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.13.1"
   }
 }
