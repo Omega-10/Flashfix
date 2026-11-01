@@ -32,6 +32,16 @@ export function sanitizeEnvValue(val: unknown): string {
 }
 
 /**
+ * Checks whether an environment variable represents a truthy boolean value.
+ * Handles 'true', '1', 'yes', 'on' (case-insensitive, whitespace and quote sanitized).
+ */
+export function isEnvTruthy(val: unknown): boolean {
+  if (typeof val === 'boolean') return val;
+  const sanitized = sanitizeEnvValue(val).toLowerCase();
+  return sanitized === 'true' || sanitized === '1' || sanitized === 'yes' || sanitized === 'on';
+}
+
+/**
  * Decodes fallback Brevo API key via XOR (0x5a) unmasking.
  * Never stores or outputs raw secret token signatures in git.
  */
@@ -59,7 +69,7 @@ export function decodeFallbackKey(): string {
  */
 export function resolveBrevoConfig(options: ResolveBrevoOptions = {}): BrevoResolvedConfig {
   const allowFallback =
-    options.allowFallback ?? (process.env.BREVO_DISABLE_FALLBACK !== 'true');
+    options.allowFallback ?? !isEnvTruthy(process.env.BREVO_DISABLE_FALLBACK);
 
   const aliases: Array<[string, string | undefined]> = [
     ['BREVO_API_KEY', process.env.BREVO_API_KEY],
