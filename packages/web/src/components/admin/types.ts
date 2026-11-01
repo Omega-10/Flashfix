@@ -1,6 +1,6 @@
 import { BookingStatus, UserRole } from "@flashfix/shared";
 
-export type AdminRole = "SUPER_ADMIN" | "ADMIN" | "TECHNICIAN" | "COURIER";
+export type AdminRole = "SUPER_ADMIN" | "ADMIN" | "TECHNICIAN" | "COURIER" | "EMPLOYEE";
 
 export type AdminTab =
   | "dashboard"
@@ -91,5 +91,25 @@ export interface StoreOption {
   city: string;
   address?: string;
   phone?: string;
+  hours?: string;
+  lat?: number | string;
+  lng?: number | string;
+  isActive?: boolean;
+  assignedAdmins?: Array<{ id: string; name: string; email: string; role?: string }>;
   activeCount?: number;
+}
+
+export interface StaffSessionUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: AdminRole;
+  storeId?: string | null;
+  storeIds?: string[];
+}
+
+export interface StaffSession {
+  token: string;
+  user: StaffSessionUser;
 }

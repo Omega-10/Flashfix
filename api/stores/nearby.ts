@@ -64,7 +64,17 @@ export default async function handler(req: any, res: any) {
       const sLng = parseFloat(s.lng);
       const dist = haversineKm(lat, lng, sLat, sLng);
       return {
-        ...s,
+        id: s.id,
+        name: s.name,
+        address: s.address,
+        city: s.city,
+        lat: sLat,
+        lng: sLng,
+        phone: s.phone || '+91 98765 43210',
+        hours: s.hours || '9 AM - 9 PM',
+        services: s.services || ['Screen Replacement', 'Battery Replacement', 'Water Damage', 'Diagnostics'],
+        rating: Number(s.rating || 4.8),
+        reviews: Number(s.review_count || s.reviews || s.reviewCount || 128),
         distanceKm: dist,
         tier: dist <= 3 ? 'flash' : dist <= 10 ? 'next-day' : 'out-of-range',
         isFlashHero: dist <= 3,

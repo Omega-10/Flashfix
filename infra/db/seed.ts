@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 import { createDb } from './index.js';
 import {
   users,
@@ -9,9 +10,66 @@ import {
   bookingTrail,
   otpCodes,
   inventoryItems,
+  storeAdmins,
 } from './schema.js';
 
 dotenv.config();
+
+const defaultAdminHash = bcrypt.hashSync('Admin@123', 10);
+const defaultTechHash = bcrypt.hashSync('Tech@123', 10);
+const defaultRiderHash = bcrypt.hashSync('Rider@123', 10);
+
+export const ADDITIONAL_STAFF_ACCOUNTS = [
+  {
+    id: '00000000-0000-4000-a000-000000000010',
+    name: 'Flashfix Store Admin',
+    email: 'admin@flashfix.in',
+    phone: '+919999900010',
+    role: 'ADMIN' as const,
+    emailVerified: true,
+    storeId: 'store-001',
+    passwordHash: defaultAdminHash,
+  },
+  {
+    id: '00000000-0000-4000-a000-000000000011',
+    name: 'Flashfix Technician',
+    email: 'tech@flashfix.in',
+    phone: '+919999900011',
+    role: 'TECHNICIAN' as const,
+    emailVerified: true,
+    storeId: 'store-001',
+    passwordHash: defaultTechHash,
+  },
+  {
+    id: '00000000-0000-4000-a000-000000000012',
+    name: 'Flashfix Delivery Rider',
+    email: 'rider@flashfix.in',
+    phone: '+919999900012',
+    role: 'EMPLOYEE' as const,
+    emailVerified: true,
+    storeId: 'store-001',
+    passwordHash: defaultRiderHash,
+  },
+];
+
+export const SEED_STORE_ADMINS = [
+  {
+    storeId: 'store-001',
+    userId: '00000000-0000-4000-a000-000000000002', // Koramangala Store Manager
+  },
+  {
+    storeId: 'store-002',
+    userId: '00000000-0000-4000-a000-000000000003', // Indiranagar Store Manager
+  },
+  {
+    storeId: 'store-001',
+    userId: '00000000-0000-4000-a000-000000000010', // admin@flashfix.in
+  },
+  {
+    storeId: 'store-002',
+    userId: '00000000-0000-4000-a000-000000000010', // admin@flashfix.in (multi-store admin)
+  },
+];
 
 export const SEED_DATA = {
   users: [
@@ -23,6 +81,7 @@ export const SEED_DATA = {
       role: 'SUPER_ADMIN' as const,
       emailVerified: true,
       storeId: null,
+      passwordHash: defaultAdminHash,
     },
     {
       id: '00000000-0000-4000-a000-000000000002',
@@ -32,6 +91,7 @@ export const SEED_DATA = {
       role: 'ADMIN' as const,
       emailVerified: true,
       storeId: 'store-001',
+      passwordHash: defaultAdminHash,
     },
     {
       id: '00000000-0000-4000-a000-000000000003',
@@ -41,6 +101,7 @@ export const SEED_DATA = {
       role: 'ADMIN' as const,
       emailVerified: true,
       storeId: 'store-002',
+      passwordHash: defaultAdminHash,
     },
     {
       id: '00000000-0000-4000-a000-000000000004',
@@ -50,6 +111,7 @@ export const SEED_DATA = {
       role: 'EMPLOYEE' as const,
       emailVerified: true,
       storeId: 'store-001',
+      passwordHash: defaultRiderHash,
     },
     {
       id: '00000000-0000-4000-a000-000000000005',
@@ -59,6 +121,7 @@ export const SEED_DATA = {
       role: 'EMPLOYEE' as const,
       emailVerified: true,
       storeId: 'store-001',
+      passwordHash: defaultTechHash,
     },
     {
       id: '00000000-0000-4000-a000-000000000006',
@@ -68,6 +131,7 @@ export const SEED_DATA = {
       role: 'CONSUMER' as const,
       emailVerified: true,
       storeId: null,
+      passwordHash: null,
     },
   ],
 
@@ -500,7 +564,35 @@ export async function seed() {
   // 2. Seed Users
   console.log(`Inserting ${SEED_DATA.users.length} users...`);
   for (const u of SEED_DATA.users) {
-    await db.insert(users).values(u).onConflictDoNothing();
+    await db
+      .insert(users)
+      .values(u)
+      .onConflictDoUpdate({
+        target: users.email,
+        set: {
+          passwordHash: u.passwordHash,
+          role: u.role,
+          name: u.name,
+          storeId: u.storeId,
+        },
+      });
+  }
+
+  // 2b. Seed Additional Staff Accounts
+  console.log(`Inserting ${ADDITIONAL_STAFF_ACCOUNTS.length} additional staff accounts...`);
+  for (const staff of ADDITIONAL_STAFF_ACCOUNTS) {
+    await db
+      .insert(users)
+      .values(staff)
+      .onConflictDoUpdate({
+        target: users.email,
+        set: {
+          passwordHash: staff.passwordHash,
+          role: staff.role,
+          name: staff.name,
+          storeId: staff.storeId,
+        },
+      });
   }
 
   // Update store admin foreign keys now that users exist
@@ -532,6 +624,12 @@ export async function seed() {
   console.log(`Inserting ${SEED_DATA.inventoryItems.length} inventory items...`);
   for (const item of SEED_DATA.inventoryItems) {
     await db.insert(inventoryItems).values(item).onConflictDoNothing();
+  }
+
+  // 7. Seed Store Admin Junction
+  console.log(`Inserting ${SEED_STORE_ADMINS.length} store admin assignments...`);
+  for (const sa of SEED_STORE_ADMINS) {
+    await db.insert(storeAdmins).values(sa).onConflictDoNothing();
   }
 
   console.log('Seed completed successfully.');

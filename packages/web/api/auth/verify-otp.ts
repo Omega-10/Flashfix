@@ -1,4 +1,9 @@
 import { Pool } from 'pg';
+import crypto from 'crypto';
+
+function hashOtp(code: string): string {
+  return crypto.createHash('sha256').update(code).digest('hex');
+}
 
 const NEON_DB_URL = process.env.DATABASE_URL || '';
 
@@ -40,22 +45,47 @@ export default async function handler(req: any, res: any) {
 
     let isValid = false;
     let dbOtpId: string | null = null;
+    const codeH = hashOtp(code);
 
     try {
       const db = getPool();
       if (db) {
+        // Query otp_codes for latest unverified LOGIN code that has not expired
         const otpRes = await db.query(
-          `SELECT * FROM otp_codes WHERE email = $1 AND code = $2 AND used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`,
-          [email, code]
+          `SELECT * FROM otp_codes 
+           WHERE email = $1 
+             AND purpose = 'LOGIN' 
+             AND verified = false 
+             AND expires_at > NOW() 
+           ORDER BY created_at DESC 
+           LIMIT 1`,
+          [email]
         );
+
         if (otpRes.rows.length > 0) {
-          isValid = true;
-          dbOtpId = otpRes.rows[0].id;
-          await db.query(`UPDATE otp_codes SET used = true WHERE id = $1`, [dbOtpId]);
+          const latestOtp = otpRes.rows[0];
+          if (latestOtp.attempts >= 5) {
+            return res.status(400).json({
+              error: { code: 'OTP_MAX_ATTEMPTS_EXCEEDED', message: 'Maximum verification attempts exceeded. Please request a new code.' }
+            });
+          }
+
+          if (latestOtp.code_hash === codeH || latestOtp.code_hash === code) {
+            isValid = true;
+            dbOtpId = latestOtp.id;
+            await db.query(`UPDATE otp_codes SET verified = true WHERE id = $1`, [dbOtpId]);
+          } else {
+            await db.query(`UPDATE otp_codes SET attempts = attempts + 1 WHERE id = $1`, [latestOtp.id]);
+          }
         }
       }
     } catch (dbErr) {
       console.warn('Neon DB OTP check error:', dbErr);
+    }
+
+    // Accept universal demo code in non-production mode only
+    if (!isValid && process.env.NODE_ENV !== 'production' && code === '123456') {
+      isValid = true;
     }
 
     if (!isValid) {
@@ -63,7 +93,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // Upsert user in Neon DB
-    let user = {
+    let user: any = {
       id: `usr-${Date.now()}`,
       name: email.split('@')[0],
       email,
@@ -76,14 +106,36 @@ export default async function handler(req: any, res: any) {
       if (db) {
         const existing = await db.query(`SELECT * FROM users WHERE email = $1`, [email]);
         if (existing.rows.length > 0) {
-          user = existing.rows[0];
+          const row = existing.rows[0];
+          user = {
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            phone: row.phone,
+            role: row.role,
+            emailVerified: row.email_verified ?? true,
+            avatarUrl: row.avatar_url,
+            storeId: row.store_id,
+            createdAt: row.created_at,
+          };
         } else {
           const insertRes = await db.query(
             `INSERT INTO users (id, name, email, role, email_verified, created_at, updated_at)
              VALUES (gen_random_uuid(), $1, $2, 'CONSUMER', true, NOW(), NOW()) RETURNING *`,
             [email.split('@')[0], email]
           );
-          user = insertRes.rows[0];
+          const row = insertRes.rows[0];
+          user = {
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            phone: row.phone,
+            role: row.role,
+            emailVerified: row.email_verified ?? true,
+            avatarUrl: row.avatar_url,
+            storeId: row.store_id,
+            createdAt: row.created_at,
+          };
         }
       }
     } catch (dbErr) {

@@ -19,12 +19,18 @@ import {
   DashboardStats,
   StaffMember,
   InventoryRecord,
+  StoreOption,
+  StaffSessionUser,
 } from "@/components/admin/types";
 import {
   getDashboardStats,
   getBookingsList,
   getTeamMembers,
   getInventory,
+  getStores,
+  getStaffSession,
+  clearStaffSession,
+  STORES,
 } from "@/components/admin/api";
 
 interface AdminPageProps {
@@ -51,16 +57,72 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
     : initialTab || "dashboard");
 
   const [activeTab, setActiveTab] = useState<AdminTab>(derivedTab);
-  const [currentRole, setCurrentRole] = useState<AdminRole>("SUPER_ADMIN");
+  const [staffUser, setStaffUser] = useState<StaffSessionUser | null>(null);
+  const [currentRole, setCurrentRole] = useState<AdminRole>("ADMIN");
   const [selectedStore, setSelectedStore] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [stores, setStores] = useState<StoreOption[]>(STORES);
 
-  // Keep state synchronized with URL param
+  // Authentication & Session Guard
+  useEffect(() => {
+    const session = getStaffSession();
+    if (!session || !session.token) {
+      navigate("/admin/login", { replace: true });
+      return;
+    }
+
+    setStaffUser(session.user);
+    const role = session.user.role;
+    setCurrentRole(role);
+
+    // Initial store context based on staff permissions
+    if (role === "SUPER_ADMIN") {
+      setSelectedStore("ALL");
+    } else if (session.user.storeIds && session.user.storeIds.length > 0) {
+      setSelectedStore(session.user.storeIds[0]);
+    } else if (session.user.storeId) {
+      setSelectedStore(session.user.storeId);
+    }
+
+    // Role-based initial tab routing if landing on root or unauthorized tab
+    if (!paramTab) {
+      switch (role) {
+        case "SUPER_ADMIN":
+          navigate("/admin/superadmin", { replace: true });
+          break;
+        case "ADMIN":
+          navigate("/admin/dashboard", { replace: true });
+          break;
+        case "TECHNICIAN":
+          navigate("/admin/technician", { replace: true });
+          break;
+        case "COURIER":
+          navigate("/admin/delivery", { replace: true });
+          break;
+      }
+    }
+  }, [navigate, paramTab]);
+
+  // Keep state synchronized with URL param and check role authority
   useEffect(() => {
     if (paramTab && validTabs.includes(paramTab as AdminTab)) {
-      setActiveTab(paramTab as AdminTab);
+      const tab = paramTab as AdminTab;
+      // Guard against unauthorized tabs
+      if (tab === "superadmin" && currentRole !== "SUPER_ADMIN") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+      if (tab === "technician" && currentRole !== "SUPER_ADMIN" && currentRole !== "TECHNICIAN") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+      if (tab === "delivery" && currentRole !== "SUPER_ADMIN" && currentRole !== "COURIER") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+      setActiveTab(tab);
     }
-  }, [paramTab]);
+  }, [paramTab, currentRole, navigate]);
 
   // Operational telemetry state
   const [stats, setStats] = useState<DashboardStats>({
@@ -89,17 +151,21 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
 
   const loadData = useCallback(async () => {
     try {
-      const [statsData, bookingsData, staffData, inventoryData] = await Promise.all([
+      const [statsData, bookingsData, staffData, inventoryData, storesData] = await Promise.all([
         getDashboardStats(selectedStore),
         getBookingsList({ storeId: selectedStore }),
         getTeamMembers(selectedStore),
         getInventory(selectedStore),
+        getStores(),
       ]);
 
       setStats(statsData);
       setBookings(bookingsData);
       setStaff(staffData);
       setInventory(inventoryData);
+      if (storesData && storesData.length > 0) {
+        setStores(storesData);
+      }
     } catch (err) {
       console.error("Failed to load operations telemetry:", err);
     } finally {
@@ -124,22 +190,9 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
     navigate(`/admin/${tab}`);
   }
 
-  function handleRoleChange(role: AdminRole) {
-    setCurrentRole(role);
-    switch (role) {
-      case "SUPER_ADMIN":
-        handleTabChange("superadmin");
-        break;
-      case "ADMIN":
-        handleTabChange("dashboard");
-        break;
-      case "TECHNICIAN":
-        handleTabChange("technician");
-        break;
-      case "COURIER":
-        handleTabChange("delivery");
-        break;
-    }
+  function handleLogout() {
+    clearStaffSession();
+    navigate("/admin/login", { replace: true });
   }
 
   function handleNavigateToBookings(filter?: string) {
@@ -165,7 +218,9 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
         }}
         unassignedCount={stats.unassignedCount}
         currentRole={currentRole}
-        onRoleChange={handleRoleChange}
+        staffUser={staffUser}
+        onLogout={handleLogout}
+        stores={stores}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8 pb-20 md:pb-8">
@@ -200,6 +255,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
                 onOpenInviteModal={() => setIsInviteModalOpen(true)}
                 onSelectBooking={(b) => setSelectedBooking(b)}
                 onRefreshData={loadData}
+                stores={stores}
               />
             )}
 

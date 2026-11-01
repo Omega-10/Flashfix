@@ -11,6 +11,7 @@ interface Step1Data { brand: string; device: string }
 interface Step2Data { issue: string }
 interface Step3Data { name: string; phone: string; address: string; lat: number; lng: number }
 interface Step4Data { date: string; time: string; storeId: string }
+interface StoreInfo { id: string; name: string; address: string; city: string; phone?: string; hours?: string }
 
 const BRANDS = ["Apple", "Samsung", "Google", "OnePlus"];
 const DEVICES: Record<string, string[]> = {
@@ -54,7 +55,9 @@ export default function BookingWizard() {
   const [step1, setStep1] = useState<Step1Data>({ brand: "", device: "" });
   const [step2, setStep2] = useState<Step2Data>({ issue: "" });
   const [step3, setStep3] = useState<Step3Data>({ name: "", phone: "", address: "", lat: 17.3850, lng: 78.4867 });
-  const [step4, setStep4] = useState<Step4Data>({ date: "", time: "", storeId: "store-001" });
+  const [step4, setStep4] = useState<Step4Data>({ date: "", time: "", storeId: "" });
+  const [stores, setStores] = useState<StoreInfo[]>([]);
+  const [loadingStores, setLoadingStores] = useState(false);
   
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<{ id: string } | null>(null);
@@ -98,6 +101,32 @@ export default function BookingWizard() {
       }));
     }
   }, [user]);
+
+  // Fetch live active stores from database
+  useEffect(() => {
+    async function loadActiveStores() {
+      setLoadingStores(true);
+      try {
+        const res = await fetch("/api/stores");
+        if (res.ok) {
+          const body = await res.json();
+          const list = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+          if (list.length > 0) {
+            setStores(list);
+            setStep4((prev) => ({
+              ...prev,
+              storeId: prev.storeId && list.some((s: StoreInfo) => s.id === prev.storeId) ? prev.storeId : list[0].id,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load stores:", err);
+      } finally {
+        setLoadingStores(false);
+      }
+    }
+    loadActiveStores();
+  }, []);
 
   // Initialize Map when Step 3 mounts
   useEffect(() => {
@@ -212,7 +241,7 @@ export default function BookingWizard() {
           brand: step1.brand,
           deviceModel: step1.device,
           issueType: step2.issue,
-          storeId: step4.storeId || "store-001",
+          storeId: step4.storeId || stores[0]?.id || "store-001",
           scheduledDate: step4.date,
           scheduledTime: step4.time,
           pickupAddress: step3.address,
@@ -512,6 +541,54 @@ export default function BookingWizard() {
               className="bg-[var(--surface-elevated)] p-8 rounded-2xl border border-[var(--surface-border)] shadow-sm"
             >
               <div className="space-y-6">
+                {/* Servicing Hub / Store Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block">
+                      Select Servicing Hub
+                    </label>
+                    <span className="text-[11px] font-mono text-[var(--accent-amber)]">
+                      {stores.length} Active {stores.length === 1 ? "Hub" : "Hubs"}
+                    </span>
+                  </div>
+
+                  {loadingStores ? (
+                    <div className="p-4 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-bg)] flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
+                      <div className="w-3.5 h-3.5 border-2 border-[var(--accent-amber)] border-t-transparent rounded-full animate-spin" />
+                      Loading verified Flashfix hubs...
+                    </div>
+                  ) : stores.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {stores.map((s) => {
+                        const isSelected = step4.storeId === s.id;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => setStep4((p) => ({ ...p, storeId: s.id }))}
+                            className={`p-3.5 rounded-xl border text-left transition-all ${
+                              isSelected
+                                ? "border-[var(--accent-amber)] bg-[var(--accent-amber)]/10 text-[var(--text-primary)] ring-1 ring-[var(--accent-amber)]/50"
+                                : "border-[var(--surface-border)] bg-[var(--surface-bg)] text-[var(--text-secondary)] hover:border-[var(--accent-amber)]/40 hover:text-[var(--text-primary)]"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-xs text-[var(--text-primary)] truncate">{s.name}</span>
+                              {isSelected && <span className="w-2 h-2 rounded-full bg-[var(--accent-amber)] shadow-[0_0_8px_#ef8f0b]" />}
+                            </div>
+                            <div className="text-[11px] text-[var(--text-muted)] mt-1 truncate">{s.address}, {s.city}</div>
+                            {s.hours && <div className="text-[10px] font-mono text-[var(--accent-amber)]/80 mt-1">🕒 {s.hours}</div>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-bg)] text-xs text-[var(--text-muted)]">
+                      Flashfix Central Hub (Auto-routed to nearest certified lab)
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Date</label>
                   <input
@@ -548,6 +625,8 @@ export default function BookingWizard() {
                   {[
                     ["Device", step1.device],
                     ["Issue", step2.issue],
+                    ["Servicing Hub", stores.find(s => s.id === step4.storeId)?.name || "Flashfix Service Hub"],
+                    ["Pickup Slot", step4.date && step4.time ? `${step4.date} @ ${step4.time}` : "Pending"],
                     ["Address", step3.address],
                   ].map(([k, v]) => (
                     <div key={k} className="flex justify-between gap-4 mb-2">

@@ -8,6 +8,13 @@
       "when": 1793437291718,
       "tag": "0000_military_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793500000000,
+      "tag": "0001_staff_auth_store_admins",
+      "breakpoints": true
     }
   ]
 }

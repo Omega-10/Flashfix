@@ -8,10 +8,10 @@ import {
   Wrench,
   Bike,
   Globe2,
+  LogOut,
 } from "lucide-react";
-import { AdminTab, AdminRole } from "./types";
+import { AdminTab, AdminRole, StoreOption } from "./types";
 import { STORES } from "./api";
-import RoleSwitcher from "./RoleSwitcher";
 
 interface AdminNavbarProps {
   activeTab: AdminTab;
@@ -20,7 +20,16 @@ interface AdminNavbarProps {
   onStoreChange: (storeId: string) => void;
   unassignedCount: number;
   currentRole: AdminRole;
-  onRoleChange: (role: AdminRole) => void;
+  staffUser?: {
+    id: string;
+    name: string;
+    email: string;
+    role: AdminRole;
+    storeId?: string | null;
+    storeIds?: string[];
+  } | null;
+  onLogout: () => void;
+  stores?: StoreOption[];
 }
 
 export default function AdminNavbar({
@@ -30,36 +39,70 @@ export default function AdminNavbar({
   onStoreChange,
   unassignedCount,
   currentRole,
-  onRoleChange,
+  staffUser,
+  onLogout,
+  stores = STORES,
 }: AdminNavbarProps) {
-  const tabs = [
-    { id: "dashboard" as AdminTab, label: "Admin", icon: LayoutDashboard },
-    { id: "superadmin" as AdminTab, label: "Superadmin", icon: Globe2 },
-    { id: "technician" as AdminTab, label: "Technician", icon: Wrench },
-    { id: "delivery" as AdminTab, label: "Delivery", icon: Bike },
+  // Determine accessible tabs based on real authenticated role
+  const allTabs = [
+    { id: "superadmin" as AdminTab, label: "Superadmin", icon: Globe2, roles: ["SUPER_ADMIN"] },
+    { id: "dashboard" as AdminTab, label: "Store Admin", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "ADMIN"] },
+    { id: "technician" as AdminTab, label: "Technician", icon: Wrench, roles: ["SUPER_ADMIN", "TECHNICIAN"] },
+    { id: "delivery" as AdminTab, label: "Delivery", icon: Bike, roles: ["SUPER_ADMIN", "COURIER"] },
     {
       id: "bookings" as AdminTab,
       label: "Bookings",
       icon: CalendarCheck,
       badge: unassignedCount > 0 ? unassignedCount : undefined,
+      roles: ["SUPER_ADMIN", "ADMIN", "TECHNICIAN", "COURIER"],
     },
-    { id: "team" as AdminTab, label: "Staff", icon: Users },
-    { id: "inventory" as AdminTab, label: "Inventory", icon: Boxes },
+    { id: "team" as AdminTab, label: "Staff", icon: Users, roles: ["SUPER_ADMIN", "ADMIN"] },
+    { id: "inventory" as AdminTab, label: "Inventory", icon: Boxes, roles: ["SUPER_ADMIN", "ADMIN", "TECHNICIAN"] },
   ];
 
-  // Mobile primary tabs (4 dedicated views + bookings)
-  const mobileTabs = [
-    { id: "dashboard" as AdminTab, label: "Admin", icon: LayoutDashboard },
-    { id: "superadmin" as AdminTab, label: "Super", icon: Globe2 },
-    { id: "technician" as AdminTab, label: "Tech Lab", icon: Wrench },
-    { id: "delivery" as AdminTab, label: "Courier", icon: Bike },
-    {
-      id: "bookings" as AdminTab,
-      label: "Bookings",
-      icon: CalendarCheck,
-      badge: unassignedCount > 0 ? unassignedCount : undefined,
-    },
-  ];
+  const visibleTabs = allTabs.filter((t) => t.roles.includes(currentRole));
+
+  // Determine selectable stores for this staff member
+  const accessibleStores = stores.filter((s) => {
+    if (currentRole === "SUPER_ADMIN") return true;
+    if (staffUser?.storeIds && staffUser.storeIds.length > 0) {
+      return staffUser.storeIds.includes(s.id);
+    }
+    if (staffUser?.storeId) {
+      return staffUser.storeId === s.id;
+    }
+    return true;
+  });
+
+  function getRoleBadgeStyle(role: AdminRole) {
+    switch (role) {
+      case "SUPER_ADMIN":
+        return "bg-[#ef8f0b]/15 text-[#ef8f0b] border-[#ef8f0b]/30";
+      case "ADMIN":
+        return "bg-blue-500/15 text-blue-400 border-blue-500/30";
+      case "TECHNICIAN":
+        return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+      case "COURIER":
+        return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+      default:
+        return "bg-[#181818] text-[#807a75] border-[rgba(255,255,255,0.1)]";
+    }
+  }
+
+  function getRoleLabel(role: AdminRole) {
+    switch (role) {
+      case "SUPER_ADMIN":
+        return "SUPER ADMIN";
+      case "ADMIN":
+        return "STORE ADMIN";
+      case "TECHNICIAN":
+        return "TECHNICIAN";
+      case "COURIER":
+        return "DELIVERY RIDER";
+      default:
+        return role;
+    }
+  }
 
   return (
     <>
@@ -67,7 +110,7 @@ export default function AdminNavbar({
       <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.08)]">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2">
-            {/* Left: Brand & Title */}
+            {/* Left: Brand & Navigation */}
             <div className="flex items-center gap-3 sm:gap-6 shrink-0">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#ef8f0b] flex items-center justify-center font-bold text-black text-base shadow-md shadow-[#ef8f0b]/20 shrink-0">
@@ -83,14 +126,14 @@ export default function AdminNavbar({
                     </span>
                   </div>
                   <span className="hidden sm:block text-[10px] text-[#807a75] font-mono leading-none mt-0.5">
-                    Integrated Staff & Admin Console
+                    Operations & Governance Console
                   </span>
                 </div>
               </div>
 
               {/* Desktop Navigation Tabs */}
               <nav className="hidden lg:flex items-center gap-1">
-                {tabs.map((tab) => {
+                {visibleTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
                   return (
@@ -116,25 +159,46 @@ export default function AdminNavbar({
               </nav>
             </div>
 
-            {/* Right: Controls & Role Switcher */}
+            {/* Right: Store Switcher & Staff Profile */}
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Store Switcher */}
               <div className="hidden sm:flex items-center gap-1.5 bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-xl px-2.5 py-1.5 text-xs">
                 <StoreIcon className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0" />
-                <select
-                  value={selectedStore}
-                  onChange={(e) => onStoreChange(e.target.value)}
-                  className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer font-medium max-w-[130px] md:max-w-[180px] truncate"
-                >
-                  <option value="ALL" className="bg-[#141414] text-[#f5f0eb]">
-                    All Stores (Platform)
-                  </option>
-                  {STORES.map((s) => (
-                    <option key={s.id} value={s.id} className="bg-[#141414] text-[#f5f0eb]">
-                      {s.name}
+                {currentRole === "SUPER_ADMIN" ? (
+                  <select
+                    value={selectedStore}
+                    onChange={(e) => onStoreChange(e.target.value)}
+                    className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer font-medium max-w-[130px] md:max-w-[180px] truncate"
+                  >
+                    <option value="ALL" className="bg-[#141414] text-[#f5f0eb]">
+                      All Stores (Platform)
                     </option>
-                  ))}
-                </select>
+                    {accessibleStores.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-[#141414] text-[#f5f0eb]">
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : accessibleStores.length > 1 ? (
+                  <select
+                    value={selectedStore}
+                    onChange={(e) => onStoreChange(e.target.value)}
+                    className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer font-medium max-w-[130px] md:max-w-[180px] truncate"
+                  >
+                    <option value="ALL" className="bg-[#141414] text-[#f5f0eb]">
+                      My Assigned Stores ({accessibleStores.length})
+                    </option>
+                    {accessibleStores.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-[#141414] text-[#f5f0eb]">
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-[#f5f0eb] font-medium text-xs truncate max-w-[160px]">
+                    {accessibleStores[0]?.name || "Assigned Store"}
+                  </span>
+                )}
               </div>
 
               {/* Notifications Alert Bell */}
@@ -150,14 +214,39 @@ export default function AdminNavbar({
                 </button>
               )}
 
-              {/* Role Switcher Pill */}
-              <RoleSwitcher currentRole={currentRole} onRoleChange={onRoleChange} />
+              {/* Staff User Identity Badge */}
+              <div className="flex items-center gap-2 pl-2 border-l border-[rgba(255,255,255,0.08)]">
+                <div className="hidden md:flex flex-col items-end text-right">
+                  <span className="text-xs font-semibold text-[#f5f0eb] leading-tight">
+                    {staffUser?.name || "Staff Member"}
+                  </span>
+                  <span className="text-[10px] text-[#807a75] font-mono leading-tight truncate max-w-[140px]">
+                    {staffUser?.email}
+                  </span>
+                </div>
+
+                <span
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold tracking-wider uppercase border shrink-0 ${getRoleBadgeStyle(
+                    currentRole
+                  )}`}
+                >
+                  {getRoleLabel(currentRole)}
+                </span>
+
+                <button
+                  onClick={onLogout}
+                  title="Sign Out of Operations Console"
+                  className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-xl bg-[#141414] hover:bg-red-500/10 border border-[rgba(255,255,255,0.08)] hover:border-red-500/30 text-[#807a75] hover:text-red-400 transition-colors ml-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Tablet/Medium Subheader Navigation Row */}
           <div className="hidden md:flex lg:hidden items-center justify-between py-2 border-t border-[rgba(255,255,255,0.08)] overflow-x-auto gap-1">
-            {tabs.map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
@@ -187,8 +276,8 @@ export default function AdminNavbar({
         aria-label="Mobile Staff Navigation"
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0d0d0d]/95 backdrop-blur-lg border-t border-[rgba(255,255,255,0.1)] px-2 py-1 safe-area-pb"
       >
-        <div className="grid grid-cols-5 gap-1">
-          {mobileTabs.map((tab) => {
+        <div className={`grid gap-1 ${visibleTabs.length >= 5 ? "grid-cols-5" : `grid-cols-${visibleTabs.length}`}`}>
+          {visibleTabs.slice(0, 5).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (

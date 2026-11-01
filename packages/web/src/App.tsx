@@ -17,8 +17,14 @@ import FortixContact from "@/pages/fortix/Contact";
 
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminPage from "@/pages/admin/AdminPage";
+import AdminLogin from "@/pages/admin/AdminLogin";
 
 const router = createBrowserRouter([
+  // Dedicated Admin Login Route (standalone authentication portal)
+  {
+    path: "/admin/login",
+    element: <AdminLogin />,
+  },
   // Dedicated Admin & Staff Operations Routes (isolated outside RootLayout & Lenis SmoothScroll)
   {
     path: "/admin",

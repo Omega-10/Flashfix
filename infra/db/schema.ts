@@ -18,6 +18,7 @@ export const userRoleEnum = pgEnum('user_role', [
   'EMPLOYEE',
   'ADMIN',
   'SUPER_ADMIN',
+  'TECHNICIAN',
 ]);
 
 export const bookingStatusEnum = pgEnum('booking_status', [
@@ -53,6 +54,7 @@ export const users = pgTable(
     googleId: text('google_id').unique(),
     avatarUrl: text('avatar_url'),
     storeId: text('store_id'), // Home store for ADMIN and EMPLOYEE
+    passwordHash: text('password_hash'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -224,6 +226,25 @@ export const inventoryItems = pgTable(
   ]
 );
 
+// 8b. Store Admins Table (Junction)
+export const storeAdmins = pgTable(
+  'store_admins',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    storeId: text('store_id')
+      .references(() => stores.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_store_admins_store_id').on(table.storeId),
+    index('idx_store_admins_user_id').on(table.userId),
+  ]
+);
+
 // 9. Drizzle ORM Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   savedAddresses: many(savedAddresses),
@@ -231,6 +252,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   assignedJobs: many(bookings, { relationName: 'employeeBookings' }),
   technicianJobs: many(bookings, { relationName: 'technicianBookings' }),
   bookingTrails: many(bookingTrail),
+  storeAdmins: many(storeAdmins),
   homeStore: one(stores, {
     fields: [users.storeId],
     references: [stores.id],
@@ -244,6 +266,7 @@ export const storesRelations = relations(stores, ({ one, many }) => ({
   }),
   bookings: many(bookings),
   inventoryItems: many(inventoryItems),
+  storeAdmins: many(storeAdmins),
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
@@ -305,3 +328,15 @@ export const inventoryItemsRelations = relations(inventoryItems, ({ one }) => ({
     references: [stores.id],
   }),
 }));
+
+export const storeAdminsRelations = relations(storeAdmins, ({ one }) => ({
+  store: one(stores, {
+    fields: [storeAdmins.storeId],
+    references: [stores.id],
+  }),
+  user: one(users, {
+    fields: [storeAdmins.userId],
+    references: [users.id],
+  }),
+}));
+

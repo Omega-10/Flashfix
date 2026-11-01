@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 // ============================================================================
 // Self-Contained Brevo Configuration Resolver (Immune to ESM ERR_MODULE_NOT_FOUND)
@@ -177,310 +178,13 @@ interface ServerlessTrailItem {
   createdAt: string;
 }
 
-const inMemoryBookings: Map<string, ServerlessBooking> = new Map([
-  [
-    'FF-104921',
-    {
-      id: 'FF-104921',
-      trackingCode: 'TRK-104921',
-      storeId: 'store-001',
-      brand: 'Apple',
-      deviceModel: 'iPhone 16 Pro Max',
-      issueType: 'Screen Replacement',
-      issueDescription: 'Cracked display glass, touch unresponsive on left quadrant',
-      scheduledDate: '2026-10-31',
-      scheduledTime: '11:00 AM',
-      pickupAddress: 'Villa 12, Jayabheri Silicon County, Hitech City, Hyderabad',
-      pickupLat: 17.4483,
-      pickupLng: 78.3742,
-      contactName: 'Srinivas Rao',
-      contactEmail: 'srinivas.rao@gmail.com',
-      contactPhone: '+91 98491 22334',
-      status: 'PENDING',
-      estimatedCostPaise: 899900,
-      notes: 'Requires genuine OEM Grade-A panel replacement',
-      createdAt: '2026-10-31T07:30:00Z',
-      updatedAt: '2026-10-31T07:30:00Z',
-    },
-  ],
-  [
-    'FF-104918',
-    {
-      id: 'FF-104918',
-      trackingCode: 'TRK-104918',
-      storeId: 'store-001',
-      brand: 'Samsung',
-      deviceModel: 'Galaxy S24 Ultra',
-      issueType: 'Battery Replacement',
-      issueDescription: 'Battery drains within 3 hours, slight swelling noted on rear panel',
-      scheduledDate: '2026-10-31',
-      scheduledTime: '10:30 AM',
-      pickupAddress: 'Flat 504, Aparna CyberLife, Nallagandla, Hyderabad',
-      pickupLat: 17.4712,
-      pickupLng: 78.3154,
-      contactName: 'Neha Kulkarni',
-      contactEmail: 'neha.k@outlook.com',
-      contactPhone: '+91 99881 12233',
-      status: 'CONFIRMED',
-      assignedEmployeeId: 'emp-001',
-      assignedEmployeeName: 'Vikram Reddy',
-      technicianId: 'emp-002',
-      technicianName: 'Arjun Verma',
-      estimatedCostPaise: 399900,
-      createdAt: '2026-10-31T06:15:00Z',
-      updatedAt: '2026-10-31T07:00:00Z',
-    },
-  ],
-  [
-    'FF-104910',
-    {
-      id: 'FF-104910',
-      trackingCode: 'TRK-104910',
-      storeId: 'store-001',
-      brand: 'Google',
-      deviceModel: 'Pixel 9 Pro XL',
-      issueType: 'Camera Fix',
-      issueDescription: 'Main wide sensor autofocus hunting continuously',
-      scheduledDate: '2026-10-31',
-      scheduledTime: '9:00 AM',
-      pickupAddress: 'Plot 89, Kavuri Hills, Madhapur, Hyderabad',
-      pickupLat: 17.4389,
-      pickupLng: 78.3982,
-      contactName: 'Pradeep Menon',
-      contactEmail: 'pradeep.menon@techcorp.in',
-      contactPhone: '+91 97112 33445',
-      status: 'IN_REPAIR',
-      assignedEmployeeId: 'emp-001',
-      assignedEmployeeName: 'Vikram Reddy',
-      technicianId: 'emp-002',
-      technicianName: 'Arjun Verma',
-      estimatedCostPaise: 449900,
-      createdAt: '2026-10-31T05:00:00Z',
-      updatedAt: '2026-10-31T08:15:00Z',
-    },
-  ],
-  [
-    'FF-104930',
-    {
-      id: 'FF-104930',
-      trackingCode: 'TRK-104930',
-      storeId: 'store-001',
-      brand: 'Apple',
-      deviceModel: 'iPad Pro 13 (M4)',
-      issueType: 'Display Repair',
-      issueDescription: 'OLED line artifact on right edge, arrived at hub awaiting custody check-in',
-      scheduledDate: '2026-10-31',
-      scheduledTime: '11:30 AM',
-      pickupAddress: 'Tower 2, Cyber Towers, Hitech City, Hyderabad',
-      pickupLat: 17.4504,
-      pickupLng: 78.3809,
-      contactName: 'Rajesh Kannan',
-      contactEmail: 'rajesh.k@innovate.co',
-      contactPhone: '+91 98840 99881',
-      status: 'CUSTODY_OTP_SENT',
-      assignedEmployeeId: 'emp-001',
-      assignedEmployeeName: 'Vikram Reddy',
-      technicianId: 'emp-002',
-      technicianName: 'Arjun Verma',
-      custodyOtp: '592184',
-      estimatedCostPaise: 1450000,
-      createdAt: '2026-10-31T06:00:00Z',
-      updatedAt: '2026-10-31T08:30:00Z',
-    },
-  ],
-  [
-    'FF-104905',
-    {
-      id: 'FF-104905',
-      trackingCode: 'TRK-104905',
-      storeId: 'store-002',
-      brand: 'OnePlus',
-      deviceModel: 'OnePlus 12',
-      issueType: 'Charging Port',
-      issueDescription: 'SuperVOOC fast charging not triggering, loose Type-C connector',
-      scheduledDate: '2026-10-31',
-      scheduledTime: '12:00 PM',
-      pickupAddress: 'Tower 3, My Home Bhooja, Silpa Gram Craft Village, Rai Durg',
-      pickupLat: 17.4342,
-      pickupLng: 78.3791,
-      contactName: 'Ayesha Khan',
-      contactEmail: 'ayesha.khan@gmail.com',
-      contactPhone: '+91 96554 11223',
-      status: 'PICKUP_OTP_SENT',
-      assignedEmployeeId: 'emp-004',
-      assignedEmployeeName: 'Karthik Nair',
-      technicianId: 'emp-002',
-      technicianName: 'Arjun Verma',
-      pickupOtp: '849201',
-      estimatedCostPaise: 249900,
-      createdAt: '2026-10-31T06:45:00Z',
-      updatedAt: '2026-10-31T08:45:00Z',
-    },
-  ],
-  [
-    'FF-104935',
-    {
-      id: 'FF-104935',
-      trackingCode: 'TRK-104935',
-      storeId: 'store-001',
-      brand: 'Apple',
-      deviceModel: 'MacBook Air (M3)',
-      issueType: 'Battery Replacement',
-      issueDescription: 'OEM battery calibration complete, QA testing passed 100%',
-      scheduledDate: '2026-10-31',
-      scheduledTime: '1:00 PM',
-      pickupAddress: 'Plot 45, Jubilee Hills Check Post, Hyderabad',
-      pickupLat: 17.4285,
-      pickupLng: 78.4112,
-      contactName: 'Sunita Reddy',
-      contactEmail: 'sunita.r@venture.in',
-      contactPhone: '+91 97001 88772',
-      status: 'REPAIR_COMPLETE',
-      assignedEmployeeId: 'emp-001',
-      assignedEmployeeName: 'Vikram Reddy',
-      technicianId: 'emp-002',
-      technicianName: 'Arjun Verma',
-      estimatedCostPaise: 1199900,
-      finalCostPaise: 1199900,
-      createdAt: '2026-10-31T04:30:00Z',
-      updatedAt: '2026-10-31T09:00:00Z',
-    },
-  ],
-  [
-    'FF-104899',
-    {
-      id: 'FF-104899',
-      trackingCode: 'TRK-104899',
-      storeId: 'store-001',
-      brand: 'Apple',
-      deviceModel: 'iPhone 15',
-      issueType: 'Back Glass',
-      issueDescription: 'Rear frosted glass fractured',
-      scheduledDate: '2026-10-31',
-      scheduledTime: '8:30 AM',
-      pickupAddress: 'Banjara Hills Road 2, Hyderabad',
-      pickupLat: 17.4168,
-      pickupLng: 78.4385,
-      contactName: 'Deepak Chawla',
-      contactEmail: 'deepak.c@finance.com',
-      contactPhone: '+91 98112 99887',
-      status: 'DELIVERED',
-      assignedEmployeeId: 'emp-001',
-      assignedEmployeeName: 'Vikram Reddy',
-      technicianId: 'emp-002',
-      technicianName: 'Arjun Verma',
-      estimatedCostPaise: 549900,
-      finalCostPaise: 549900,
-      paymentStatus: 'PAID',
-      createdAt: '2026-10-30T14:00:00Z',
-      updatedAt: '2026-10-31T09:15:00Z',
-    },
-  ],
-]);
-
-const inMemoryTrails: Map<string, ServerlessTrailItem[]> = new Map([
-  [
-    'FF-104905',
-    [
-      {
-        id: 'tr-1',
-        bookingId: 'FF-104905',
-        toStatus: 'PENDING',
-        notes: 'Service booking initialized via Flashfix Portal',
-        createdAt: '2026-10-31T06:45:00Z',
-      },
-      {
-        id: 'tr-2',
-        bookingId: 'FF-104905',
-        fromStatus: 'PENDING',
-        toStatus: 'CONFIRMED',
-        notes: 'Assigned mobile courier Karthik Nair & technician Arjun Verma',
-        createdAt: '2026-10-31T07:15:00Z',
-      },
-      {
-        id: 'tr-3',
-        bookingId: 'FF-104905',
-        fromStatus: 'CONFIRMED',
-        toStatus: 'PICKUP_EN_ROUTE',
-        notes: 'Delivery partner en route to customer location',
-        createdAt: '2026-10-31T08:00:00Z',
-      },
-      {
-        id: 'tr-4',
-        bookingId: 'FF-104905',
-        fromStatus: 'PICKUP_EN_ROUTE',
-        toStatus: 'PICKUP_OTP_SENT',
-        notes: 'Doorstep pickup OTP sent to customer',
-        createdAt: '2026-10-31T08:45:00Z',
-      },
-    ],
-  ],
-  [
-    'FF-104930',
-    [
-      {
-        id: 'tr-1',
-        bookingId: 'FF-104930',
-        toStatus: 'PENDING',
-        notes: 'Service booking initialized via Flashfix Portal',
-        createdAt: '2026-10-31T06:00:00Z',
-      },
-      {
-        id: 'tr-2',
-        bookingId: 'FF-104930',
-        fromStatus: 'PENDING',
-        toStatus: 'CONFIRMED',
-        notes: 'Assigned mobile courier Vikram Reddy & technician Arjun Verma',
-        createdAt: '2026-10-31T06:30:00Z',
-      },
-      {
-        id: 'tr-3',
-        bookingId: 'FF-104930',
-        fromStatus: 'CONFIRMED',
-        toStatus: 'PICKUP_EN_ROUTE',
-        notes: 'Delivery partner en route to customer location',
-        createdAt: '2026-10-31T07:00:00Z',
-      },
-      {
-        id: 'tr-4',
-        bookingId: 'FF-104930',
-        fromStatus: 'PICKUP_EN_ROUTE',
-        toStatus: 'PICKUP_OTP_SENT',
-        notes: 'Doorstep pickup OTP sent to customer',
-        createdAt: '2026-10-31T07:45:00Z',
-      },
-      {
-        id: 'tr-5',
-        bookingId: 'FF-104930',
-        fromStatus: 'PICKUP_OTP_SENT',
-        toStatus: 'IN_TRANSIT',
-        notes: 'Phone accepted by Vikram Reddy',
-        createdAt: '2026-10-31T07:55:00Z',
-      },
-      {
-        id: 'tr-6',
-        bookingId: 'FF-104930',
-        fromStatus: 'IN_TRANSIT',
-        toStatus: 'CUSTODY_OTP_SENT',
-        notes: 'Custody OTP dispatched to technician Arjun Verma',
-        createdAt: '2026-10-31T08:30:00Z',
-      },
-    ],
-  ],
-]);
+const inMemoryBookings: Map<string, ServerlessBooking> = new Map();
+const inMemoryTrails: Map<string, ServerlessTrailItem[]> = new Map();
 
 function getOrCreateTrail(bookingId: string): ServerlessTrailItem[] {
   let list = inMemoryTrails.get(bookingId);
   if (!list) {
-    list = [
-      {
-        id: `tr-${Date.now()}-1`,
-        bookingId,
-        toStatus: 'PENDING',
-        notes: 'Service booking registered on Flashfix platform',
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-      },
-    ];
+    list = [];
     inMemoryTrails.set(bookingId, list);
   }
   return list;
@@ -656,25 +360,79 @@ export default async function handler(req: any, res: any) {
 
       // Check memory cache first
       let valid = false;
+      let handledInMemory = false;
       const mem = otpMemoryCache.get(email);
-      if (mem && mem.code === code && mem.expiresAt > Date.now()) {
-        valid = true;
-        otpMemoryCache.delete(email);
+      if (mem) {
+        if (mem.expiresAt <= Date.now()) {
+          otpMemoryCache.delete(email);
+        } else if (mem.attempts >= 5) {
+          return res.status(400).json({
+            error: { code: 'OTP_MAX_ATTEMPTS_EXCEEDED', message: 'Maximum verification attempts exceeded. Please request a new code.' }
+          });
+        } else if (mem.code === code) {
+          valid = true;
+          handledInMemory = true;
+          otpMemoryCache.delete(email);
+          try {
+            const db = getPool();
+            if (db) {
+              await db.query(
+                `UPDATE otp_codes SET verified = true WHERE email = $1 AND purpose = 'LOGIN' AND verified = false`,
+                [email]
+              );
+            }
+          } catch (dbErr) {
+            console.warn('Neon DB OTP sync error on memory match:', dbErr);
+          }
+        } else {
+          // If the code in memory did not match, increment attempts in Neon DB as well as in memory
+          handledInMemory = true;
+          mem.attempts = (mem.attempts || 0) + 1;
+          try {
+            const db = getPool();
+            if (db) {
+              await db.query(
+                `UPDATE otp_codes SET attempts = attempts + 1 WHERE email = $1 AND purpose = 'LOGIN' AND verified = false`,
+                [email]
+              );
+            }
+          } catch (dbErr) {
+            console.warn('Neon DB OTP attempts increment error:', dbErr);
+          }
+        }
       }
 
       // If not in memory, check Neon DB
-      if (!valid) {
+      if (!valid && !handledInMemory) {
         try {
           const db = getPool();
           if (db) {
             const codeH = hashOtp(code);
             const otpCheck = await db.query(
-              `SELECT * FROM otp_codes WHERE email = $1 AND (code_hash = $2 OR code_hash = $3) AND verified = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`,
-              [email, codeH, code]
+              `SELECT * FROM otp_codes 
+               WHERE email = $1 
+                 AND purpose = 'LOGIN' 
+                 AND verified = false 
+                 AND expires_at > NOW() 
+               ORDER BY created_at DESC 
+               LIMIT 1`,
+              [email]
             );
             if (otpCheck.rows.length > 0) {
-              valid = true;
-              await db.query(`UPDATE otp_codes SET verified = true WHERE id = $1`, [otpCheck.rows[0].id]);
+              const latestOtp = otpCheck.rows[0];
+              if (latestOtp.attempts >= 5) {
+                return res.status(400).json({
+                  error: { code: 'OTP_MAX_ATTEMPTS_EXCEEDED', message: 'Maximum verification attempts exceeded. Please request a new code.' }
+                });
+              }
+
+              if (latestOtp.code_hash === codeH || latestOtp.code_hash === code) {
+                valid = true;
+                otpMemoryCache.delete(email);
+                await db.query(`UPDATE otp_codes SET verified = true WHERE id = $1`, [latestOtp.id]);
+              } else {
+                await db.query(`UPDATE otp_codes SET attempts = attempts + 1 WHERE id = $1`, [latestOtp.id]);
+              }
             }
           }
         } catch (dbErr) {
@@ -692,7 +450,7 @@ export default async function handler(req: any, res: any) {
       }
 
       // Upsert user in Neon DB
-      let user = {
+      let user: any = {
         id: `usr-${Date.now()}`,
         name: email.split('@')[0],
         email,
@@ -705,14 +463,36 @@ export default async function handler(req: any, res: any) {
         if (db) {
           const existing = await db.query(`SELECT * FROM users WHERE email = $1`, [email]);
           if (existing.rows.length > 0) {
-            user = existing.rows[0];
+            const row = existing.rows[0];
+            user = {
+              id: row.id,
+              name: row.name,
+              email: row.email,
+              phone: row.phone,
+              role: row.role,
+              emailVerified: row.email_verified ?? true,
+              avatarUrl: row.avatar_url,
+              storeId: row.store_id,
+              createdAt: row.created_at,
+            };
           } else {
             const insertRes = await db.query(
               `INSERT INTO users (id, name, email, role, email_verified, created_at, updated_at)
                VALUES (gen_random_uuid(), $1, $2, 'CONSUMER', true, NOW(), NOW()) RETURNING *`,
               [email.split('@')[0], email]
             );
-            user = insertRes.rows[0];
+            const row = insertRes.rows[0];
+            user = {
+              id: row.id,
+              name: row.name,
+              email: row.email,
+              phone: row.phone,
+              role: row.role,
+              emailVerified: row.email_verified ?? true,
+              avatarUrl: row.avatar_url,
+              storeId: row.store_id,
+              createdAt: row.created_at,
+            };
           }
         }
       } catch (dbErr) {
@@ -729,6 +509,482 @@ export default async function handler(req: any, res: any) {
         refreshToken,
         user,
       });
+    }
+
+    // -------------------------------------------------------------------------
+    // 2b. POST /api/admin/auth/login (Dedicated Staff & Executive Authentication)
+    // -------------------------------------------------------------------------
+    if (pathname === '/admin/auth/login' && req.method === 'POST') {
+      const email = (body.email || '').trim().toLowerCase();
+      const password = body.password || '';
+
+      if (!email || !password) {
+        return res.status(400).json({
+          error: { code: 'MISSING_CREDENTIALS', message: 'Email and password are required for staff login.' },
+        });
+      }
+
+      try {
+        const db = getPool();
+        if (!db) {
+          return res.status(500).json({ error: { message: 'Database pool unavailable.' } });
+        }
+
+        const userRes = await db.query(
+          `SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND role IN ('SUPER_ADMIN', 'ADMIN', 'EMPLOYEE', 'TECHNICIAN')`,
+          [email]
+        );
+
+        if (userRes.rows.length === 0) {
+          return res.status(401).json({
+            error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials or staff privileges not assigned.' },
+          });
+        }
+
+        const userRow = userRes.rows[0];
+        const hash = userRow.password_hash;
+
+        if (!hash) {
+          return res.status(401).json({
+            error: { code: 'NO_PASSWORD', message: 'Password has not been set for this staff account. Contact administrator.' },
+          });
+        }
+
+        const isMatch = bcrypt.compareSync(password, hash);
+        if (!isMatch) {
+          return res.status(401).json({
+            error: { code: 'INVALID_CREDENTIALS', message: 'Invalid password. Please check your credentials.' },
+          });
+        }
+
+        // Fetch assigned stores from store_admins junction table
+        const saRes = await db.query(
+          `SELECT store_id FROM store_admins WHERE user_id = $1`,
+          [userRow.id]
+        );
+        const storeIds: string[] = saRes.rows.map((r: any) => r.store_id);
+        if (userRow.store_id && !storeIds.includes(userRow.store_id)) {
+          storeIds.push(userRow.store_id);
+        }
+
+        const tokenPayload = {
+          id: userRow.id,
+          name: userRow.name,
+          email: userRow.email,
+          role: userRow.role,
+          storeId: userRow.store_id || (storeIds[0] || null),
+          storeIds,
+          iat: Date.now(),
+        };
+        const token = 'ff_staff_' + Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
+
+        return res.status(200).json({
+          success: true,
+          token,
+          user: {
+            id: userRow.id,
+            name: userRow.name,
+            email: userRow.email,
+            phone: userRow.phone,
+            role: userRow.role,
+            storeId: userRow.store_id || (storeIds[0] || null),
+            storeIds,
+          },
+        });
+      } catch (err: any) {
+        console.error('Staff Login Handler Error:', err);
+        return res.status(500).json({ error: { message: err.message || 'Staff authentication error' } });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2c. GET /api/admin/dashboard (Live KPI telemetry from Neon DB)
+    // -------------------------------------------------------------------------
+    if (pathname === '/admin/dashboard' && req.method === 'GET') {
+      const url = new URL(req.url || '', 'http://localhost');
+      const storeId = url.searchParams.get('storeId');
+      const filterStore = storeId && storeId !== 'ALL' ? storeId : null;
+
+      try {
+        const db = getPool();
+        if (db) {
+          const statsRes = await db.query(
+            `SELECT 
+               COUNT(*)::int as "todayTotal",
+               COUNT(*) FILTER (WHERE status = 'PENDING')::int as "pending",
+               COUNT(*) FILTER (WHERE status IN ('IN_REPAIR', 'CUSTODY_OTP_SENT'))::int as "inRepair",
+               COUNT(*) FILTER (WHERE status = 'DELIVERED')::int as "delivered",
+               COUNT(*) FILTER (WHERE assigned_employee_id IS NULL AND status != 'CANCELLED')::int as "unassignedCount"
+             FROM bookings
+             WHERE ($1::text IS NULL OR store_id = $1)`,
+            [filterStore]
+          );
+
+          return res.status(200).json({
+            success: true,
+            data: statsRes.rows[0] || {
+              todayTotal: 0,
+              pending: 0,
+              inRepair: 0,
+              delivered: 0,
+              unassignedCount: 0,
+            },
+          });
+        }
+      } catch (dbErr) {
+        console.warn('Neon DB dashboard query error:', dbErr);
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          todayTotal: 0,
+          pending: 0,
+          inRepair: 0,
+          delivered: 0,
+          unassignedCount: 0,
+        },
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // 2d. GET /api/admin/team (Live staff from Neon DB)
+    // -------------------------------------------------------------------------
+    if (pathname === '/admin/team' && req.method === 'GET') {
+      const url = new URL(req.url || '', 'http://localhost');
+      const storeId = url.searchParams.get('storeId');
+      const filterStore = storeId && storeId !== 'ALL' ? storeId : null;
+
+      try {
+        const db = getPool();
+        if (db) {
+          const teamRes = await db.query(
+            `SELECT 
+               u.id, 
+               u.name, 
+               u.email, 
+               u.phone, 
+               u.role, 
+               u.store_id as "storeId", 
+               s.name as "storeName",
+               'ACTIVE' as status, 
+               (
+                 SELECT count(*)::int 
+                 FROM bookings b 
+                 WHERE (b.assigned_employee_id = u.id OR b.technician_id = u.id) 
+                   AND b.status NOT IN ('DELIVERED', 'CANCELLED')
+               ) as "activeJobsCount",
+               u.created_at as "createdAt",
+               COALESCE(
+                 (SELECT json_agg(sa.store_id) FROM store_admins sa WHERE sa.user_id = u.id),
+                 '[]'::json
+               ) as "assignedStoreIds"
+             FROM users u
+             LEFT JOIN stores s ON u.store_id = s.id
+             WHERE u.role IN ('SUPER_ADMIN', 'ADMIN', 'EMPLOYEE', 'TECHNICIAN')
+               AND (
+                 $1::text IS NULL 
+                 OR u.store_id = $1 
+                 OR EXISTS (SELECT 1 FROM store_admins sa WHERE sa.user_id = u.id AND sa.store_id = $1)
+               )
+             ORDER BY u.created_at ASC`,
+            [filterStore]
+          );
+
+          return res.status(200).json({ success: true, data: teamRes.rows });
+        }
+      } catch (dbErr) {
+        console.warn('Neon DB team query error:', dbErr);
+      }
+
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // -------------------------------------------------------------------------
+    // 2e. PATCH /api/admin/team/:id/role
+    // -------------------------------------------------------------------------
+    const teamRoleMatch = pathname.match(/^\/admin\/team\/([^\/]+)\/role$/);
+    if (teamRoleMatch && req.method === 'PATCH') {
+      const userId = teamRoleMatch[1];
+      const newRole = body.role;
+      const storeId = body.storeId || null;
+
+      try {
+        const db = getPool();
+        if (db) {
+          await db.query(
+            `UPDATE users SET role = $1, store_id = COALESCE($2, store_id), updated_at = NOW() WHERE id = $3`,
+            [newRole, storeId, userId]
+          );
+          return res.status(200).json({ success: true, message: 'Role updated successfully.' });
+        }
+      } catch (dbErr: any) {
+        console.error('Neon DB update team role error:', dbErr);
+        return res.status(500).json({ error: { message: dbErr.message || 'Failed to update role.' } });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2f. GET /api/admin/inventory (Live parts inventory from Neon DB)
+    // -------------------------------------------------------------------------
+    if (pathname === '/admin/inventory' && req.method === 'GET') {
+      const url = new URL(req.url || '', 'http://localhost');
+      const storeId = url.searchParams.get('storeId');
+      const filterStore = storeId && storeId !== 'ALL' ? storeId : null;
+
+      try {
+        const db = getPool();
+        if (db) {
+          const invRes = await db.query(
+            `SELECT 
+               id, 
+               store_id as "storeId", 
+               part_name as "partName", 
+               sku, 
+               compatible_with as "compatibleWith", 
+               quantity, 
+               min_threshold as "minThreshold", 
+               unit_cost_paise as "unitCostPaise", 
+               updated_at as "updatedAt"
+             FROM inventory_items
+             WHERE ($1::text IS NULL OR store_id = $1)
+             ORDER BY updated_at DESC`,
+            [filterStore]
+          );
+
+          return res.status(200).json({ success: true, data: invRes.rows });
+        }
+      } catch (dbErr) {
+        console.warn('Neon DB inventory query error:', dbErr);
+      }
+
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // -------------------------------------------------------------------------
+    // 2g. GET /api/admin/stores and GET /api/stores (Live Store List & Assigned Admins)
+    // -------------------------------------------------------------------------
+    if ((pathname === '/admin/stores' || pathname === '/stores') && req.method === 'GET') {
+      try {
+        const db = getPool();
+        if (db) {
+          const storesRes = await db.query(
+            `SELECT 
+               s.id,
+               s.slug,
+               s.name,
+               s.address,
+               s.city,
+               s.lat,
+               s.lng,
+               s.phone,
+               s.hours,
+               s.is_active as "isActive",
+               s.rating,
+               s.review_count as "reviewCount",
+               COALESCE(
+                 (
+                   SELECT json_agg(json_build_object('id', u.id, 'name', u.name, 'email', u.email, 'role', u.role))
+                   FROM store_admins sa
+                   JOIN users u ON sa.user_id = u.id
+                   WHERE sa.store_id = s.id
+                 ),
+                 '[]'::json
+               ) as "assignedAdmins"
+             FROM stores s
+             ORDER BY s.created_at ASC`
+          );
+
+          return res.status(200).json({ success: true, data: storesRes.rows });
+        }
+      } catch (dbErr) {
+        console.warn('Neon DB stores query error:', dbErr);
+      }
+
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // -------------------------------------------------------------------------
+    // 2h. POST /api/admin/stores (Add / Update Store)
+    // -------------------------------------------------------------------------
+    if (pathname === '/admin/stores' && req.method === 'POST') {
+      const name = (body.name || '').trim();
+      const address = (body.address || '').trim();
+      const city = (body.city || 'Bengaluru').trim();
+      const phone = (body.phone || '+91 80 4821 7700').trim();
+      const hours = (body.hours || '9 AM – 9 PM').trim();
+      const lat = body.lat ? String(body.lat) : '12.9352';
+      const lng = body.lng ? String(body.lng) : '77.6245';
+      const id = body.id || `store-${Date.now().toString(36)}`;
+      const slug = body.slug || id;
+      const assignedAdminIds: string[] = Array.isArray(body.assignedAdminIds) ? body.assignedAdminIds : [];
+
+      if (!name || !address) {
+        return res.status(400).json({ error: { message: 'Store name and address are required.' } });
+      }
+
+      try {
+        const db = getPool();
+        if (db) {
+          const insertRes = await db.query(
+            `INSERT INTO stores (id, slug, name, address, city, phone, lat, lng, hours, is_active, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, NOW())
+             ON CONFLICT (id) DO UPDATE SET 
+               name = EXCLUDED.name,
+               address = EXCLUDED.address,
+               city = EXCLUDED.city,
+               phone = EXCLUDED.phone,
+               lat = EXCLUDED.lat,
+               lng = EXCLUDED.lng,
+               hours = EXCLUDED.hours,
+               is_active = true
+             RETURNING *`,
+            [id, slug, name, address, city, phone, lat, lng, hours]
+          );
+
+          if (assignedAdminIds.length > 0) {
+            await db.query(`DELETE FROM store_admins WHERE store_id = $1`, [id]);
+            for (const adminId of assignedAdminIds) {
+              await db.query(
+                `INSERT INTO store_admins (id, store_id, user_id, created_at)
+                 VALUES (gen_random_uuid(), $1, $2, NOW())
+                 ON CONFLICT DO NOTHING`,
+                [id, adminId]
+              );
+            }
+          }
+
+          return res.status(201).json({
+            success: true,
+            data: insertRes.rows[0],
+            message: 'Store created successfully',
+          });
+        }
+      } catch (dbErr: any) {
+        console.error('Neon DB create store error:', dbErr);
+        return res.status(500).json({ error: { message: dbErr.message || 'Failed to create store.' } });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2i. POST /api/admin/stores/toggle (Activate / Deactivate Store)
+    // -------------------------------------------------------------------------
+    const storeToggleMatch = pathname.match(/^\/admin\/stores\/([^\/]+)\/toggle$/);
+    if ((storeToggleMatch || pathname === '/admin/stores/toggle') && (req.method === 'POST' || req.method === 'PATCH')) {
+      const storeId = storeToggleMatch?.[1] || body.storeId;
+      if (!storeId) {
+        return res.status(400).json({ error: { message: 'Store ID is required.' } });
+      }
+
+      try {
+        const db = getPool();
+        if (db) {
+          const toggleRes = await db.query(
+            `UPDATE stores SET is_active = NOT is_active WHERE id = $1 RETURNING *`,
+            [storeId]
+          );
+          if (toggleRes.rows.length > 0) {
+            return res.status(200).json({
+              success: true,
+              data: toggleRes.rows[0],
+              message: `Store ${toggleRes.rows[0].is_active ? 'activated' : 'deactivated'} successfully`,
+            });
+          }
+        }
+      } catch (dbErr: any) {
+        console.error('Neon DB toggle store error:', dbErr);
+        return res.status(500).json({ error: { message: dbErr.message || 'Failed to toggle store.' } });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2j. DELETE /api/admin/stores/:id or POST /api/admin/stores/delete (Remove Store)
+    // -------------------------------------------------------------------------
+    const storeDeleteMatch = pathname.match(/^\/admin\/stores\/([^\/]+)$/);
+    if ((storeDeleteMatch && req.method === 'DELETE') || (pathname === '/admin/stores/delete' && req.method === 'POST')) {
+      const storeId = storeDeleteMatch?.[1] || body.storeId;
+      if (!storeId) {
+        return res.status(400).json({ error: { message: 'Store ID is required.' } });
+      }
+
+      try {
+        const db = getPool();
+        if (db) {
+          await db.query(`DELETE FROM store_admins WHERE store_id = $1`, [storeId]);
+          await db.query(`DELETE FROM stores WHERE id = $1`, [storeId]);
+          return res.status(200).json({ success: true, message: 'Store removed successfully.' });
+        }
+      } catch (dbErr: any) {
+        console.error('Neon DB delete store error:', dbErr);
+        return res.status(500).json({ error: { message: dbErr.message || 'Failed to delete store.' } });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2k. POST /api/admin/stores/assign-admins (Assign Admin(s) to Store)
+    // -------------------------------------------------------------------------
+    if (pathname === '/admin/stores/assign-admins' && req.method === 'POST') {
+      const storeId = body.storeId;
+      const adminUserIds: string[] = Array.isArray(body.adminUserIds) ? body.adminUserIds : [];
+
+      if (!storeId) {
+        return res.status(400).json({ error: { message: 'Store ID is required.' } });
+      }
+
+      try {
+        const db = getPool();
+        if (db) {
+          await db.query(`DELETE FROM store_admins WHERE store_id = $1`, [storeId]);
+          for (const userId of adminUserIds) {
+            await db.query(
+              `INSERT INTO store_admins (id, store_id, user_id, created_at)
+               VALUES (gen_random_uuid(), $1, $2, NOW())
+               ON CONFLICT DO NOTHING`,
+              [storeId, userId]
+            );
+          }
+          return res.status(200).json({ success: true, message: 'Admins assigned to store successfully.' });
+        }
+      } catch (dbErr: any) {
+        console.error('Neon DB assign-admins error:', dbErr);
+        return res.status(500).json({ error: { message: dbErr.message || 'Failed to assign admins.' } });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2l. POST /api/admin/bookings/:id/assign (Assign Staff/Technician to Booking)
+    // -------------------------------------------------------------------------
+    const assignMatch = pathname.match(/^\/admin\/bookings\/([^\/]+)\/assign$/);
+    if (assignMatch && req.method === 'POST') {
+      const id = assignMatch[1];
+      const employeeId = body.employeeId || null;
+      const technicianId = body.technicianId || null;
+
+      try {
+        const db = getPool();
+        if (db) {
+          await db.query(
+            `UPDATE bookings 
+             SET assigned_employee_id = COALESCE($1, assigned_employee_id),
+                 technician_id = COALESCE($2, technician_id),
+                 status = CASE WHEN status = 'PENDING' THEN 'CONFIRMED' ELSE status END,
+                 updated_at = NOW()
+             WHERE id = $3`,
+            [employeeId, technicianId, id]
+          );
+
+          await db.query(
+            `INSERT INTO booking_trail (id, booking_id, from_status, to_status, notes, created_at)
+             VALUES (gen_random_uuid(), $1, 'PENDING', 'CONFIRMED', 'Staff allocated to booking', NOW())`,
+            [id]
+          );
+
+          return res.status(200).json({ success: true, message: 'Staff allocated successfully.' });
+        }
+      } catch (dbErr: any) {
+        console.error('Neon DB assign error:', dbErr);
+        return res.status(500).json({ error: { message: dbErr.message || 'Failed to assign staff.' } });
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -764,7 +1020,17 @@ export default async function handler(req: any, res: any) {
           const sLng = parseFloat(s.lng);
           const dist = haversineKm(lat, lng, sLat, sLng);
           return {
-            ...s,
+            id: s.id,
+            name: s.name,
+            address: s.address,
+            city: s.city,
+            lat: sLat,
+            lng: sLng,
+            phone: s.phone || '+91 98765 43210',
+            hours: s.hours || '9 AM - 9 PM',
+            services: s.services || ['Screen Replacement', 'Battery Replacement', 'Water Damage', 'Diagnostics'],
+            rating: Number(s.rating || 4.8),
+            reviews: Number(s.review_count || s.reviews || s.reviewCount || 128),
             distanceKm: dist,
             tier: dist <= 3 ? 'flash' : dist <= 10 ? 'next-day' : 'out-of-range',
             isFlashHero: dist <= 3,
@@ -1754,26 +2020,78 @@ export default async function handler(req: any, res: any) {
     // 15. GET /api/admin/bookings or /api/bookings
     // -------------------------------------------------------------------------
     if ((pathname === '/admin/bookings' || pathname === '/bookings') && req.method === 'GET') {
+      const url = new URL(req.url || '', 'http://localhost');
+      const storeId = url.searchParams.get('storeId');
+      const filterStore = storeId && storeId !== 'ALL' ? storeId : null;
+      const status = url.searchParams.get('status');
+      const filterStatus = status && status !== 'ALL' ? status : null;
+      const search = url.searchParams.get('search');
+      const filterSearch = search ? `%${search.trim().toLowerCase()}%` : null;
+
       let list: any[] = [];
       try {
         const db = getPool();
         if (db) {
           const resDb = await db.query(
-            `SELECT b.*, u1.name as "assignedEmployeeName", u2.name as "technicianName"
+            `SELECT 
+               b.id,
+               b.tracking_code as "trackingCode",
+               b.brand,
+               b.device_model as "deviceModel",
+               b.issue_type as "issueType",
+               b.issue_description as "issueDescription",
+               b.store_id as "storeId",
+               b.scheduled_date as "scheduledDate",
+               b.scheduled_time as "scheduledTime",
+               b.pickup_address as "pickupAddress",
+               b.pickup_lat as "pickupLat",
+               b.pickup_lng as "pickupLng",
+               b.contact_name as "contactName",
+               b.contact_email as "contactEmail",
+               b.contact_phone as "contactPhone",
+               b.status,
+               b.estimated_cost_paise as "estimatedCostPaise",
+               b.final_cost_paise as "finalCostPaise",
+               b.payment_method as "paymentMethod",
+               b.payment_status as "paymentStatus",
+               b.notes,
+               b.assigned_employee_id as "assignedEmployeeId",
+               u1.name as "assignedEmployeeName",
+               b.technician_id as "technicianId",
+               u2.name as "technicianName",
+               b.pickup_otp as "pickupOtp",
+               b.custody_otp as "custodyOtp",
+               b.created_at as "createdAt",
+               b.updated_at as "updatedAt"
              FROM bookings b
              LEFT JOIN users u1 ON b.assigned_employee_id = u1.id
              LEFT JOIN users u2 ON b.technician_id = u2.id
-             ORDER BY b.created_at DESC`
+             WHERE ($1::text IS NULL OR b.store_id = $1)
+               AND ($2::text IS NULL OR b.status = $2)
+               AND ($3::text IS NULL OR (
+                 LOWER(b.id) LIKE $3 OR 
+                 LOWER(b.contact_name) LIKE $3 OR 
+                 LOWER(b.contact_phone) LIKE $3 OR 
+                 LOWER(b.device_model) LIKE $3 OR 
+                 LOWER(b.brand) LIKE $3
+               ))
+             ORDER BY b.created_at DESC`,
+            [filterStore, filterStatus, filterSearch]
           );
           list = resDb.rows;
+          return res.status(200).json({
+            success: true,
+            data: list,
+          });
         }
-      } catch {
-        // Fallback below
+      } catch (dbErr) {
+        console.warn('Neon DB bookings list error:', dbErr);
       }
 
-      if (list.length === 0) {
-        list = Array.from(inMemoryBookings.values());
-      }
+      // In-memory fallback (empty by default)
+      list = Array.from(inMemoryBookings.values());
+      if (filterStore) list = list.filter((b) => b.storeId === filterStore);
+      if (filterStatus) list = list.filter((b) => b.status === filterStatus);
 
       return res.status(200).json({
         success: true,
