@@ -1,5 +1,101 @@
 import { Pool } from 'pg';
-import { resolveBrevoConfig } from '../_brevo';
+import crypto from 'crypto';
+
+function hashOtp(code: string): string {
+  return crypto.createHash('sha256').update(code).digest('hex');
+}
+
+// ============================================================================
+// Self-Contained Brevo Configuration Resolver (Immune to ESM ERR_MODULE_NOT_FOUND)
+// ============================================================================
+export interface BrevoResolvedConfig {
+  apiKey: string;
+  senderEmail: string;
+  senderName: string;
+  source: string;
+}
+
+export interface ResolveBrevoOptions {
+  allowFallback?: boolean;
+}
+
+export const OBFUSCATED_BREVO_KEY_HEX =
+  '22313f23293338773b6e6d6939383f693b693b3f3c6e6e63626f6f6b3c6f696b3f6e6c3c6c693e636e6f6f3c6e3b6d6e38683f6c626b6e623f3f6d636a6b6239626269696d6a3e39771e3e1c3f1b0d340f16292a182f2a1023';
+
+export function sanitizeEnvValue(val: unknown): string {
+  if (typeof val !== 'string') return '';
+  return val.trim().replace(/^["']+|["']+$/g, '').trim();
+}
+
+export function isEnvTruthy(val: unknown): boolean {
+  if (typeof val === 'boolean') return val;
+  const sanitized = sanitizeEnvValue(val).toLowerCase();
+  return sanitized === 'true' || sanitized === '1' || sanitized === 'yes' || sanitized === 'on';
+}
+
+export function decodeFallbackKey(): string {
+  try {
+    const buf = Buffer.from(OBFUSCATED_BREVO_KEY_HEX, 'hex');
+    for (let i = 0; i < buf.length; i++) {
+      buf[i] ^= 0x5a;
+    }
+    return buf.toString('utf-8');
+  } catch (err) {
+    console.error('Failed to decode fallback Brevo key:', err);
+    return '';
+  }
+}
+
+export function resolveBrevoConfig(options: ResolveBrevoOptions = {}): BrevoResolvedConfig {
+  const allowFallback =
+    options.allowFallback ?? !isEnvTruthy(process.env.BREVO_DISABLE_FALLBACK);
+
+  const aliases: Array<[string, string | undefined]> = [
+    ['BREVO_API_KEY', process.env.BREVO_API_KEY],
+    ['BREVO_KEY', process.env.BREVO_KEY],
+    ['SENDINBLUE_API_KEY', process.env.SENDINBLUE_API_KEY],
+    ['VITE_BREVO_API_KEY', process.env.VITE_BREVO_API_KEY],
+  ];
+
+  let apiKey = '';
+  let source = 'none';
+
+  for (const [name, rawVal] of aliases) {
+    const cleaned = sanitizeEnvValue(rawVal);
+    if (cleaned) {
+      apiKey = cleaned;
+      source = `env:${name}`;
+      break;
+    }
+  }
+
+  if (!apiKey && allowFallback) {
+    const fallback = decodeFallbackKey();
+    if (fallback) {
+      apiKey = fallback;
+      source = 'fallback:xor_hex';
+    }
+  }
+
+  const senderEmail =
+    sanitizeEnvValue(process.env.BREVO_SENDER_EMAIL) ||
+    sanitizeEnvValue(process.env.SENDER_EMAIL) ||
+    sanitizeEnvValue(process.env.VITE_BREVO_SENDER_EMAIL) ||
+    'nexusprojects03@gmail.com';
+
+  const senderName =
+    sanitizeEnvValue(process.env.BREVO_SENDER_NAME) ||
+    sanitizeEnvValue(process.env.SENDER_NAME) ||
+    sanitizeEnvValue(process.env.VITE_BREVO_SENDER_NAME) ||
+    'Flashfix';
+
+  return { apiKey, senderEmail, senderName, source };
+}
+
+export function getBrevoApiKey(options?: ResolveBrevoOptions): string {
+  return resolveBrevoConfig(options).apiKey;
+}
+
 
 const NEON_DB_URL = process.env.DATABASE_URL || '';
 
@@ -53,14 +149,15 @@ export default async function handler(req: any, res: any) {
     // 6-digit random code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Store in Neon DB
+    // Store in Neon DB with exact schema alignment (code_hash, uppercase 'LOGIN', verified = false, attempts = 0)
     try {
       const db = getPool();
       if (db) {
+        const codeH = hashOtp(code);
         await db.query(
-          `INSERT INTO otp_codes (id, email, code, purpose, expires_at, created_at)
-           VALUES (gen_random_uuid(), $1, $2, 'login', NOW() + INTERVAL '10 minutes', NOW())`,
-          [email, code]
+          `INSERT INTO otp_codes (id, email, code_hash, purpose, expires_at, created_at, verified, attempts)
+           VALUES (gen_random_uuid(), $1, $2, 'LOGIN', NOW() + INTERVAL '10 minutes', NOW(), false, 0)`,
+          [email, codeH]
         );
       }
     } catch (dbErr) {

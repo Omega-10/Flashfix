@@ -15,7 +15,27 @@ import FortixProductDetail from "@/pages/fortix/FortixProductDetail";
 import FortixAbout from "@/pages/fortix/About";
 import FortixContact from "@/pages/fortix/Contact";
 
+import AdminLayout from "@/components/admin/AdminLayout";
+import AdminPage from "@/pages/admin/AdminPage";
+
 const router = createBrowserRouter([
+  // Dedicated Admin & Staff Operations Routes (isolated outside RootLayout & Lenis SmoothScroll)
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+      { path: ":tab", element: <AdminPage /> },
+    ],
+  },
+  {
+    path: "/flashfix/admin",
+    element: <Navigate to="/admin" replace />,
+  },
+  {
+    path: "/flashfix/admin/*",
+    element: <Navigate to="/admin" replace />,
+  },
   {
     path: "/",
     element: <RootLayout />,

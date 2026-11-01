@@ -15,6 +15,8 @@ import {
   UserCheck,
   Check,
   Sparkles,
+  KeyRound,
+  Copy,
 } from "lucide-react";
 import { BookingStatus, BookingTrail } from "@flashfix/shared";
 
@@ -33,10 +35,13 @@ interface BookingDetail {
   storeName?: string;
   contactName: string;
   contactPhone: string;
+  contactEmail?: string;
   estimatedCostPaise?: number | null;
   finalCostPaise?: number | null;
   assignedEmployeeName?: string | null;
   technicianName?: string | null;
+  pickupOtp?: string | null;
+  custodyOtp?: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -151,6 +156,7 @@ export default function TrackRepair() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
+  const [copiedOtp, setCopiedOtp] = useState(false);
 
   const fetchBookingData = useCallback(
     async (isManual = false) => {
@@ -170,7 +176,7 @@ export default function TrackRepair() {
 
         if (bookingRes.ok) {
           const bData = await bookingRes.json();
-          setBooking(bData.data || bData);
+          setBooking(bData.data || bData.booking || bData);
         } else {
           // Provide genuine mock fallback state for simulated tracking
           setBooking((prev) =>
@@ -201,7 +207,11 @@ export default function TrackRepair() {
 
         if (trailRes.ok) {
           const tData = await trailRes.json();
-          setTrail(tData.data || tData);
+          const rawTrail = Array.isArray(tData) ? tData : tData.data || tData.trail || [];
+          const sorted = [...rawTrail].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          setTrail(sorted);
         } else {
           setTrail([
             {
@@ -378,6 +388,90 @@ export default function TrackRepair() {
           </div>
         </div>
 
+        {/* Doorstep Pickup OTP Code Banner (When status is PICKUP_OTP_SENT) */}
+        {booking.status === "PICKUP_OTP_SENT" && (
+          <div className="mb-8 p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-[#ef8f0b]/20 via-[#181510] to-[#121212] border-2 border-[#ef8f0b] shadow-[0_0_35px_rgba(239,143,11,0.25)] text-[#f5f0eb] relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#ef8f0b]/15 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-[#ef8f0b] text-black shadow-lg shadow-[#ef8f0b]/30">
+                    <KeyRound className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] font-bold tracking-widest text-[#ef8f0b] uppercase">
+                        Doorstep Custody Handover Code
+                      </span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    </div>
+                    <h2 className="text-lg sm:text-xl font-bold font-display text-[#f5f0eb]">
+                      Courier Arrived at Your Doorstep
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ef8f0b]/10 border border-[#ef8f0b]/30 text-xs font-mono text-[#ef8f0b] self-start sm:self-auto font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ef8f0b] animate-ping" />
+                  <span>Awaiting Handover</span>
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm text-[#a8a09a] mb-5 leading-relaxed max-w-2xl">
+                Please share this 6-digit one-time passcode with Flashfix courier{" "}
+                <strong className="text-[#f5f0eb]">{booking.assignedEmployeeName || "Vikram Reddy"}</strong>{" "}
+                to authenticate physical device handover and verify chain of custody before transit.
+              </p>
+
+              {/* 6-Digit PIN Display Card */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl bg-[#0d0d0d]/90 border border-[rgba(255,255,255,0.08)]">
+                <div className="flex items-center gap-2 sm:gap-2.5 justify-center sm:justify-start">
+                  {(booking.pickupOtp || "849201").split("").map((digit, idx) => (
+                    <div
+                      key={idx}
+                      className="w-10 h-12 sm:w-12 sm:h-14 rounded-xl bg-[#1a1a1a] border-2 border-[#ef8f0b]/60 flex items-center justify-center text-xl sm:text-2xl font-mono font-bold text-[#ef8f0b] shadow-inner"
+                    >
+                      {digit}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 sm:ml-auto">
+                  <button
+                    onClick={() => {
+                      const code = booking.pickupOtp || "849201";
+                      if (navigator?.clipboard?.writeText) {
+                        navigator.clipboard.writeText(code).catch((err) => console.warn('Clipboard copy error:', err));
+                      }
+                      setCopiedOtp(true);
+                      setTimeout(() => setCopiedOtp(false), 2000);
+                    }}
+                    className="min-h-[44px] px-4 py-2 rounded-xl bg-[#1e1e1e] hover:bg-[#252525] border border-[rgba(255,255,255,0.12)] hover:border-[#ef8f0b]/40 text-xs font-semibold text-[#f5f0eb] flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    {copiedOtp ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-400" />
+                        <span className="text-emerald-400">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-[#ef8f0b]" />
+                        <span>Copy Code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3.5 flex items-center gap-2 text-[11px] text-[#807a75]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Never share this code over phone or SMS. Provide it only in person to the courier collecting your hardware.</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Top KPI Device & Assignment Banner */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {/* Card 1: Device Info */}
@@ -534,12 +628,24 @@ export default function TrackRepair() {
                     </p>
 
                     {/* Step specific highlight notes */}
+                    {item.step === 3 && booking.status === "PICKUP_OTP_SENT" && (
+                      <div className="mt-2.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300 flex items-center gap-2">
+                        <KeyRound className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0" />
+                        <span>Courier arrived at your doorstep. Please share the 6-digit handover PIN shown above.</span>
+                      </div>
+                    )}
                     {item.step === 4 && (
                       <div className="mt-2.5 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-300">
                         ⚡ Pickup Handover Security: Verified in person with consumer one-time passcode.
                       </div>
                     )}
-                    {item.step === 5 && (
+                    {item.step === 5 && booking.status === "CUSTODY_OTP_SENT" && (
+                      <div className="mt-2.5 p-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-[11px] text-blue-300 flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span>Device arrived at service hub. Lab custody handover OTP dispatched to technician.</span>
+                      </div>
+                    )}
+                    {item.step === 5 && booking.status !== "CUSTODY_OTP_SENT" && (
                       <div className="mt-2.5 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300">
                         🔒 Lab Custody Guarantee: Device passed into cleanroom repair custody.
                       </div>

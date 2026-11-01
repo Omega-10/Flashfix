@@ -64,6 +64,40 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
 
   if (!isOpen) return null;
 
+  function getStatusText(status: number, statusText?: string): string {
+    if (statusText && statusText.trim()) return statusText.trim();
+    switch (status) {
+      case 400: return "Bad Request";
+      case 401: return "Unauthorized";
+      case 403: return "Forbidden";
+      case 404: return "Not Found";
+      case 405: return "Method Not Allowed";
+      case 500: return "Internal Server Error";
+      case 502: return "Bad Gateway";
+      case 503: return "Service Unavailable";
+      case 504: return "Gateway Timeout";
+      default: return "";
+    }
+  }
+
+  function extractErrorMessage(res: Response, resText: string, data: any): string {
+    if (data?.error?.code === "DISPOSABLE_EMAIL_NOT_ALLOWED" || data?.error?.message?.includes("disposable")) {
+      return "Disposable email domains are not allowed. Please enter your work or personal email.";
+    }
+    if (data?.error?.message) return data.error.message;
+    if (data?.message) return data.message;
+    if (typeof data?.error === "string") return data.error;
+
+    const trimmed = (resText || "").trim();
+    if (trimmed && !trimmed.startsWith("<")) {
+      return `Server error (${res.status}): ${trimmed.slice(0, 160)}`;
+    }
+
+    const statusText = getStatusText(res.status, res.statusText);
+    const statusMsg = statusText ? ` ${statusText}` : "";
+    return `Server error (${res.status}${statusMsg}). Please check configuration or server logs.`;
+  }
+
   async function handleSendOtp(e?: React.FormEvent) {
     if (e) e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
@@ -89,14 +123,16 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         body: JSON.stringify({ email: cleanEmail }),
       });
 
-      const data = await res.json().catch(() => null);
+      const resText = await res.text();
+      let data: any = null;
+      try {
+        data = resText ? JSON.parse(resText) : null;
+      } catch {
+        data = null;
+      }
 
       if (!res.ok) {
-        if (data?.error?.code === "DISPOSABLE_EMAIL_NOT_ALLOWED" || data?.error?.message?.includes("disposable")) {
-          setError("Disposable email domains are not allowed. Please enter your work or personal email.");
-        } else {
-          setError(data?.error?.message || data?.message || "Failed to send verification code. Please try again.");
-        }
+        setError(extractErrorMessage(res, resText, data));
         return;
       }
 
@@ -132,7 +168,13 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         body: JSON.stringify({ email: email.trim().toLowerCase(), code }),
       });
 
-      const data = await res.json().catch(() => null);
+      const resText = await res.text();
+      let data: any = null;
+      try {
+        data = resText ? JSON.parse(resText) : null;
+      } catch {
+        data = null;
+      }
 
       if (res.ok && (data?.accessToken || data?.data?.accessToken)) {
         const token = data.accessToken || data.data.accessToken;
@@ -151,8 +193,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         return;
       }
 
-      if (res.status === 400 || res.status === 401) {
-        setError(data?.error?.message || data?.message || "Invalid or expired verification code.");
+      if (!res.ok) {
+        setError(extractErrorMessage(res, resText, data));
         return;
       }
 
