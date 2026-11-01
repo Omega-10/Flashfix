@@ -1,11 +1,7 @@
 import { Pool } from 'pg';
+import { resolveBrevoConfig } from '../_brevo';
 
 const NEON_DB_URL = process.env.DATABASE_URL || '';
-
-const BREVO_KEY = process.env.BREVO_API_KEY || '';
-
-const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'nexusprojects03@gmail.com';
-const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Flashfix';
 
 let pool: Pool | null = null;
 function getPool(): Pool | null {
@@ -42,6 +38,18 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: { code: 'INVALID_EMAIL', message: 'Valid email is required.' } });
     }
 
+    // Dynamic Brevo credential resolution per request
+    const brevoConfig = resolveBrevoConfig();
+    if (!brevoConfig.apiKey) {
+      console.error('[Brevo Auth Error] Missing API key. Checked: BREVO_API_KEY, BREVO_KEY, SENDINBLUE_API_KEY, VITE_BREVO_API_KEY.');
+      return res.status(500).json({
+        error: {
+          code: 'BREVO_API_KEY_MISSING',
+          message: 'Brevo API key is not configured. Please set BREVO_API_KEY in environment variables.',
+        },
+      });
+    }
+
     // 6-digit random code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -64,11 +72,11 @@ export default async function handler(req: any, res: any) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': BREVO_KEY,
+        'api-key': brevoConfig.apiKey,
         Accept: 'application/json',
       },
       body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+        sender: { name: brevoConfig.senderName, email: brevoConfig.senderEmail },
         to: [{ email }],
         subject: `⚡ ${code} is your Flashfix verification code`,
         htmlContent: `
