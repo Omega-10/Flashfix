@@ -88,7 +88,11 @@ export default function BookingWizard() {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const accuracyCircleRef = useRef<L.Circle | null>(null);
+  const geoWatchIdRef = useRef<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Array<{ display_name: string; lat: number; lon: number }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [locateStatus, setLocateStatus] = useState<{ message: string; type: "info" | "error" | "success" } | null>(null);
 
@@ -151,34 +155,115 @@ export default function BookingWizard() {
     loadActiveStores();
   }, []);
 
-  async function reverseGeocode(lat: number, lng: number) {
+  async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+    // 1. Primary: OpenStreetMap Nominatim (zoom=18 for building/street precision)
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`
       );
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data?.display_name) {
-        setStep3((p) => ({
-          ...p,
-          lat,
-          lng,
-          address: data.display_name,
-        }));
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.display_name) {
+          setStep3((p) => ({
+            ...p,
+            lat,
+            lng,
+            address: data.display_name,
+          }));
+          return data.display_name;
+        }
       }
     } catch {
-      // ignore reverse geocode network error
+      // fall through to backup geocoder
     }
+
+    // 2. Fallback: Photon Komoot (OpenStreetMap based, no strict rate-limit)
+    try {
+      const res = await fetch(`https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`);
+      if (res.ok) {
+        const data = await res.json();
+        const props = data?.features?.[0]?.properties;
+        if (props) {
+          const parts = [
+            props.name,
+            props.housenumber,
+            props.street,
+            props.district || props.suburb || props.locality,
+            props.city || props.town,
+            props.state,
+            props.postcode,
+          ].filter(Boolean);
+          if (parts.length > 0) {
+            const formatted = Array.from(new Set(parts)).join(", ");
+            setStep3((p) => ({ ...p, lat, lng, address: formatted }));
+            return formatted;
+          }
+        }
+      }
+    } catch {
+      // fall through
+    }
+
+    // 3. Fallback: BigDataCloud client reverse geocoder
+    try {
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const parts = [
+          data.locality,
+          data.city,
+          data.principalSubdivision,
+          data.postcode,
+          data.countryName,
+        ].filter(Boolean);
+        if (parts.length > 0) {
+          const formatted = Array.from(new Set(parts)).join(", ");
+          setStep3((p) => ({ ...p, lat, lng, address: formatted }));
+          return formatted;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
   }
+
+  const updateMapPin = useCallback((lat: number, lng: number, zoom = 17, accuracyMeters?: number) => {
+    if (leafletMap.current) {
+      leafletMap.current.setView([lat, lng], zoom, { animate: true });
+      if (accuracyCircleRef.current) {
+        leafletMap.current.removeLayer(accuracyCircleRef.current);
+        accuracyCircleRef.current = null;
+      }
+      if (typeof accuracyMeters === "number" && accuracyMeters > 0 && accuracyMeters < 3000) {
+        accuracyCircleRef.current = L.circle([lat, lng], {
+          radius: accuracyMeters,
+          color: "#ef8f0b",
+          fillColor: "#ef8f0b",
+          fillOpacity: 0.12,
+          weight: 1,
+        }).addTo(leafletMap.current);
+      }
+    }
+    markerRef.current?.setLatLng([lat, lng]);
+    setStep3((p) => ({ ...p, lat, lng }));
+  }, []);
 
   // Callback ref: initializes Leaflet the exact moment Step 3's DOM container mounts
   const handleMapMount = useCallback((node: HTMLDivElement | null) => {
     mapRef.current = node;
     if (!node) {
+      if (geoWatchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(geoWatchIdRef.current);
+        geoWatchIdRef.current = null;
+      }
       if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;
         markerRef.current = null;
+        accuracyCircleRef.current = null;
       }
       return;
     }
@@ -190,7 +275,7 @@ export default function BookingWizard() {
 
     const map = L.map(node, {
       center: [step3.lat, step3.lng],
-      zoom: 13,
+      zoom: 14,
     });
     leafletMap.current = map;
 
@@ -201,9 +286,9 @@ export default function BookingWizard() {
 
     const customIcon = L.divIcon({
       className: "",
-      html: `<div style="width:18px; height:18px; background:#ef8f0b; border-radius:50%; border:3px solid #141210; box-shadow:0 2px 8px rgba(0,0,0,0.45);"></div>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
+      html: `<div style="width:20px; height:20px; background:#ef8f0b; border-radius:50%; border:3px solid #141210; box-shadow:0 2px 10px rgba(0,0,0,0.5);"></div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
     });
 
     markerRef.current = L.marker([step3.lat, step3.lng], {
@@ -214,11 +299,19 @@ export default function BookingWizard() {
       .on("dragend", (e) => {
         const marker = e.target;
         const position = marker.getLatLng();
+        if (accuracyCircleRef.current && leafletMap.current) {
+          leafletMap.current.removeLayer(accuracyCircleRef.current);
+          accuracyCircleRef.current = null;
+        }
         setStep3((p) => ({ ...p, lat: position.lat, lng: position.lng }));
         reverseGeocode(position.lat, position.lng);
       });
 
     map.on("click", (e: any) => {
+      if (accuracyCircleRef.current && leafletMap.current) {
+        leafletMap.current.removeLayer(accuracyCircleRef.current);
+        accuracyCircleRef.current = null;
+      }
       markerRef.current?.setLatLng(e.latlng);
       setStep3((p) => ({ ...p, lat: e.latlng.lat, lng: e.latlng.lng }));
       reverseGeocode(e.latlng.lat, e.latlng.lng);
@@ -228,86 +321,230 @@ export default function BookingWizard() {
     requestAnimationFrame(() => map.invalidateSize());
     setTimeout(() => map.invalidateSize(), 200);
     setTimeout(() => map.invalidateSize(), 450);
+
+    // Automatically request high-accuracy location when Step 3 opens if address isn't filled yet
+    if (!step3.address.trim()) {
+      setTimeout(() => {
+        handleLocateMe();
+      }, 300);
+    }
   }, []);
 
-  async function fallbackIpLocate() {
-    try {
-      const res = await fetch("https://ipapi.co/json/");
-      if (res.ok) {
-        const data = await res.json();
-        if (data && typeof data.latitude === "number" && typeof data.longitude === "number") {
-          const newLat = data.latitude;
-          const newLng = data.longitude;
-          leafletMap.current?.setView([newLat, newLng], 14);
-          markerRef.current?.setLatLng([newLat, newLng]);
-          const approxAddress = [data.city, data.region, data.country_name].filter(Boolean).join(", ");
-          setStep3((p) => ({
-            ...p,
-            lat: newLat,
-            lng: newLng,
-            address: p.address || approxAddress,
-          }));
-          setLocateStatus({
-            message: `Located approximately near ${data.city || data.region || "your area"}. Drag the pin to adjust.`,
-            type: "info",
-          });
-          return;
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    setLocateStatus({
-      message: "Could not retrieve GPS coordinates. Please type your area in the search bar or click on the map.",
-      type: "error",
-    });
-  }
-
   function handleLocateMe() {
-    setIsSearching(true);
-    setLocateStatus(null);
-
     if (!navigator.geolocation) {
-      fallbackIpLocate().finally(() => setIsSearching(false));
+      setLocateStatus({
+        message: "Geolocation is not supported by your browser. Please search your street or area above.",
+        type: "error",
+      });
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const newLat = pos.coords.latitude;
-        const newLng = pos.coords.longitude;
-        leafletMap.current?.setView([newLat, newLng], 16);
-        markerRef.current?.setLatLng([newLat, newLng]);
-        setStep3((p) => ({ ...p, lat: newLat, lng: newLng }));
-        reverseGeocode(newLat, newLng)
-          .then(() => setLocateStatus({ message: "Exact location pinpointed successfully!", type: "success" }))
-          .finally(() => {
-            setIsSearching(false);
-            setTimeout(() => setLocateStatus(null), 4000);
-          });
-      },
+    if (geoWatchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(geoWatchIdRef.current);
+      geoWatchIdRef.current = null;
+    }
+
+    setIsSearching(true);
+    setLocateStatus({
+      message: "Acquiring high-accuracy GPS / Wi-Fi location...",
+      type: "info",
+    });
+
+    let bestAccuracy = Infinity;
+    let hasResolved = false;
+
+    const finishWatch = () => {
+      if (geoWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(geoWatchIdRef.current);
+        geoWatchIdRef.current = null;
+      }
+      setIsSearching(false);
+    };
+
+    const settleTimer = window.setTimeout(() => {
+      if (hasResolved) {
+        finishWatch();
+      }
+    }, 6000);
+
+    const applyPosition = (pos: GeolocationPosition) => {
+      hasResolved = true;
+      const newLat = pos.coords.latitude;
+      const newLng = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy || 100;
+
+      // Only update if this reading is more accurate than any prior reading
+      if (accuracy < bestAccuracy) {
+        bestAccuracy = accuracy;
+        const targetZoom = accuracy <= 80 ? 18 : accuracy <= 500 ? 16 : 14;
+        updateMapPin(newLat, newLng, targetZoom, accuracy);
+        reverseGeocode(newLat, newLng);
+      }
+
+      if (accuracy <= 50) {
+        window.clearTimeout(settleTimer);
+        finishWatch();
+        setLocateStatus({
+          message: `Exact location pinpointed (±${Math.round(accuracy)}m). Drag the pin if needed to fine-tune your building.`,
+          type: "success",
+        });
+      } else if (accuracy <= 500) {
+        setLocateStatus({
+          message: `Location locked (±${Math.round(accuracy)}m). Drag the pin to your exact building entrance.`,
+          type: "success",
+        });
+      } else {
+        setLocateStatus({
+          message: `Coarse network location detected (±${(accuracy / 1000).toFixed(1)} km) — enable Wi-Fi / OS Location Services for street-level GPS, or search your area above.`,
+          type: "info",
+        });
+      }
+    };
+
+    geoWatchIdRef.current = navigator.geolocation.watchPosition(
+      applyPosition,
       (err) => {
-        console.warn("GPS Geolocation unavailable or denied, falling back to IP:", err.message);
-        fallbackIpLocate().finally(() => setIsSearching(false));
+        window.clearTimeout(settleTimer);
+        finishWatch();
+
+        if (err.code === 1) {
+          setLocateStatus({
+            message:
+              "Location permission is blocked in your browser. Click the site settings icon in the address bar → Allow Location, then click Locate Me again.",
+            type: "error",
+          });
+          return;
+        }
+
+        // Retry once with standard network location if strict GPS timed out on a desktop PC
+        setIsSearching(true);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            applyPosition(pos);
+            setIsSearching(false);
+          },
+          () => {
+            setIsSearching(false);
+            setLocateStatus({
+              message:
+                "Unable to read device GPS coordinates. Please type your street, colony, or landmark in the search bar above.",
+              type: "error",
+            });
+          },
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 }
+        );
       },
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+  }
+
+  // Live debounced autocomplete suggestions when typing in the area search box
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=in&accept-language=en&q=${encodeURIComponent(q)}`,
+          { signal: controller.signal }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setSuggestions(
+              data.map((d: any) => ({
+                display_name: d.display_name,
+                lat: parseFloat(d.lat),
+                lon: parseFloat(d.lon),
+              }))
+            );
+            setShowSuggestions(true);
+            return;
+          }
+        }
+
+        // Fallback to Photon search
+        const pRes = await fetch(
+          `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lat=${step3.lat}&lon=${step3.lng}`,
+          { signal: controller.signal }
+        );
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          const features = Array.isArray(pData?.features) ? pData.features : [];
+          setSuggestions(
+            features.map((f: any) => {
+              const p = f.properties || {};
+              const label = [p.name, p.street, p.district || p.locality, p.city, p.state, p.postcode]
+                .filter(Boolean)
+                .join(", ");
+              return {
+                display_name: label || q,
+                lat: f.geometry.coordinates[1],
+                lon: f.geometry.coordinates[0],
+              };
+            })
+          );
+          setShowSuggestions(true);
+        }
+      } catch {
+        // ignore abort or network error
+      }
+    }, 280);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery]);
+
+  function selectSuggestion(item: { display_name: string; lat: number; lon: number }) {
+    setSearchQuery(item.display_name);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    updateMapPin(item.lat, item.lon, 17);
+    setStep3((p) => ({
+      ...p,
+      lat: item.lat,
+      lng: item.lon,
+      address: item.display_name,
+    }));
+    setLocateStatus({
+      message: "Pinned to selected location. Drag the marker to your exact building entrance.",
+      type: "success",
+    });
   }
 
   async function handleSearch() {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
+    setShowSuggestions(false);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.trim())}`);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=in&accept-language=en&q=${encodeURIComponent(
+          searchQuery.trim()
+        )}`
+      );
       const data = await res.json();
-      if (data && data.length > 0) {
+      if (Array.isArray(data) && data.length > 0) {
         const { lat, lon, display_name } = data[0];
         const newLat = parseFloat(lat);
         const newLng = parseFloat(lon);
-        leafletMap.current?.setView([newLat, newLng], 15);
-        markerRef.current?.setLatLng([newLat, newLng]);
-        setStep3(p => ({ ...p, lat: newLat, lng: newLng, address: display_name }));
+        updateMapPin(newLat, newLng, 17);
+        setStep3((p) => ({ ...p, lat: newLat, lng: newLng, address: display_name }));
+        setLocateStatus({
+          message: "Pinned to searched area. Drag the marker to your exact building.",
+          type: "success",
+        });
+      } else {
+        setLocateStatus({
+          message: "No matching area found. Try adding your city or pincode (e.g. Miyapur, Hyderabad 500049).",
+          type: "error",
+        });
       }
     } catch (e) {
       console.error(e);
@@ -592,38 +829,60 @@ export default function BookingWizard() {
               <div className="space-y-6">
                 <div>
                   <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Location Pinpoint</label>
-                  <div className="flex gap-2 mb-4">
-                    <input
-                      type="text"
-                      placeholder="Search area (e.g. Miyapur, Hyderabad)"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                      className="flex-1 bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSearch}
-                      disabled={isSearching}
-                      title="Search area"
-                      className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center"
-                    >
-                      <Search className="w-4 h-4 text-[var(--text-primary)]" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLocateMe}
-                      disabled={isSearching}
-                      title="Use my current location"
-                      className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center gap-1.5 text-xs font-medium text-[var(--accent-amber)] disabled:opacity-50"
-                    >
-                      {isSearching ? (
-                        <div className="w-3.5 h-3.5 border-2 border-[var(--accent-amber)] border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Navigation className="w-3.5 h-3.5" />
-                      )}
-                      <span className="hidden sm:inline">{isSearching ? "Locating..." : "Locate Me"}</span>
-                    </button>
+                  <div className="relative mb-4">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Search street, colony, or landmark (e.g. Miyapur, Hyderabad)"
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                        className="flex-1 bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSearch}
+                        disabled={isSearching}
+                        title="Search area"
+                        className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center"
+                      >
+                        <Search className="w-4 h-4 text-[var(--text-primary)]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLocateMe}
+                        disabled={isSearching}
+                        title="Use my current location"
+                        className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center gap-1.5 text-xs font-medium text-[var(--accent-amber)] disabled:opacity-50"
+                      >
+                        {isSearching ? (
+                          <div className="w-3.5 h-3.5 border-2 border-[var(--accent-amber)] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Navigation className="w-3.5 h-3.5" />
+                        )}
+                        <span className="hidden sm:inline">{isSearching ? "Locating..." : "Locate Me"}</span>
+                      </button>
+                    </div>
+
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-30 rounded-xl bg-[var(--surface-elevated)] border border-[var(--surface-border)] shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                        {suggestions.map((item, idx) => (
+                          <button
+                            key={`${item.lat}-${item.lon}-${idx}`}
+                            type="button"
+                            onClick={() => selectSuggestion(item)}
+                            className="w-full text-left px-3.5 py-2.5 text-xs text-[var(--text-primary)] hover:bg-[var(--accent-amber-soft)] hover:text-[var(--accent-amber)] border-b border-[var(--surface-border)] last:border-b-0 transition-colors flex items-start gap-2"
+                          >
+                            <span className="mt-0.5 shrink-0">📍</span>
+                            <span className="line-clamp-2">{item.display_name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {locateStatus && (
                     <div
