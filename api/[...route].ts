@@ -5,6 +5,8 @@ import {
   sendOtpHandler,
   meHandler,
   logoutHandler,
+  googleAuthStartHandler,
+  googleAuthCallbackHandler,
 } from './_lib/routes/auth.ts';
 import {
   getAddressesHandler,
@@ -104,6 +106,8 @@ export default async function handler(req: any, res: any) {
 
   try {
     // --- Auth Endpoints ---
+    if (pathname === '/auth/google' && method === 'GET') return await googleAuthStartHandler(req, res);
+    if (pathname === '/auth/google/callback' && method === 'GET') return await googleAuthCallbackHandler(req, res);
     if (pathname === '/auth/identify' && method === 'POST') return await identifyHandler(req, res);
     if ((pathname === '/auth/staff-login' || pathname === '/admin/auth/login') && method === 'POST') return await staffLoginHandler(req, res);
     if (pathname === '/auth/verify-otp' && method === 'POST') return await verifyOtpHandler(req, res);

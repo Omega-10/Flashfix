@@ -4,7 +4,38 @@ import { getPool } from '../db.ts';
 import { issue, clearSession, requireAuth } from '../session.ts';
 import { HttpError } from '../authz.ts';
 import { sendOtpEmail } from '../email.ts';
-import { isDisposableEmail } from '@flashfix/shared';
+import { sanitizeEnvValue } from '../env.ts';
+
+const DISPOSABLE_EMAIL_DOMAINS: ReadonlySet<string> = new Set([
+  '0-mail.com', '10minutemail.com', '10minutemail.net', '10minutemail.org',
+  '1secmail.com', '1secmail.net', '1secmail.org', '20minutemail.com',
+  '30minutemail.com', 'burnermail.io', 'discard.email', 'discardmail.com',
+  'disposable.com', 'disposablemail.com', 'disposemail.com', 'dispostable.com',
+  'dropmail.me', 'emailondeck.com', 'fakeinbox.com', 'fakemailgenerator.com',
+  'generator.email', 'getairmail.com', 'getnada.com', 'grr.la',
+  'guerillamail.com', 'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.org',
+  'harakirimail.com', 'inboxkitten.com', 'jetable.org', 'mailcatch.com',
+  'maildrop.cc', 'mailexpire.com', 'mailforspam.com', 'mailinator.com',
+  'mailinator.net', 'mailinator.org', 'mailnesia.com', 'mailnull.com',
+  'mailtemp.info', 'meltmail.com', 'mintemail.com', 'mohmal.com',
+  'mytemp.email', 'mytrashmail.com', 'nada.ltd', 'sharklasers.com',
+  'spamgourmet.com', 'temp-mail.org', 'tempail.com', 'tempmail.com',
+  'throwawaymail.com', 'trashmail.com', 'yopmail.com', 'yopmail.fr', 'yopmail.net',
+]);
+
+function isDisposableEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') return false;
+  const parts = email.toLowerCase().trim().split('@');
+  if (parts.length !== 2) return false;
+  const host = parts[1];
+  if (DISPOSABLE_EMAIL_DOMAINS.has(host)) return true;
+  const segments = host.split('.');
+  for (let i = 1; i < segments.length - 1; i++) {
+    const parent = segments.slice(i).join('.');
+    if (DISPOSABLE_EMAIL_DOMAINS.has(parent)) return true;
+  }
+  return false;
+}
 
 function hashOtp(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
@@ -480,5 +511,231 @@ export async function sendOtpHandler(req: any, res: any) {
       return res.status(err.statusCode).json({ error: { code: err.code, message: err.message } });
     }
     return res.status(500).json({ error: { message: err.message || 'Failed to send OTP.' } });
+  }
+}
+
+function getGoogleCredentials() {
+  const clientId =
+    sanitizeEnvValue(process.env.GOOGLE_CLIENT_ID) ||
+    sanitizeEnvValue(process.env.Google_Client_ID) ||
+    sanitizeEnvValue(process.env.VITE_GOOGLE_CLIENT_ID);
+  const clientSecret =
+    sanitizeEnvValue(process.env.GOOGLE_CLIENT_SECRET) ||
+    sanitizeEnvValue(process.env.Google_client_secret) ||
+    sanitizeEnvValue(process.env.Google_Client_Secret);
+  return { clientId, clientSecret };
+}
+
+function getRequestOrigin(req: any): string {
+  const configured = sanitizeEnvValue(process.env.PUBLIC_APP_URL);
+  if (configured) return configured.replace(/\/$/, '');
+
+  const protoHeader = req.headers?.['x-forwarded-proto'];
+  const proto = Array.isArray(protoHeader)
+    ? protoHeader[0]
+    : (protoHeader || '').split(',')[0].trim() || 'https';
+  const hostHeader = req.headers?.['x-forwarded-host'] || req.headers?.host || 'localhost:5173';
+  const host = Array.isArray(hostHeader) ? hostHeader[0] : hostHeader.split(',')[0].trim();
+  const scheme = host.startsWith('localhost') || host.startsWith('127.0.0.1') ? 'http' : proto;
+  return `${scheme}://${host}`;
+}
+
+/**
+ * GET /auth/google
+ * Redirects user to Google OAuth 2.0 consent screen.
+ */
+export async function googleAuthStartHandler(req: any, res: any) {
+  const { clientId } = getGoogleCredentials();
+  const origin = getRequestOrigin(req);
+
+  if (!clientId) {
+    res.setHeader(
+      'Location',
+      `${origin}/login?error=${encodeURIComponent('Google Sign-In is not configured on this server.')}`
+    );
+    return res.status(302).end();
+  }
+
+  const redirectUri =
+    sanitizeEnvValue(process.env.GOOGLE_REDIRECT_URI) ||
+    `${origin}/api/auth/google/callback`;
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
+    access_type: 'online',
+    prompt: 'select_account',
+  });
+
+  res.setHeader('Location', `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+  return res.status(302).end();
+}
+
+/**
+ * GET /auth/google/callback
+ * Exchanges Google OAuth authorization code for profile, upserts user, issues signed JWT session cookie, and redirects.
+ */
+export async function googleAuthCallbackHandler(req: any, res: any) {
+  const { clientId, clientSecret } = getGoogleCredentials();
+  const origin = getRequestOrigin(req);
+
+  const url = new URL(req.url || '', origin);
+  const code = url.searchParams.get('code');
+  const oauthError = url.searchParams.get('error');
+
+  if (oauthError || !code) {
+    res.setHeader(
+      'Location',
+      `${origin}/login?error=${encodeURIComponent('Google Sign-In was cancelled or denied.')}`
+    );
+    return res.status(302).end();
+  }
+
+  if (!clientId || !clientSecret) {
+    res.setHeader(
+      'Location',
+      `${origin}/login?error=${encodeURIComponent('Google OAuth credentials are missing on the server.')}`
+    );
+    return res.status(302).end();
+  }
+
+  const redirectUri =
+    sanitizeEnvValue(process.env.GOOGLE_REDIRECT_URI) ||
+    `${origin}/api/auth/google/callback`;
+
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }).toString(),
+    });
+
+    if (!tokenRes.ok) {
+      const errBody = await tokenRes.text();
+      console.error('Google token exchange failed:', tokenRes.status, errBody);
+      res.setHeader(
+        'Location',
+        `${origin}/login?error=${encodeURIComponent('Failed to verify Google account. Check redirect URI configuration.')}`
+      );
+      return res.status(302).end();
+    }
+
+    const tokenData = (await tokenRes.json()) as { access_token?: string };
+    if (!tokenData.access_token) {
+      res.setHeader(
+        'Location',
+        `${origin}/login?error=${encodeURIComponent('No access token returned by Google.')}`
+      );
+      return res.status(302).end();
+    }
+
+    const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    if (!profileRes.ok) {
+      res.setHeader(
+        'Location',
+        `${origin}/login?error=${encodeURIComponent('Could not retrieve Google user profile.')}`
+      );
+      return res.status(302).end();
+    }
+
+    const profile = (await profileRes.json()) as {
+      sub?: string;
+      email?: string;
+      name?: string;
+      picture?: string;
+    };
+
+    const email = (profile.email || '').trim().toLowerCase();
+    if (!email) {
+      res.setHeader(
+        'Location',
+        `${origin}/login?error=${encodeURIComponent('Google account did not provide a valid email address.')}`
+      );
+      return res.status(302).end();
+    }
+
+    const db = getPool();
+    if (!db) {
+      res.setHeader(
+        'Location',
+        `${origin}/login?error=${encodeURIComponent('Database connection is unavailable.')}`
+      );
+      return res.status(302).end();
+    }
+
+    let userRow: any;
+    const existing = await db.query(`SELECT * FROM users WHERE LOWER(email) = LOWER($1)`, [email]);
+
+    if (existing.rows.length > 0) {
+      userRow = existing.rows[0];
+      if (userRow.is_active === false) {
+        res.setHeader(
+          'Location',
+          `${origin}/login?error=${encodeURIComponent('This account has been deactivated.')}`
+        );
+        return res.status(302).end();
+      }
+      await db.query(
+        `UPDATE users 
+         SET google_id = COALESCE(google_id, $1),
+             avatar_url = COALESCE($2, avatar_url),
+             email_verified = true,
+             updated_at = NOW()
+         WHERE id = $3`,
+        [profile.sub || null, profile.picture || null, userRow.id]
+      );
+    } else {
+      const displayName = (profile.name || email.split('@')[0]).trim();
+      const insertRes = await db.query(
+        `INSERT INTO users (id, name, email, role, google_id, avatar_url, email_verified, created_at, updated_at)
+         VALUES (gen_random_uuid(), $1, $2, 'CONSUMER', $3, $4, true, NOW(), NOW())
+         RETURNING *`,
+        [displayName, email, profile.sub || null, profile.picture || null]
+      );
+      userRow = insertRes.rows[0];
+    }
+
+    let storeIds: string[] = [];
+    if (userRow.role !== 'CONSUMER') {
+      const saRes = await db.query(`SELECT store_id FROM store_admins WHERE user_id = $1`, [userRow.id]);
+      storeIds = saRes.rows.map((r: any) => r.store_id);
+      if (userRow.store_id && !storeIds.includes(userRow.store_id)) {
+        storeIds.push(userRow.store_id);
+      }
+    }
+
+    const userPayload = {
+      id: userRow.id,
+      name: userRow.name,
+      email: userRow.email,
+      phone: userRow.phone,
+      role: userRow.role,
+      avatarUrl: userRow.avatar_url || profile.picture,
+      storeId: userRow.store_id || (storeIds[0] || null),
+      storeIds,
+    };
+
+    issue(res, userPayload, true);
+    const redirectPath = getRedirectForRole(userRow.role);
+    res.setHeader('Location', `${origin}${redirectPath}`);
+    return res.status(302).end();
+  } catch (err: any) {
+    console.error('Google OAuth callback error:', err);
+    res.setHeader(
+      'Location',
+      `${origin}/login?error=${encodeURIComponent('An unexpected error occurred during Google Sign-In.')}`
+    );
+    return res.status(302).end();
   }
 }
