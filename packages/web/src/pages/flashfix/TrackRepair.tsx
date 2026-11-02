@@ -19,10 +19,15 @@ import {
   Copy,
   Search,
   XCircle,
+  ChevronRight,
+  ArrowRight,
+  LogIn,
 } from "lucide-react";
 import { BookingStatus, BookingTrail } from "@flashfix/shared";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useAuthStore } from "@/store/authStore";
+import LoginModal from "@/components/flashfix/LoginModal";
 
 interface BookingDetail {
   id: string;
@@ -156,6 +161,11 @@ export default function TrackRepair() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
 
+  const { user, isAuthenticated, initAuth } = useAuthStore();
+  const [userBookings, setUserBookings] = useState<BookingDetail[]>([]);
+  const [loadingUserBookings, setLoadingUserBookings] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   const [lookupInput, setLookupInput] = useState("");
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [trail, setTrail] = useState<BookingTrail[]>([]);
@@ -170,14 +180,71 @@ export default function TrackRepair() {
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  const getHeaders = (): Record<string, string> => {
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
+
+  const getHeaders = useCallback((): Record<string, string> => {
     const token = localStorage.getItem("accessToken");
     const headers: Record<string, string> = {};
     if (token && token !== "cookie-session") {
       headers.Authorization = `Bearer ${token}`;
     }
+    if (user?.email) {
+      headers["x-user-email"] = user.email;
+    }
     return headers;
-  };
+  }, [user]);
+
+  const loadUserBookings = useCallback(async () => {
+    setLoadingUserBookings(true);
+    try {
+      const res = await fetch("/api/bookings/mine", {
+        credentials: "include",
+        headers: getHeaders(),
+      });
+      if (res.ok) {
+        const body = await res.json();
+        const list = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        const normalized = list.map((b: any) => ({
+          id: b.id,
+          trackingCode: b.trackingCode || b.tracking_code || b.id,
+          brand: b.brand,
+          deviceModel: b.deviceModel || b.device_model || "",
+          issueType: b.issueType || b.issue_type || "",
+          issueDescription: b.issueDescription || b.issue_description || null,
+          status: b.status,
+          scheduledDate: b.scheduledDate || b.scheduled_date || "",
+          scheduledTime: b.scheduledTime || b.scheduled_time || "",
+          pickupAddress: b.pickupAddress || b.pickup_address || "",
+          storeId: b.storeId || b.store_id,
+          storeName: b.storeName || b.store_name,
+          contactName: b.contactName || b.contact_name || "",
+          contactPhone: b.contactPhone || b.contact_phone || "",
+          contactEmail: b.contactEmail || b.contact_email,
+          estimatedCostPaise: b.estimatedCostPaise || b.estimated_cost_paise,
+          finalCostPaise: b.finalCostPaise || b.final_cost_paise,
+          assignedEmployeeName: b.assignedEmployeeName || b.assigned_employee_name,
+          technicianName: b.technicianName || b.technician_name,
+          pickupOtp: b.pickupOtp || b.pickup_otp,
+          custodyOtp: b.custodyOtp || b.custody_otp,
+          createdAt: b.createdAt || b.created_at,
+          updatedAt: b.updatedAt || b.updated_at,
+        }));
+        setUserBookings(normalized);
+      }
+    } catch (err) {
+      console.error("Failed to load user bookings:", err);
+    } finally {
+      setLoadingUserBookings(false);
+    }
+  }, [getHeaders]);
+
+  useEffect(() => {
+    if (!id && (isAuthenticated || user)) {
+      loadUserBookings();
+    }
+  }, [id, isAuthenticated, user, loadUserBookings]);
 
   const fetchBookingData = useCallback(
     async (isManual = false) => {
@@ -295,41 +362,272 @@ export default function TrackRepair() {
     navigate(`/flashfix/track/${encodeURIComponent(cleaned)}`);
   }
 
-  // Standalone Lookup Screen when visiting /flashfix/track without an ID
+  // Standalone Screen when visiting /flashfix/track without an ID
   if (!id) {
+    const activeBookings = userBookings.filter(
+      (b) => !["DELIVERED", "CANCELLED"].includes(b.status)
+    );
+    const pastBookings = userBookings.filter(
+      (b) => ["DELIVERED", "CANCELLED"].includes(b.status)
+    );
+
     return (
-      <div className="pt-32 pb-24 min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
-        <div className="section-container max-w-md">
-          <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl p-7 sm:p-8 shadow-sm">
-            <span className="font-mono text-xs uppercase tracking-widest text-[var(--accent)] font-semibold block mb-1">
-              REPAIR TRACKING
-            </span>
-            <h1 className="font-display font-bold text-2xl mb-2">Track Your Repair</h1>
-            <p className="text-xs text-[var(--ink-2)] mb-6 leading-relaxed">
-              Enter your booking ID to view real-time repair progress and status updates.
-            </p>
-            <form onSubmit={handleLookupSubmit} className="space-y-4">
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-3)]" />
+      <div className="pt-28 pb-24 min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
+        <div className="section-container max-w-4xl">
+          {/* Header */}
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="font-mono text-xs uppercase tracking-widest text-[var(--accent)] font-semibold block mb-1">
+                REPAIR TRACKING
+              </span>
+              <h1 className="font-display font-bold text-3xl">Track Your Repairs</h1>
+              <p className="text-xs text-[var(--ink-secondary)] mt-1">
+                {isAuthenticated && user
+                  ? `Real-time updates, courier dispatch, and custody tracking for ${user.name || user.email}`
+                  : "Track active repairs, technician handover, and order progress"}
+              </p>
+            </div>
+
+            {/* Quick manual lookup bar */}
+            <form onSubmit={handleLookupSubmit} className="flex gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
                 <input
                   type="text"
                   value={lookupInput}
                   onChange={(e) => setLookupInput(e.target.value)}
-                  placeholder="Enter booking ID"
-                  autoFocus
-                  required
-                  className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-4 text-sm font-mono text-[var(--ink)] placeholder-[var(--ink-3)] outline-none focus:border-[var(--accent)]"
+                  placeholder="Lookup booking ID..."
+                  className="w-full h-10 bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl pl-9 pr-3 text-xs font-mono text-[var(--ink)] placeholder-[var(--ink-muted)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <button
                 type="submit"
                 disabled={!lookupInput.trim()}
-                className="w-full h-11 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] font-semibold text-sm rounded-lg transition-all disabled:opacity-50"
+                className="h-10 px-4 bg-[var(--accent)] hover:brightness-105 text-[var(--accent-ink)] font-semibold text-xs rounded-xl transition-all disabled:opacity-50 whitespace-nowrap shadow-xs"
               >
-                Track Repair
+                Track
               </button>
             </form>
           </div>
+
+          {!isAuthenticated && !user ? (
+            /* Unauthenticated Prompt */
+            <div className="space-y-6">
+              <div className="p-6 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-base text-[var(--ink)]">Have an account with Flashfix?</h3>
+                  <p className="text-xs text-[var(--ink-secondary)] max-w-xl">
+                    Sign in to view all your active repairs, scheduled pickups, and completed orders automatically without typing booking IDs.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] font-semibold text-xs whitespace-nowrap shadow-xs hover:brightness-105 transition-all"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In to View Repairs</span>
+                </button>
+              </div>
+
+              {/* Standalone lookup card */}
+              <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center">
+                <h3 className="font-semibold text-base mb-2">Track by Booking Reference</h3>
+                <p className="text-xs text-[var(--ink-secondary)] mb-6">
+                  Enter your Flashfix booking ID from your confirmation email or SMS.
+                </p>
+                <form onSubmit={handleLookupSubmit} className="space-y-3">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
+                    <input
+                      type="text"
+                      value={lookupInput}
+                      onChange={(e) => setLookupInput(e.target.value)}
+                      placeholder="e.g. BK-..."
+                      required
+                      className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl pl-10 pr-4 text-sm font-mono text-[var(--ink)] placeholder-[var(--ink-muted)] outline-none focus:border-[var(--accent)]"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!lookupInput.trim()}
+                    className="w-full h-11 bg-[var(--accent)] hover:brightness-105 text-[var(--accent-ink)] font-semibold text-sm rounded-xl transition-all disabled:opacity-50"
+                  >
+                    Track Repair
+                  </button>
+                </form>
+              </div>
+            </div>
+          ) : loadingUserBookings ? (
+            <div className="py-20 text-center">
+              <div className="w-8 h-8 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-xs text-[var(--ink-muted)] font-mono">Loading your repairs...</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Active Repairs Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-lg text-[var(--ink)] flex items-center gap-2">
+                    <span>Active Repairs</span>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-[var(--accent-amber-soft)] text-[var(--accent)] font-semibold">
+                      {activeBookings.length}
+                    </span>
+                  </h2>
+                  <Link
+                    to="/flashfix/book"
+                    className="text-xs text-[var(--accent)] hover:underline font-semibold"
+                  >
+                    + Book New Repair
+                  </Link>
+                </div>
+
+                {activeBookings.length === 0 ? (
+                  <div className="p-8 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] text-center">
+                    <CheckCircle2 className="w-8 h-8 text-[var(--accent)] mx-auto mb-2 opacity-80" />
+                    <h3 className="font-semibold text-sm text-[var(--ink)]">No active repairs in progress</h3>
+                    <p className="text-xs text-[var(--ink-secondary)] mt-1 mb-4">
+                      All your previous repairs are completed. Need a phone or tablet fixed?
+                    </p>
+                    <Link
+                      to="/flashfix/book"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] font-semibold text-xs shadow-xs"
+                    >
+                      Book Repair Now
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {activeBookings.map((b) => {
+                      const stepIdx = mapStatusToStepIndex(b.status);
+                      const currentDef = NINE_STEPS[Math.max(0, stepIdx - 1)];
+                      return (
+                        <div
+                          key={b.id}
+                          className="p-5 sm:p-6 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] hover:border-[var(--accent)]/40 transition-all shadow-xs"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                            <div>
+                              <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                                <span className="font-mono text-xs font-semibold text-[var(--ink-muted)]">
+                                  #{b.id}
+                                </span>
+                                <StatusPill status={b.status} />
+                                {b.storeName && (
+                                  <span className="text-[11px] text-[var(--ink-muted)]">
+                                    • {b.storeName}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="font-bold text-base text-[var(--ink)]">
+                                {b.brand} {b.deviceModel}
+                              </h3>
+                              <p className="text-xs text-[var(--ink-secondary)] mt-0.5">
+                                Issue: {b.issueType}
+                              </p>
+                            </div>
+
+                            <Link
+                              to={`/flashfix/track/${encodeURIComponent(b.id)}`}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:brightness-105 text-[var(--accent-ink)] font-semibold text-xs whitespace-nowrap transition-all self-start sm:self-center"
+                            >
+                              <span>Track Live Progress</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+
+                          {/* Step progress bar */}
+                          <div className="space-y-1.5 pt-3 border-t border-[var(--hairline)]">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-medium text-[var(--ink)]">
+                                Stage {stepIdx} of 9: {currentDef?.title || b.status}
+                              </span>
+                              <span className="font-mono text-[11px] text-[var(--ink-muted)]">
+                                {b.scheduledDate ? `${b.scheduledDate} (${b.scheduledTime || ""})` : ""}
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-[var(--surface-2)] rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-[var(--accent)] transition-all duration-500 rounded-full"
+                                style={{ width: `${Math.min(100, Math.max(10, (stepIdx / 9) * 100))}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Handover OTP highlight if pickup OTP is sent */}
+                          {b.status === "PICKUP_OTP_SENT" && b.pickupOtp && (
+                            <div className="mt-4 p-3 rounded-xl bg-[var(--accent-amber-soft)] border border-[var(--accent)]/30 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <KeyRound className="w-4 h-4 text-[var(--accent)]" />
+                                <span className="text-xs text-[var(--ink)]">
+                                  Pickup OTP: <strong className="font-mono text-sm tracking-widest text-[var(--accent)]">{b.pickupOtp}</strong>
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-[var(--ink-muted)] hidden sm:inline">
+                                Share with courier upon arrival
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Past Repairs Section */}
+              {pastBookings.length > 0 && (
+                <div>
+                  <h2 className="font-bold text-lg text-[var(--ink)] mb-4 flex items-center gap-2">
+                    <span>Previous Repairs</span>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--ink-muted)] font-semibold">
+                      {pastBookings.length}
+                    </span>
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {pastBookings.map((b) => (
+                      <div
+                        key={b.id}
+                        className="p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--hairline)] flex items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-[10px] text-[var(--ink-muted)]">#{b.id}</span>
+                            <StatusPill status={b.status} />
+                          </div>
+                          <h4 className="font-semibold text-xs text-[var(--ink)] truncate">
+                            {b.brand} {b.deviceModel}
+                          </h4>
+                          <p className="text-[11px] text-[var(--ink-secondary)] truncate">
+                            {b.issueType} • {b.scheduledDate}
+                          </p>
+                        </div>
+                        <Link
+                          to={`/flashfix/track/${encodeURIComponent(b.id)}`}
+                          className="shrink-0 p-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-xs text-[var(--ink)] transition-colors"
+                          title="View repair receipt"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isLoginModalOpen && (
+            <LoginModal
+              isOpen={isLoginModalOpen}
+              onClose={() => setIsLoginModalOpen(false)}
+              onSuccess={() => {
+                setIsLoginModalOpen(false);
+                loadUserBookings();
+              }}
+            />
+          )}
         </div>
       </div>
     );
@@ -396,9 +694,9 @@ export default function TrackRepair() {
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
-              to="/flashfix/profile"
-              className="p-2 rounded-lg bg-[var(--surface-1)] border border-[var(--hairline)] text-[var(--ink-2)] hover:text-[var(--ink)] transition-colors"
-              title="Back to My Account"
+              to="/flashfix/track"
+              className="p-2 rounded-lg bg-[var(--surface-1)] border border-[var(--hairline)] text-[var(--ink-secondary)] hover:text-[var(--ink)] transition-colors"
+              title="Back to all repairs"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>

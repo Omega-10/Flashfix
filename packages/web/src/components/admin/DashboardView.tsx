@@ -63,29 +63,24 @@ export default function DashboardView({
     <div className="space-y-6 sm:space-y-8 max-w-full">
       {/* ── Unassigned Bookings Alert Banner ── */}
       {stats.unassignedCount > 0 && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/40">
-              <AlertTriangle className="w-5 h-5 animate-bounce" />
-            </div>
+        <div className="p-4 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] border-l-4 border-l-[#ef8f0b] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-[#ef8f0b] shrink-0" />
             <div>
-              <h3 className="font-bold text-sm text-[#f5f0eb] flex items-center gap-2 flex-wrap">
-                <span>Dispatch Attention Required:</span>
-                <span className="font-mono text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                  {stats.unassignedCount} Unassigned Booking{stats.unassignedCount > 1 ? "s" : ""}
-                </span>
+              <h3 className="font-semibold text-sm text-[var(--ink)]">
+                {stats.unassignedCount} booking{stats.unassignedCount > 1 ? "s" : ""} waiting for assignment
               </h3>
-              <p className="text-xs text-[#a8a09a] mt-0.5">
-                New repair orders have been registered and require technician & mobile courier allocation.
+              <p className="text-xs text-[var(--ink-muted)] mt-0.5">
+                Assign a technician and pickup partner to start these repairs.
               </p>
             </div>
           </div>
 
           <button
             onClick={() => onNavigateToBookings("PENDING")}
-            className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[#ef8f0b] hover:bg-[#d87c09] text-black font-semibold text-xs rounded-xl px-5 py-2.5 transition-all shadow-md shadow-[#ef8f0b]/20 shrink-0"
+            className="min-h-[40px] inline-flex items-center justify-center gap-2 bg-[#ef8f0b] hover:bg-[#d87c09] text-black font-semibold text-xs rounded-xl px-4 py-2 transition-colors shrink-0"
           >
-            <span>Assign Technicians Now</span>
+            <span>Review</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -94,28 +89,28 @@ export default function DashboardView({
       {/* ── Top 4 KPI Stat Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {/* KPI 1: Today's Bookings */}
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[#807a75]">
+            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)]">
               Total Today
             </span>
-            <div className="p-1.5 sm:p-2 rounded-xl bg-[#1e1e1e] text-[#f5f0eb] border border-[rgba(255,255,255,0.06)]">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-[var(--surface-3)] text-[var(--ink)] border border-[var(--hairline)]">
               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ef8f0b]" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-display font-bold text-[#f5f0eb]">
+          <div className="text-2xl sm:text-3xl font-display font-bold text-[var(--ink)]">
             {stats.todayTotal}
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-[#a8a09a] mt-1.5 sm:mt-2 font-mono">
+          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-[var(--ink-secondary)] mt-1.5 sm:mt-2 font-mono">
             <TrendingUp className="w-3 h-3 text-emerald-400" />
             <span>Active Service Intake</span>
           </div>
         </div>
 
         {/* KPI 2: Pending Assignment / Unassigned */}
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[#807a75]">
+            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)]">
               Unassigned
             </span>
             <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -125,15 +120,15 @@ export default function DashboardView({
           <div className="text-2xl sm:text-3xl font-display font-bold text-amber-400">
             {stats.unassignedCount}
           </div>
-          <div className="text-[10px] sm:text-[11px] text-[#a8a09a] mt-1.5 sm:mt-2 font-mono">
+          <div className="text-[10px] sm:text-[11px] text-[var(--ink-secondary)] mt-1.5 sm:mt-2 font-mono">
             Awaiting Staff Allocation
           </div>
         </div>
 
         {/* KPI 3: In Active Repair */}
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[#807a75]">
+            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)]">
               In Repair
             </span>
             <div className="p-1.5 sm:p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -143,15 +138,15 @@ export default function DashboardView({
           <div className="text-2xl sm:text-3xl font-display font-bold text-blue-400">
             {stats.inRepair}
           </div>
-          <div className="text-[10px] sm:text-[11px] text-[#a8a09a] mt-1.5 sm:mt-2 font-mono">
+          <div className="text-[10px] sm:text-[11px] text-[var(--ink-secondary)] mt-1.5 sm:mt-2 font-mono">
             Under Diagnostics & Fix
           </div>
         </div>
 
         {/* KPI 4: Delivered Today */}
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[#807a75]">
+            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)]">
               Delivered
             </span>
             <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -161,7 +156,7 @@ export default function DashboardView({
           <div className="text-2xl sm:text-3xl font-display font-bold text-emerald-400">
             {stats.delivered}
           </div>
-          <div className="text-[10px] sm:text-[11px] text-[#a8a09a] mt-1.5 sm:mt-2 font-mono">
+          <div className="text-[10px] sm:text-[11px] text-[var(--ink-secondary)] mt-1.5 sm:mt-2 font-mono">
             100% Quality Checked
           </div>
         </div>
@@ -170,10 +165,10 @@ export default function DashboardView({
       {/* ── Active Hubs Overview ── */}
       <div>
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h2 className="font-bold text-sm sm:text-base text-[#f5f0eb]">
+          <h2 className="font-bold text-sm sm:text-base text-[var(--ink)]">
             Hyderabad Store Hubs & Workload
           </h2>
-          <span className="text-[10px] sm:text-xs font-mono text-[#807a75]">
+          <span className="text-[10px] sm:text-xs font-mono text-[var(--ink-muted)]">
             4 Active Operational Hubs
           </span>
         </div>
@@ -187,36 +182,36 @@ export default function DashboardView({
             return (
               <div
                 key={store.id}
-                className="p-4 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.08)] hover:border-[#ef8f0b]/30 transition-all"
+                className="p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--hairline)] hover:border-[#ef8f0b]/30 transition-all"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <StoreIcon className="w-4 h-4 text-[#ef8f0b]" />
-                    <span className="font-mono text-xs font-bold text-[#f5f0eb] truncate">
+                    <span className="font-mono text-xs font-bold text-[var(--ink)] truncate">
                       {store.name.split(" ")[0]}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1e1e1e] text-[#807a75]">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-3)] text-[var(--ink-muted)]">
                     {store.id}
                   </span>
                 </div>
 
-                <div className="text-[11px] text-[#807a75] truncate mb-3">
+                <div className="text-[11px] text-[var(--ink-muted)] truncate mb-3">
                   {store.address || store.city}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[rgba(255,255,255,0.06)] text-center text-xs">
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--hairline)] text-center text-xs">
                   <div>
-                    <span className="block text-[10px] text-[#807a75]">Total</span>
-                    <span className="font-mono font-bold text-[#f5f0eb]">{storeBookings.length}</span>
+                    <span className="block text-[10px] text-[var(--ink-muted)]">Total</span>
+                    <span className="font-mono font-bold text-[var(--ink)]">{storeBookings.length}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#807a75]">In Lab</span>
+                    <span className="block text-[10px] text-[var(--ink-muted)]">In Lab</span>
                     <span className="font-mono font-bold text-amber-400">{inRepairCount}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#807a75]">Pending</span>
-                    <span className={`font-mono font-bold ${unassigned > 0 ? "text-amber-400" : "text-[#807a75]"}`}>
+                    <span className="block text-[10px] text-[var(--ink-muted)]">Pending</span>
+                    <span className={`font-mono font-bold ${unassigned > 0 ? "text-amber-400" : "text-[var(--ink-muted)]"}`}>
                       {unassigned}
                     </span>
                   </div>
@@ -231,10 +226,10 @@ export default function DashboardView({
       <div>
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div>
-            <h2 className="font-bold text-sm sm:text-base text-[#f5f0eb]">
+            <h2 className="font-bold text-sm sm:text-base text-[var(--ink)]">
               Recent Service Orders
             </h2>
-            <p className="text-[11px] sm:text-xs text-[#807a75]">
+            <p className="text-[11px] sm:text-xs text-[var(--ink-muted)]">
               Real-time dispatch intake from consumer portal
             </p>
           </div>
@@ -249,10 +244,10 @@ export default function DashboardView({
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl overflow-hidden">
+        <div className="hidden md:block bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#1a1a1a] text-[#807a75] font-mono text-[11px] uppercase tracking-wider">
+              <thead className="bg-[var(--surface-2)] text-[var(--ink-muted)] font-mono text-[11px] uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">ID</th>
                   <th className="px-5 py-3.5">Customer Contact</th>
@@ -263,31 +258,31 @@ export default function DashboardView({
                   <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[rgba(255,255,255,0.06)] text-[#f5f0eb]">
+              <tbody className="divide-y divide-[var(--hairline)] text-[var(--ink)]">
                 {recentBookings.slice(0, 6).map((b) => {
                   const badge = getStatusBadge(b.status);
                   const isUnassigned = !b.assignedEmployeeName;
                   return (
                     <tr
                       key={b.id}
-                      className="hover:bg-[#1a1a1a]/60 transition-colors cursor-pointer"
+                      className="hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
                       onClick={() => onSelectBooking(b)}
                     >
                       <td className="px-5 py-4 font-mono font-bold text-[#ef8f0b]">
                         {b.id}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="font-semibold text-[#f5f0eb]">{b.contactName}</div>
-                        <div className="text-[11px] text-[#807a75]">{b.contactPhone}</div>
+                        <div className="font-semibold text-[var(--ink)]">{b.contactName}</div>
+                        <div className="text-[11px] text-[var(--ink-muted)]">{b.contactPhone}</div>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 font-medium text-[#f5f0eb]">
+                        <div className="flex items-center gap-1.5 font-medium text-[var(--ink)]">
                           <Smartphone className="w-3.5 h-3.5 text-[#ef8f0b]" />
                           <span>{b.brand} {b.deviceModel}</span>
                         </div>
-                        <div className="text-[11px] text-[#a8a09a] mt-0.5">{b.issueType}</div>
+                        <div className="text-[11px] text-[var(--ink-secondary)] mt-0.5">{b.issueType}</div>
                       </td>
-                      <td className="px-5 py-4 text-[#a8a09a] text-[11px]">
+                      <td className="px-5 py-4 text-[var(--ink-secondary)] text-[11px]">
                         {getStoreName(b.storeId)}
                       </td>
                       <td className="px-5 py-4">
@@ -305,8 +300,8 @@ export default function DashboardView({
                           </span>
                         ) : (
                           <div className="text-xs">
-                            <span className="font-medium text-[#f5f0eb] block">{b.assignedEmployeeName}</span>
-                            <span className="text-[10px] text-[#807a75] block font-mono">Tech: {b.technicianName}</span>
+                            <span className="font-medium text-[var(--ink)] block">{b.assignedEmployeeName}</span>
+                            <span className="text-[10px] text-[var(--ink-muted)] block font-mono">Tech: {b.technicianName}</span>
                           </div>
                         )}
                       </td>
@@ -323,14 +318,14 @@ export default function DashboardView({
                           ) : (
                             <button
                               onClick={() => onAssignBooking(b)}
-                              className="border border-[rgba(255,255,255,0.08)] hover:border-[#ef8f0b]/40 text-[#a8a09a] hover:text-[#ef8f0b] text-xs px-2.5 py-1.5 rounded-lg transition-colors"
+                              className="border border-[var(--hairline)] hover:border-[#ef8f0b]/40 text-[var(--ink-secondary)] hover:text-[#ef8f0b] text-xs px-2.5 py-1.5 rounded-lg transition-colors"
                             >
                               Reassign
                             </button>
                           )}
                           <button
                             onClick={() => onSelectBooking(b)}
-                            className="p-1.5 text-[#807a75] hover:text-[#f5f0eb] hover:bg-[#1e1e1e] rounded-lg transition-colors"
+                            className="p-1.5 text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-3)] rounded-lg transition-colors"
                             title="Audit Trail & Details"
                           >
                             <Eye className="w-4 h-4" />
@@ -354,7 +349,7 @@ export default function DashboardView({
               <div
                 key={b.id}
                 onClick={() => onSelectBooking(b)}
-                className="p-4 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.08)] active:bg-[#1a1a1a] transition-all cursor-pointer"
+                className="p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--hairline)] active:bg-[var(--surface-2)] transition-all cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-mono text-xs text-[#ef8f0b] font-bold">{b.id}</span>
@@ -363,15 +358,15 @@ export default function DashboardView({
                   </span>
                 </div>
 
-                <div className="text-sm font-semibold text-[#f5f0eb]">
+                <div className="text-sm font-semibold text-[var(--ink)]">
                   {b.brand} {b.deviceModel}
                 </div>
-                <div className="text-xs text-[#807a75] mt-0.5">{b.issueType}</div>
+                <div className="text-xs text-[var(--ink-muted)] mt-0.5">{b.issueType}</div>
 
-                <div className="text-xs text-[#a8a09a] mt-3 pt-2.5 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between gap-2">
+                <div className="text-xs text-[var(--ink-secondary)] mt-3 pt-2.5 border-t border-[var(--hairline)] flex items-center justify-between gap-2">
                   <div>
-                    <span className="text-[#f5f0eb] font-medium block">{b.contactName}</span>
-                    <span className="text-[10px] text-[#807a75]">{b.scheduledTime} • {getStoreName(b.storeId).split(" ")[0]}</span>
+                    <span className="text-[var(--ink)] font-medium block">{b.contactName}</span>
+                    <span className="text-[10px] text-[var(--ink-muted)]">{b.scheduledTime} • {getStoreName(b.storeId).split(" ")[0]}</span>
                   </div>
 
                   <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">

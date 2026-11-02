@@ -9,9 +9,7 @@ import { useAuthStore } from "@/store/authStore";
 const flashfixLinks = [
   { to: "/flashfix", label: "Home" },
   { to: "/flashfix/services", label: "Services" },
-  { to: "/flashfix/book", label: "Book Repair" },
   { to: "/flashfix/track", label: "Track Repair" },
-  { to: "/flashfix/profile", label: "Profile" },
   { to: "/flashfix/about", label: "About" },
   { to: "/flashfix/contact", label: "Contact" },
 ];
@@ -55,10 +53,10 @@ function NavFlipLink({ to, label, end }: { to: string; label: string; end?: bool
           initial="initial"
           transition={{ duration: 0.3 }}
           style={{ transformStyle: "preserve-3d" }}
-          className="relative font-medium text-sm py-1.5 px-3 rounded-lg select-none"
+          className="relative font-medium text-sm py-1.5 px-2.5 rounded-lg select-none whitespace-nowrap"
         >
           {/* Sizing anchor */}
-          <span className="invisible block px-0.5">{label}</span>
+          <span className="invisible block px-0.5 whitespace-nowrap">{label}</span>
 
           {/* Front Face */}
           <motion.div
@@ -153,7 +151,7 @@ export default function Navbar() {
               <Magnetic strength={0.3}>
                 <Link
                   to="/story"
-                  className="hidden md:flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-xs font-mono uppercase tracking-widest"
+                  className="hidden xl:flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-xs font-mono uppercase tracking-widest"
                 >
                   <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current">
                     <path d="M12.5 7H4.9l3.1-3.1L7 2.9 2.4 7.5 7 12.1l1-1-3.1-3.1h7.6v-1z" />
@@ -207,7 +205,7 @@ export default function Navbar() {
 
           {/* ── Center: 3D Flip Nav links (Perspective Container) ── */}
           <nav
-            className="hidden lg:flex items-center gap-1.5"
+            className="hidden lg:flex items-center gap-0.5"
             style={{ perspective: "1000px" }}
           >
             {links.map((link) => (
@@ -226,47 +224,21 @@ export default function Navbar() {
             )}
           </nav>
 
-          {/* ── Right: Auth + CTA + Theme Toggle ── */}
-          <div className="flex items-center gap-3">
+          {/* ── Right: Theme · Primary CTA · Account (always last) ── */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <ThemeToggle />
 
-            {/* User Account / Sign In */}
-            {isAuthenticated ? (
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Link
-                  to="/flashfix/profile"
-                  className="flex items-center gap-2 bg-[var(--surface-elevated)] hover:border-[var(--accent)] border border-[var(--surface-border)] px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-primary)] transition-all shadow-xs"
-                  title="View Profile & Bookings"
-                >
-                  <div className="w-6 h-6 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center font-bold text-xs">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
-                  </div>
-                  <span className="hidden sm:inline-block max-w-[100px] truncate">{user?.name || "Profile"}</span>
-                </Link>
-              </motion.div>
-            ) : (
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Link
-                  to="/login"
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-full border border-[var(--surface-border)] hover:border-[var(--accent)] text-[var(--text-primary)] hover:text-[var(--accent)] transition-all bg-[var(--surface-elevated)]"
-                >
-                  <LogIn className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  <span>Sign In</span>
-                </Link>
-              </motion.div>
-            )}
-
-            {/* Desktop Primary CTA Button with Scale Hover Animation */}
+            {/* Desktop Primary CTA */}
             {platform === "flashfix" && (
               <motion.div
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="hidden md:inline-flex"
+                className="hidden md:block"
               >
                 <Link
                   to="/flashfix/book"
-                  className="px-5 py-2 rounded-full text-sm font-semibold bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs hover:brightness-105 transition-all"
+                  className="inline-flex items-center h-9 px-4 rounded-full text-sm font-semibold whitespace-nowrap bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-105 transition-all"
                 >
                   Book Repair
                 </Link>
@@ -277,13 +249,37 @@ export default function Navbar() {
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="hidden md:inline-flex"
+                className="hidden md:block"
               >
                 <Link
                   to="/fortix/products"
-                  className="px-5 py-2 rounded-full text-sm font-semibold bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs hover:brightness-105 transition-all"
+                  className="inline-flex items-center h-9 px-4 rounded-full text-sm font-semibold whitespace-nowrap bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-105 transition-all"
                 >
                   Shop Now
+                </Link>
+              </motion.div>
+            )}
+
+            {/* Account — always the last item */}
+            {isAuthenticated ? (
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/flashfix/profile"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-amber-soft)] border border-[var(--surface-border)] hover:border-[var(--accent)] text-[var(--accent)] font-bold text-sm transition-colors shadow-xs"
+                  title={user?.name ? `${user.name} — Profile` : "Profile"}
+                  aria-label="Profile"
+                >
+                  {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                </Link>
+              </motion.div>
+            ) : (
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="hidden sm:block">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-semibold whitespace-nowrap border border-[var(--surface-border)] hover:border-[var(--accent)] bg-[var(--surface-elevated)] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors shadow-xs"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span>Sign In</span>
                 </Link>
               </motion.div>
             )}

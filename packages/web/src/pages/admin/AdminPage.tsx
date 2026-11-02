@@ -214,7 +214,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
         setStores(storesData);
       }
     } catch (err) {
-      console.error("Failed to load operations telemetry:", err);
+      console.error("Failed to load admin data:", err);
     } finally {
       setLoading(false);
     }
@@ -260,7 +260,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-[#f5f0eb] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)] flex items-center justify-center">
         <div className="w-7 h-7 border-2 border-[#ef8f0b] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -277,7 +277,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f0eb] flex flex-col font-sans">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)] flex flex-col font-sans">
       <AdminNavbar
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -297,8 +297,8 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
         {loading ? (
           <div className="py-24 text-center">
             <div className="w-8 h-8 border-2 border-[#ef8f0b] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="font-mono text-xs uppercase tracking-widest text-[#807a75]">
-              Loading Operations Telemetry...
+            <p className="font-mono text-xs uppercase tracking-widest text-[var(--ink-muted)]">
+              Loading…
             </p>
           </div>
         ) : (

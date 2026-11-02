@@ -155,7 +155,7 @@ export default async function handler(req: any, res: any) {
 
     // --- Customer Bookings & Operations ---
     if (pathname === '/bookings' && method === 'POST') return await createBookingHandler(req, res);
-    if (pathname === '/bookings/mine' && method === 'GET') return await getMyBookingsHandler(req, res);
+    if ((pathname === '/bookings/mine' || pathname === '/bookings/my' || pathname === '/account/bookings') && method === 'GET') return await getMyBookingsHandler(req, res);
 
     const bookingCancelMatch = pathname.match(/^\/bookings\/([^\/]+)\/cancel$/);
     if (bookingCancelMatch && method === 'POST') return await cancelBookingHandler(req, res, bookingCancelMatch[1]);

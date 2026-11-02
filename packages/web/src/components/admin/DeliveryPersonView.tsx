@@ -113,26 +113,23 @@ export default function DeliveryPersonView({
   return (
     <div className="space-y-4 sm:space-y-6 max-w-full overflow-x-hidden pb-12 sm:pb-0">
       {/* ── Operative Mobile Header ── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)] flex items-center justify-between gap-3">
+      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
             <Bike className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm sm:text-base text-[#f5f0eb] truncate">
-                Delivery Route Console
-              </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
-            </div>
-            <p className="text-[11px] text-[#807a75] font-mono truncate">
-              Assigned Pickups & Return Deliveries
+            <span className="font-bold text-sm sm:text-base text-[var(--ink)] truncate block">
+              My Deliveries
+            </span>
+            <p className="text-xs text-[var(--ink-muted)] truncate">
+              Pickups and returns assigned to you
             </p>
           </div>
         </div>
 
         <div className="shrink-0 text-right">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[#807a75] block">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-muted)] block">
             Active Tasks
           </span>
           <span className="text-xl sm:text-2xl font-display font-bold text-[#ef8f0b]">
@@ -142,13 +139,13 @@ export default function DeliveryPersonView({
       </div>
 
       {/* ── Segmented Control: Active vs Completed ── */}
-      <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)]">
+      <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)]">
         <button
           onClick={() => setActiveTaskTab("ACTIVE")}
           className={`min-h-[44px] flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all ${
             activeTaskTab === "ACTIVE"
-              ? "bg-[#1e1e1e] text-[#ef8f0b] shadow border border-[rgba(255,255,255,0.08)]"
-              : "text-[#807a75] hover:text-[#f5f0eb]"
+              ? "bg-[var(--surface-3)] text-[#ef8f0b] shadow border border-[var(--hairline)]"
+              : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
           <span>Active Tasks</span>
@@ -161,8 +158,8 @@ export default function DeliveryPersonView({
           onClick={() => setActiveTaskTab("COMPLETED")}
           className={`min-h-[44px] flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all ${
             activeTaskTab === "COMPLETED"
-              ? "bg-[#1e1e1e] text-[#ef8f0b] shadow border border-[rgba(255,255,255,0.08)]"
-              : "text-[#807a75] hover:text-[#f5f0eb]"
+              ? "bg-[var(--surface-3)] text-[#ef8f0b] shadow border border-[var(--hairline)]"
+              : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
           <span>Completed Today</span>
@@ -176,10 +173,10 @@ export default function DeliveryPersonView({
       {activeTaskTab === "ACTIVE" && (
         <div className="space-y-4">
           {activeDeliveries.length === 0 ? (
-            <div className="py-16 text-center bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-6">
+            <div className="py-16 text-center bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-6">
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-[#f5f0eb]">No Pending Deliveries</h3>
-              <p className="text-xs text-[#807a75] mt-1">
+              <h3 className="text-sm font-bold text-[var(--ink)]">No Pending Deliveries</h3>
+              <p className="text-xs text-[var(--ink-muted)] mt-1">
                 You have fulfilled all assigned customer pickups and returns for this route.
               </p>
             </div>
@@ -192,20 +189,20 @@ export default function DeliveryPersonView({
               return (
                 <div
                   key={booking.id}
-                  className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5 transition-all space-y-4"
+                  className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5 transition-all space-y-4"
                 >
                   {/* Task Card Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-[rgba(255,255,255,0.06)]">
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--hairline)]">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-[#ef8f0b]">
                         {booking.id}
                       </span>
-                      <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-[#1e1e1e] text-[#a8a09a] border border-[rgba(255,255,255,0.08)]">
+                      <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-[var(--surface-3)] text-[var(--ink-secondary)] border border-[var(--hairline)]">
                         {booking.status}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 text-[11px] text-[#807a75] font-mono">
+                    <div className="flex items-center gap-1 text-[11px] text-[var(--ink-muted)] font-mono">
                       <Clock className="w-3.5 h-3.5 text-[#ef8f0b]" />
                       <span>{booking.scheduledTime}</span>
                     </div>
@@ -213,24 +210,24 @@ export default function DeliveryPersonView({
 
                   {/* Customer & Address Details */}
                   <div>
-                    <h3 className="font-bold text-sm text-[#f5f0eb] flex items-center gap-1.5">
+                    <h3 className="font-bold text-sm text-[var(--ink)] flex items-center gap-1.5">
                       <Smartphone className="w-4 h-4 text-[#ef8f0b]" />
                       <span>{booking.brand} {booking.deviceModel}</span>
                     </h3>
-                    <p className="text-xs text-[#807a75] mt-0.5">
+                    <p className="text-xs text-[var(--ink-muted)] mt-0.5">
                       Issue: {booking.issueType}
                     </p>
 
-                    <div className="mt-3 p-3 rounded-xl bg-[#1a1a1a] border border-[rgba(255,255,255,0.04)] text-xs text-[#f5f0eb]">
-                      <div className="font-semibold text-xs text-[#f5f0eb] flex items-center gap-1 mb-1">
+                    <div className="mt-3 p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] text-xs text-[var(--ink)]">
+                      <div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1 mb-1">
                         <MapPin className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0" />
                         <span>Pickup Location:</span>
                       </div>
-                      <p className="text-xs text-[#a8a09a] leading-relaxed">
+                      <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
                         {booking.pickupAddress}
                       </p>
-                      <div className="mt-1.5 text-[11px] text-[#807a75]">
-                        Contact: <strong className="text-[#f5f0eb]">{booking.contactName}</strong> ({booking.contactPhone})
+                      <div className="mt-1.5 text-[11px] text-[var(--ink-muted)]">
+                        Contact: <strong className="text-[var(--ink)]">{booking.contactName}</strong> ({booking.contactPhone})
                       </div>
                     </div>
                   </div>
@@ -239,7 +236,7 @@ export default function DeliveryPersonView({
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <a
                       href={`tel:${booking.contactPhone}`}
-                      className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[#1e1e1e] hover:bg-[#252525] border border-[rgba(255,255,255,0.08)] hover:border-[#ef8f0b]/40 rounded-xl text-xs font-semibold text-[#f5f0eb] active:scale-95 transition-all"
+                      className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[var(--surface-3)] hover:bg-[var(--surface-3)] border border-[var(--hairline)] hover:border-[#ef8f0b]/40 rounded-xl text-xs font-semibold text-[var(--ink)] active:scale-95 transition-all"
                     >
                       <Phone className="w-4 h-4 text-emerald-400" />
                       <span>Call Customer</span>
@@ -249,7 +246,7 @@ export default function DeliveryPersonView({
                       href={mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[#1e1e1e] hover:bg-[#252525] border border-[rgba(255,255,255,0.08)] hover:border-[#ef8f0b]/40 rounded-xl text-xs font-semibold text-[#f5f0eb] active:scale-95 transition-all"
+                      className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[var(--surface-3)] hover:bg-[var(--surface-3)] border border-[var(--hairline)] hover:border-[#ef8f0b]/40 rounded-xl text-xs font-semibold text-[var(--ink)] active:scale-95 transition-all"
                     >
                       <Navigation className="w-4 h-4 text-[#ef8f0b]" />
                       <span>Open GPS</span>
@@ -264,7 +261,7 @@ export default function DeliveryPersonView({
                   )}
 
                   {/* Step-by-Step Lifecycle Action Button (Touch Target >= 44px) */}
-                  <div className="pt-2 border-t border-[rgba(255,255,255,0.06)]">
+                  <div className="pt-2 border-t border-[var(--hairline)]">
                     {/* Status: CONFIRMED -> Start Route */}
                     {booking.status === "CONFIRMED" && (
                       <button
@@ -301,7 +298,7 @@ export default function DeliveryPersonView({
                             onSuccess: onRefreshData,
                           })
                         }
-                        className="min-h-[44px] w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ef8f0b] to-[#f59e0b] text-black font-bold text-xs rounded-xl px-4 py-2.5 transition-all shadow-lg shadow-[#ef8f0b]/25 active:scale-98 animate-pulse"
+                        className="min-h-[44px] w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ef8f0b] to-[#f59e0b] text-black font-bold text-xs rounded-xl px-4 py-2.5 transition-all shadow-lg shadow-[#ef8f0b]/25 active:scale-98"
                       >
                         <KeyRound className="w-4 h-4" />
                         <span>🔑 Enter Customer Doorstep OTP</span>
@@ -332,7 +329,7 @@ export default function DeliveryPersonView({
                         <button
                           disabled={isLoading}
                           onClick={() => handleHandoverAtHub(booking.id)}
-                          className="min-h-[44px] w-full inline-flex items-center justify-center gap-2 bg-[#1e1e1e] hover:bg-[#252525] text-[#f5f0eb] border border-[rgba(255,255,255,0.12)] font-semibold text-xs rounded-xl px-4 py-2.5 transition-all active:scale-98 disabled:opacity-50"
+                          className="min-h-[44px] w-full inline-flex items-center justify-center gap-2 bg-[var(--surface-3)] hover:bg-[var(--surface-3)] text-[var(--ink)] border border-[var(--hairline-strong)] font-semibold text-xs rounded-xl px-4 py-2.5 transition-all active:scale-98 disabled:opacity-50"
                         >
                           <Send className="w-4 h-4 text-[#ef8f0b]" />
                           <span>{isLoading ? "Dispatching..." : "Resend Custody OTP to Tech"}</span>
@@ -366,7 +363,7 @@ export default function DeliveryPersonView({
             <div
               key={b.id}
               onClick={() => onSelectBooking(b)}
-              className="p-4 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.08)] flex items-center justify-between gap-3 cursor-pointer hover:border-[#ef8f0b]/30 transition-all"
+              className="p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--hairline)] flex items-center justify-between gap-3 cursor-pointer hover:border-[#ef8f0b]/30 transition-all"
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -375,10 +372,10 @@ export default function DeliveryPersonView({
                     {b.status}
                   </span>
                 </div>
-                <div className="text-xs font-semibold text-[#f5f0eb]">
+                <div className="text-xs font-semibold text-[var(--ink)]">
                   {b.brand} {b.deviceModel}
                 </div>
-                <div className="text-[11px] text-[#807a75]">
+                <div className="text-[11px] text-[var(--ink-muted)]">
                   Customer: {b.contactName} • {b.scheduledDate}
                 </div>
               </div>
@@ -388,7 +385,7 @@ export default function DeliveryPersonView({
                   e.stopPropagation();
                   onSelectBooking(b);
                 }}
-                className="min-h-[44px] text-xs font-medium text-[#807a75] hover:text-[#ef8f0b]"
+                className="min-h-[44px] text-xs font-medium text-[var(--ink-muted)] hover:text-[#ef8f0b]"
               >
                 <Eye className="w-4 h-4" />
               </button>

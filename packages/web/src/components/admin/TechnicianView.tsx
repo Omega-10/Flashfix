@@ -95,32 +95,27 @@ export default function TechnicianView({
   return (
     <div className="space-y-6 sm:space-y-8 max-w-full overflow-x-hidden">
       {/* ── Technician Bench Header ── */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
             <Cpu className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-xl font-bold font-display text-[#f5f0eb]">
-                Hardware Workbench & Lab Console
-              </h1>
-              <span className="font-mono text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/30 font-semibold">
-                OPERATIVE BENCH
-              </span>
-            </div>
-            <p className="text-xs text-[#807a75] mt-0.5">
-              Hardware Repair Queue & Custody Verification
+            <h1 className="text-base sm:text-xl font-bold font-display text-[var(--ink)]">
+              Repair Queue
+            </h1>
+            <p className="text-xs text-[var(--ink-muted)] mt-0.5">
+              Devices assigned to you and custody verification
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-xl bg-[#1e1e1e] border border-[rgba(255,255,255,0.08)] text-xs font-mono text-[#a8a09a]">
+          <span className="px-3 py-1.5 rounded-xl bg-[var(--surface-3)] border border-[var(--hairline)] text-xs font-mono text-[var(--ink-secondary)]">
             Active Lab Load: <strong className="text-[#ef8f0b]">{activeWorkbenchQueue.length} devices</strong>
           </span>
           {inventory.length > 0 && (
-            <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-[#1e1e1e] border border-[rgba(255,255,255,0.08)] text-xs font-mono text-emerald-400">
+            <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-[var(--surface-3)] border border-[var(--hairline)] text-xs font-mono text-emerald-400">
               OEM Stock: {inventory.reduce((acc, i) => acc + i.quantity, 0)} parts
             </span>
           )}
@@ -128,13 +123,13 @@ export default function TechnicianView({
       </div>
 
       {/* ── Segmented Workbench Tabs ── */}
-      <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)]">
+      <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)]">
         <button
           onClick={() => setActiveQueueTab("ACTIVE")}
           className={`min-h-[44px] flex flex-col sm:flex-row items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
             activeQueueTab === "ACTIVE"
-              ? "bg-[#1e1e1e] text-[#ef8f0b] shadow border border-[rgba(255,255,255,0.08)]"
-              : "text-[#807a75] hover:text-[#f5f0eb]"
+              ? "bg-[var(--surface-3)] text-[#ef8f0b] shadow border border-[var(--hairline)]"
+              : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
           <Wrench className="w-4 h-4" />
@@ -148,8 +143,8 @@ export default function TechnicianView({
           onClick={() => setActiveQueueTab("INCOMING")}
           className={`min-h-[44px] flex flex-col sm:flex-row items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
             activeQueueTab === "INCOMING"
-              ? "bg-[#1e1e1e] text-[#ef8f0b] shadow border border-[rgba(255,255,255,0.08)]"
-              : "text-[#807a75] hover:text-[#f5f0eb]"
+              ? "bg-[var(--surface-3)] text-[#ef8f0b] shadow border border-[var(--hairline)]"
+              : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
           <KeyRound className="w-4 h-4" />
@@ -163,8 +158,8 @@ export default function TechnicianView({
           onClick={() => setActiveQueueTab("DONE")}
           className={`min-h-[44px] flex flex-col sm:flex-row items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
             activeQueueTab === "DONE"
-              ? "bg-[#1e1e1e] text-[#ef8f0b] shadow border border-[rgba(255,255,255,0.08)]"
-              : "text-[#807a75] hover:text-[#f5f0eb]"
+              ? "bg-[var(--surface-3)] text-[#ef8f0b] shadow border border-[var(--hairline)]"
+              : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
           <CheckCircle2 className="w-4 h-4" />
@@ -199,10 +194,10 @@ export default function TechnicianView({
       {activeQueueTab === "ACTIVE" && (
         <div className="space-y-4">
           {activeWorkbenchQueue.length === 0 ? (
-            <div className="py-16 text-center bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-6">
+            <div className="py-16 text-center bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-6">
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-[#f5f0eb]">Workbench Clear</h3>
-              <p className="text-xs text-[#807a75] mt-1">
+              <h3 className="text-sm font-bold text-[var(--ink)]">Workbench Clear</h3>
+              <p className="text-xs text-[var(--ink-muted)] mt-1">
                 No active repair jobs queued on this bench. Check "Awaiting Custody" for incoming deliveries.
               </p>
             </div>
@@ -216,10 +211,10 @@ export default function TechnicianView({
               return (
                 <div
                   key={booking.id}
-                  className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-6 transition-all"
+                  className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-6 transition-all"
                 >
                   {/* Top Bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-[rgba(255,255,255,0.06)]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-[var(--hairline)]">
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-sm font-bold text-[#ef8f0b]">
                         {booking.id}
@@ -229,54 +224,54 @@ export default function TechnicianView({
                       </span>
                     </div>
 
-                    <div className="text-xs text-[#807a75] font-mono">
-                      Scheduled: <strong className="text-[#f5f0eb]">{booking.scheduledDate} ({booking.scheduledTime})</strong>
+                    <div className="text-xs text-[var(--ink-muted)] font-mono">
+                      Scheduled: <strong className="text-[var(--ink)]">{booking.scheduledDate} ({booking.scheduledTime})</strong>
                     </div>
                   </div>
 
                   {/* Device & Reported Problem */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <div className="text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                      <div className="text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                         Device Specification
                       </div>
-                      <div className="text-base font-bold text-[#f5f0eb]">
+                      <div className="text-base font-bold text-[var(--ink)]">
                         {booking.brand} {booking.deviceModel}
                       </div>
                       <div className="text-xs text-[#ef8f0b] font-medium mt-0.5">
                         {booking.issueType}
                       </div>
                       {booking.issueDescription && (
-                        <p className="text-xs text-[#a8a09a] mt-2 p-2.5 rounded-xl bg-[#1a1a1a] border border-[rgba(255,255,255,0.04)]">
+                        <p className="text-xs text-[var(--ink-secondary)] mt-2 p-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)]">
                           "{booking.issueDescription}"
                         </p>
                       )}
                     </div>
 
                     <div>
-                      <div className="text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                      <div className="text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                         Custody & Customer Info
                       </div>
-                      <div className="text-xs text-[#f5f0eb] font-medium">
+                      <div className="text-xs text-[var(--ink)] font-medium">
                         Customer: {booking.contactName} ({booking.contactPhone})
                       </div>
-                      <div className="text-xs text-[#807a75] mt-1">
+                      <div className="text-xs text-[var(--ink-muted)] mt-1">
                         Pickup Courier: {booking.assignedEmployeeName || "Assigned Courier"}
                       </div>
-                      <div className="text-xs text-[#807a75] mt-0.5">
+                      <div className="text-xs text-[var(--ink-muted)] mt-0.5">
                         Lab Facility: {STORES.find((s) => s.id === booking.storeId)?.name || booking.storeId}
                       </div>
                     </div>
                   </div>
 
                   {/* Multi-Point Diagnostic Checklist */}
-                  <div className="p-3.5 sm:p-4 rounded-xl bg-[#181818] border border-[rgba(255,255,255,0.06)] mb-4">
+                  <div className="p-3.5 sm:p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] mb-4">
                     <div className="flex items-center justify-between mb-2.5">
-                      <span className="text-xs font-bold text-[#f5f0eb] flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
                         <ShieldCheck className="w-4 h-4 text-[#ef8f0b]" />
                         <span>Multi-Point Lab Diagnostic Checklist</span>
                       </span>
-                      <span className="text-[11px] font-mono text-[#807a75]">
+                      <span className="text-[11px] font-mono text-[var(--ink-muted)]">
                         {checkedCount} / {DIAGNOSTIC_STEPS.length} verified {allChecked ? "✓ QA Ready" : ""}
                       </span>
                     </div>
@@ -291,13 +286,13 @@ export default function TechnicianView({
                             className={`min-h-[44px] flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-all ${
                               isChecked
                                 ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
-                                : "bg-[#202020] text-[#a8a09a] hover:text-[#f5f0eb]"
+                                : "bg-[var(--surface-3)] text-[var(--ink-secondary)] hover:text-[var(--ink)]"
                             }`}
                           >
                             {isChecked ? (
                               <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />
                             ) : (
-                              <Square className="w-4 h-4 text-[#807a75] shrink-0" />
+                              <Square className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
                             )}
                             <span className="leading-tight">{step.label}</span>
                           </button>
@@ -307,10 +302,10 @@ export default function TechnicianView({
                   </div>
 
                   {/* Action Controls */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[rgba(255,255,255,0.06)]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--hairline)]">
                     <button
                       onClick={() => onSelectBooking(booking)}
-                      className="min-h-[44px] text-xs font-medium text-[#807a75] hover:text-[#f5f0eb] flex items-center gap-1.5"
+                      className="min-h-[44px] text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] flex items-center gap-1.5"
                     >
                       <Eye className="w-4 h-4" />
                       <span>Audit Trail & Details</span>
@@ -336,10 +331,10 @@ export default function TechnicianView({
       {activeQueueTab === "INCOMING" && (
         <div className="space-y-4">
           {incomingQueue.length === 0 ? (
-            <div className="py-16 text-center bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-6">
+            <div className="py-16 text-center bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-6">
               <Clock className="w-10 h-10 text-blue-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-[#f5f0eb]">No Incoming Custody Transfers</h3>
-              <p className="text-xs text-[#807a75] mt-1">
+              <h3 className="text-sm font-bold text-[var(--ink)]">No Incoming Custody Transfers</h3>
+              <p className="text-xs text-[var(--ink-muted)] mt-1">
                 All courier pickups have already been checked into the lab facility.
               </p>
             </div>
@@ -349,9 +344,9 @@ export default function TechnicianView({
               return (
                 <div
                   key={booking.id}
-                  className="bg-[#141414] border border-blue-500/30 rounded-2xl p-4 sm:p-6 relative overflow-hidden"
+                  className="bg-[var(--surface-1)] border border-blue-500/30 rounded-2xl p-4 sm:p-6 relative overflow-hidden"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-[var(--hairline)]">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm font-bold text-[#ef8f0b]">{booking.id}</span>
                       <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
@@ -362,16 +357,16 @@ export default function TechnicianView({
                         {isOtpSent ? "CUSTODY OTP PENDING" : "EN ROUTE TO HUB"}
                       </span>
                     </div>
-                    <span className="text-xs font-mono text-[#807a75]">
+                    <span className="text-xs font-mono text-[var(--ink-muted)]">
                       Carrier: {booking.assignedEmployeeName || "Assigned Courier"}
                     </span>
                   </div>
 
                   <div className="mb-4">
-                    <h3 className="text-base font-bold text-[#f5f0eb]">
+                    <h3 className="text-base font-bold text-[var(--ink)]">
                       {booking.brand} {booking.deviceModel}
                     </h3>
-                    <p className="text-xs text-[#807a75] mt-0.5">
+                    <p className="text-xs text-[var(--ink-muted)] mt-0.5">
                       Service: {booking.issueType} • Customer: {booking.contactName}
                     </p>
                     <p className="text-xs text-amber-300/90 mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -381,10 +376,10 @@ export default function TechnicianView({
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[rgba(255,255,255,0.06)]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--hairline)]">
                     <button
                       onClick={() => onSelectBooking(booking)}
-                      className="min-h-[44px] text-xs font-medium text-[#807a75] hover:text-[#f5f0eb]"
+                      className="min-h-[44px] text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]"
                     >
                       View Order Details
                     </button>
@@ -406,7 +401,7 @@ export default function TechnicianView({
                         <span>Verify Custody OTP (Accept into Lab)</span>
                       </button>
                     ) : (
-                      <span className="min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[#807a75] text-xs font-mono">
+                      <span className="min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[var(--hairline)] border border-[var(--hairline)] text-[var(--ink-muted)] text-xs font-mono">
                         <Clock className="w-4 h-4" />
                         <span>Awaiting Courier Hub Arrival</span>
                       </span>
@@ -423,10 +418,10 @@ export default function TechnicianView({
       {activeQueueTab === "DONE" && (
         <div className="space-y-4">
           {completedQueue.length === 0 ? (
-            <div className="py-16 text-center bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-6">
+            <div className="py-16 text-center bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-6">
               <Boxes className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-[#f5f0eb]">No Finished Repairs Pending Return</h3>
-              <p className="text-xs text-[#807a75] mt-1">
+              <h3 className="text-sm font-bold text-[var(--ink)]">No Finished Repairs Pending Return</h3>
+              <p className="text-xs text-[var(--ink-muted)] mt-1">
                 Repaired hardware that passes QA testing will appear here for return delivery dispatch.
               </p>
             </div>
@@ -434,7 +429,7 @@ export default function TechnicianView({
             completedQueue.map((booking) => (
               <div
                 key={booking.id}
-                className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -443,10 +438,10 @@ export default function TechnicianView({
                       {booking.status}
                     </span>
                   </div>
-                  <div className="text-sm font-bold text-[#f5f0eb]">
+                  <div className="text-sm font-bold text-[var(--ink)]">
                     {booking.brand} {booking.deviceModel}
                   </div>
-                  <div className="text-xs text-[#807a75]">
+                  <div className="text-xs text-[var(--ink-muted)]">
                     Customer: {booking.contactName} ({booking.pickupAddress})
                   </div>
                 </div>
@@ -463,7 +458,7 @@ export default function TechnicianView({
                   )}
                   <button
                     onClick={() => onSelectBooking(booking)}
-                    className="min-h-[44px] px-3 py-2 rounded-xl border border-[rgba(255,255,255,0.08)] text-xs text-[#a8a09a] hover:text-[#f5f0eb]"
+                    className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--hairline)] text-xs text-[var(--ink-secondary)] hover:text-[var(--ink)]"
                   >
                     Details
                   </button>

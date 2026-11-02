@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
 import { adminLogin } from "@/components/admin/api";
 import { StaffSessionUser } from "@/components/admin/types";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import { useThemeSync } from "@/hooks/useThemeSync";
 
 interface AdminLoginProps {
   onSuccess?: (user: StaffSessionUser) => void;
@@ -24,6 +26,7 @@ export function getStaffHomeRoute(role: string): string {
 }
 
 export default function AdminLogin({ onSuccess }: AdminLoginProps) {
+  useThemeSync();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,23 +60,26 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
   }
 
   return (
-    <div className="min-h-screen px-4 py-16 flex items-center justify-center bg-[#0a0a0a] text-[#f5f0eb]">
+    <div className="admin-shell relative min-h-screen px-4 py-16 flex items-center justify-center bg-[var(--canvas)] text-[var(--ink)] transition-colors duration-300">
+      <div className="absolute top-5 right-5">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-[400px]">
-        <div className="bg-[#111111] border border-white/10 rounded-xl p-7 sm:p-8 shadow-lg">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl p-7 sm:p-8 shadow-lg">
           <div className="mb-7">
             <div className="flex items-center justify-between mb-3">
-              <span className="font-display font-bold text-lg tracking-[0.14em] text-[#f5f0eb]">
+              <span className="heading-flashfix text-xl tracking-[0.12em] text-[var(--ink)]">
                 FLASH<span className="text-[#ef8f0b]">FIX</span>
               </span>
               <span className="text-[11px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#ef8f0b]/15 text-[#ef8f0b] border border-[#ef8f0b]/30">
                 Staff Portal
               </span>
             </div>
-            <h1 className="text-xl font-semibold tracking-tight text-[#f5f0eb]">
-              Operations Sign In
+            <h1 className="text-xl font-semibold tracking-tight text-[var(--ink)]">
+              Staff sign in
             </h1>
-            <p className="text-xs text-[#a8a09a] mt-1">
-              Enter your assigned staff credentials. Your workspace (Super Admin, Store Admin, Technician, or Delivery) opens automatically.
+            <p className="text-xs text-[var(--ink-secondary)] mt-1">
+              Your workspace opens automatically based on your role.
             </p>
           </div>
 
@@ -91,12 +97,12 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
             <div>
               <label
                 htmlFor="staff-email"
-                className="block text-xs font-medium text-[#a8a09a] mb-1.5"
+                className="block text-xs font-medium text-[var(--ink-secondary)] mb-1.5"
               >
                 Staff email
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#85807b] pointer-events-none" />
+                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] pointer-events-none" />
                 <input
                   id="staff-email"
                   type="email"
@@ -106,7 +112,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   autoComplete="email"
                   autoFocus
                   required
-                  className="w-full h-11 bg-[#181818] border border-white/10 rounded-lg pl-10 pr-3.5 text-sm text-[#f5f0eb] placeholder-[#85807b] focus:outline-none focus:border-[#ef8f0b] focus:ring-1 focus:ring-[#ef8f0b] transition-colors"
+                  className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-3.5 text-sm text-[var(--ink)] placeholder-[var(--ink-muted)] focus:outline-none focus:border-[#ef8f0b] focus:ring-1 focus:ring-[#ef8f0b] transition-colors"
                 />
               </div>
             </div>
@@ -114,12 +120,12 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
             <div>
               <label
                 htmlFor="staff-password"
-                className="block text-xs font-medium text-[#a8a09a] mb-1.5"
+                className="block text-xs font-medium text-[var(--ink-secondary)] mb-1.5"
               >
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#85807b] pointer-events-none" />
+                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] pointer-events-none" />
                 <input
                   id="staff-password"
                   type={showPassword ? "text" : "password"}
@@ -128,13 +134,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   placeholder="Enter your password"
                   autoComplete="current-password"
                   required
-                  className="w-full h-11 bg-[#181818] border border-white/10 rounded-lg pl-10 pr-10 text-sm text-[#f5f0eb] placeholder-[#85807b] focus:outline-none focus:border-[#ef8f0b] focus:ring-1 focus:ring-[#ef8f0b] transition-colors"
+                  className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-10 text-sm text-[var(--ink)] placeholder-[var(--ink-muted)] focus:outline-none focus:border-[#ef8f0b] focus:ring-1 focus:ring-[#ef8f0b] transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#85807b] hover:text-[#f5f0eb] p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] hover:text-[var(--ink)] p-1"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -144,16 +150,16 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
             <button
               type="submit"
               disabled={loading || !email.trim() || !password}
-              className="w-full h-11 bg-[#ef8f0b] hover:brightness-105 text-[#0a0a0a] font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full h-11 bg-[#ef8f0b] hover:brightness-105 text-[var(--accent-ink)] font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {loading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Authenticating...</span>
+                  <span>Signing in…</span>
                 </>
               ) : (
                 <>
-                  <span>Sign In to Console</span>
+                  <span>Sign in</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

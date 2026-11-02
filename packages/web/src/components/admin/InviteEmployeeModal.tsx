@@ -53,17 +53,17 @@ export default function InviteEmployeeModal({
       />
 
       {/* Modal Dialog */}
-      <div className="relative z-10 w-full max-w-md bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl p-6 text-[#f5f0eb]">
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[rgba(255,255,255,0.08)]">
+      <div className="relative z-10 w-full max-w-md bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl shadow-2xl p-6 text-[var(--ink)]">
+        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--hairline)]">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-[#ef8f0b]/10 text-[#ef8f0b] border border-[#ef8f0b]/30">
               <UserPlus className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-[#f5f0eb]">
+              <h3 className="font-bold text-sm text-[var(--ink)]">
                 Provision Staff Member
               </h3>
-              <span className="text-[10px] text-[#807a75]">
+              <span className="text-[10px] text-[var(--ink-muted)]">
                 Invite operative or store admin to Flashfix hub
               </span>
             </div>
@@ -71,7 +71,7 @@ export default function InviteEmployeeModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-[#807a75] hover:text-[#f5f0eb] hover:bg-[#1a1a1a] rounded-lg transition-colors"
+            className="p-1.5 text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -86,7 +86,7 @@ export default function InviteEmployeeModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="text-[11px] font-mono uppercase tracking-wider text-[#807a75] block mb-1.5">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)] block mb-1.5">
               Full Name
             </label>
             <input
@@ -95,12 +95,12 @@ export default function InviteEmployeeModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Rohith Kumar"
-              className="min-h-[44px] w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+              className="min-h-[44px] w-full bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-mono uppercase tracking-wider text-[#807a75] block mb-1.5">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)] block mb-1.5">
               Email Address
             </label>
             <input
@@ -109,19 +109,19 @@ export default function InviteEmployeeModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="rohith.kumar@flashfix.in"
-              className="min-h-[44px] w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+              className="min-h-[44px] w-full bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-mono uppercase tracking-wider text-[#807a75] block mb-1.5 flex items-center gap-1.5">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)] block mb-1.5 flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5 text-[#ef8f0b]" />
               <span>Role Permissions</span>
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as "EMPLOYEE" | "TECHNICIAN" | "ADMIN")}
-              className="min-h-[44px] w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs text-[#f5f0eb] outline-none cursor-pointer focus:border-[#ef8f0b]"
+              className="min-h-[44px] w-full bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs text-[var(--ink)] outline-none cursor-pointer focus:border-[#ef8f0b]"
             >
               <option value="EMPLOYEE">EMPLOYEE (Delivery Rider)</option>
               <option value="TECHNICIAN">TECHNICIAN (Lab Workbench)</option>
@@ -130,14 +130,14 @@ export default function InviteEmployeeModal({
           </div>
 
           <div>
-            <label className="text-[11px] font-mono uppercase tracking-wider text-[#807a75] block mb-1.5 flex items-center gap-1.5">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)] block mb-1.5 flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-[#ef8f0b]" />
               <span>Assigned Store Hub</span>
             </label>
             <select
               value={storeId}
               onChange={(e) => setStoreId(e.target.value)}
-              className="min-h-[44px] w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs text-[#f5f0eb] outline-none cursor-pointer focus:border-[#ef8f0b]"
+              className="min-h-[44px] w-full bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs text-[var(--ink)] outline-none cursor-pointer focus:border-[#ef8f0b]"
             >
               {STORES.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -151,7 +151,7 @@ export default function InviteEmployeeModal({
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[44px] px-4 py-2 text-xs font-medium text-[#807a75] hover:text-[#f5f0eb]"
+              className="min-h-[44px] px-4 py-2 text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]"
             >
               Cancel
             </button>

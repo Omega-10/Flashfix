@@ -6,6 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useAuthStore, UserProfile } from "@/store/authStore";
 import LoginModal from "@/components/flashfix/LoginModal";
+import DatePicker, { toLocalISODate, parseLocalISODate } from "@/components/flashfix/DatePicker";
 
 interface Step1Data { brand: string; device: string }
 interface Step2Data { issue: string }
@@ -49,6 +50,26 @@ const DEVICES: Record<string, string[]> = {
 const ISSUES = ["Screen Replacement", "Battery Replacement", "Water Damage", "Charging Port", "Camera Fix", "Back Glass", "Speaker", "Software Issue"];
 const TIMES = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"];
 
+/** 24h hour for a slot label like "2:00 PM" */
+function slotHour(label: string): number {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(label.trim());
+  if (!m) return 0;
+  let h = Number(m[1]) % 12;
+  if (m[3].toUpperCase() === "PM") h += 12;
+  return h;
+}
+
+/** Slots are bookable only in the future, with at least 1 hour of lead time. */
+function isSlotAvailable(date: string, label: string): boolean {
+  const d = parseLocalISODate(date);
+  if (!d) return false;
+  const today = new Date();
+  const todayISO = toLocalISODate(today);
+  if (date < todayISO) return false;
+  if (date > todayISO) return true;
+  return slotHour(label) > today.getHours() + 1 || (slotHour(label) === today.getHours() + 1 && today.getMinutes() === 0);
+}
+
 export default function BookingWizard() {
   const { user, isAuthenticated, initAuth } = useAuthStore();
   const [step, setStep] = useState(1);
@@ -69,6 +90,7 @@ export default function BookingWizard() {
   const markerRef = useRef<L.Marker | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [locateStatus, setLocateStatus] = useState<{ message: string; type: "info" | "error" | "success" } | null>(null);
 
   // Restore draft from sessionStorage and initialize auth on mount
   useEffect(() => {
@@ -208,9 +230,49 @@ export default function BookingWizard() {
     setTimeout(() => map.invalidateSize(), 450);
   }, []);
 
+  async function fallbackIpLocate() {
+    try {
+      const res = await fetch("https://ipapi.co/json/");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.latitude === "number" && typeof data.longitude === "number") {
+          const newLat = data.latitude;
+          const newLng = data.longitude;
+          leafletMap.current?.setView([newLat, newLng], 14);
+          markerRef.current?.setLatLng([newLat, newLng]);
+          const approxAddress = [data.city, data.region, data.country_name].filter(Boolean).join(", ");
+          setStep3((p) => ({
+            ...p,
+            lat: newLat,
+            lng: newLng,
+            address: p.address || approxAddress,
+          }));
+          setLocateStatus({
+            message: `Located approximately near ${data.city || data.region || "your area"}. Drag the pin to adjust.`,
+            type: "info",
+          });
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    setLocateStatus({
+      message: "Could not retrieve GPS coordinates. Please type your area in the search bar or click on the map.",
+      type: "error",
+    });
+  }
+
   function handleLocateMe() {
-    if (!navigator.geolocation) return;
     setIsSearching(true);
+    setLocateStatus(null);
+
+    if (!navigator.geolocation) {
+      fallbackIpLocate().finally(() => setIsSearching(false));
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const newLat = pos.coords.latitude;
@@ -218,12 +280,18 @@ export default function BookingWizard() {
         leafletMap.current?.setView([newLat, newLng], 16);
         markerRef.current?.setLatLng([newLat, newLng]);
         setStep3((p) => ({ ...p, lat: newLat, lng: newLng }));
-        reverseGeocode(newLat, newLng).finally(() => setIsSearching(false));
+        reverseGeocode(newLat, newLng)
+          .then(() => setLocateStatus({ message: "Exact location pinpointed successfully!", type: "success" }))
+          .finally(() => {
+            setIsSearching(false);
+            setTimeout(() => setLocateStatus(null), 4000);
+          });
       },
-      () => {
-        setIsSearching(false);
+      (err) => {
+        console.warn("GPS Geolocation unavailable or denied, falling back to IP:", err.message);
+        fallbackIpLocate().finally(() => setIsSearching(false));
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
     );
   }
 
@@ -546,13 +614,31 @@ export default function BookingWizard() {
                       type="button"
                       onClick={handleLocateMe}
                       disabled={isSearching}
-                      title="Use my current GPS location"
-                      className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center gap-1.5 text-xs font-medium text-[var(--accent-amber)]"
+                      title="Use my current location"
+                      className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center gap-1.5 text-xs font-medium text-[var(--accent-amber)] disabled:opacity-50"
                     >
-                      <Navigation className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Locate Me</span>
+                      {isSearching ? (
+                        <div className="w-3.5 h-3.5 border-2 border-[var(--accent-amber)] border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Navigation className="w-3.5 h-3.5" />
+                      )}
+                      <span className="hidden sm:inline">{isSearching ? "Locating..." : "Locate Me"}</span>
                     </button>
                   </div>
+                  {locateStatus && (
+                    <div
+                      className={`text-xs mb-3 px-3 py-2 rounded-lg border flex items-center gap-2 ${
+                        locateStatus.type === "error"
+                          ? "bg-red-500/10 border-red-500/30 text-red-400"
+                          : locateStatus.type === "success"
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                          : "bg-[var(--accent-amber-soft)] border-[var(--accent-amber)]/30 text-[var(--accent-amber)]"
+                      }`}
+                    >
+                      <span>{locateStatus.type === "error" ? "⚠️" : "📍"}</span>
+                      <span>{locateStatus.message}</span>
+                    </div>
+                  )}
                   <div ref={handleMapMount} className="w-full h-[250px] rounded-xl overflow-hidden border border-[var(--surface-border)] relative z-0" />
                   <p className="text-[10px] text-[var(--text-muted)] mt-2 italic">Drag the pin or click on the map to set exact coordinates.</p>
                 </div>
@@ -667,23 +753,35 @@ export default function BookingWizard() {
 
                 <div>
                   <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">Date</label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={step4.date}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setStep4((p) => ({ ...p, date: e.target.value }))}
-                    className="w-full bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-3 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
+                    onChange={(date) =>
+                      setStep4((p) => ({
+                        ...p,
+                        date,
+                        time: p.time && isSlotAvailable(date, p.time) ? p.time : "",
+                      }))
+                    }
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-3">Time Slot</label>
+                  {!step4.date ? (
+                    <p className="text-xs text-[var(--text-muted)]">Pick a date to see available slots.</p>
+                  ) : TIMES.every((t) => !isSlotAvailable(step4.date, t)) ? (
+                    <p className="text-xs text-[var(--text-muted)]">No slots left today — please choose another date.</p>
+                  ) : (
                   <div className="grid grid-cols-4 gap-2">
-                    {TIMES.map((t) => (
+                    {TIMES.map((t) => {
+                      const available = isSlotAvailable(step4.date, t);
+                      return (
                       <button
                         key={t}
+                        type="button"
+                        disabled={!available}
                         onClick={() => setStep4((p) => ({ ...p, time: t }))}
-                        className={`text-xs py-2.5 rounded-xl border transition-all ${
+                        className={`text-xs py-2.5 rounded-xl border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
                           step4.time === t
                             ? "border-[var(--accent-amber)] bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] font-medium"
                             : "border-[var(--surface-border)] text-[var(--text-secondary)] hover:border-[var(--accent-amber)]/30"
@@ -691,8 +789,10 @@ export default function BookingWizard() {
                       >
                         {t}
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
+                  )}
                 </div>
 
                 {/* Summary */}

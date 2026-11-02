@@ -2951,7 +2951,7 @@ async function handler(req, res) {
     if (assignBookingMatch && method === "POST") return await assignBookingStaffHandler(req, res, assignBookingMatch[1]);
     if ((pathname === "/admin/bookings" || pathname === "/bookings") && method === "GET") return await getAdminBookingsHandler(req, res);
     if (pathname === "/bookings" && method === "POST") return await createBookingHandler(req, res);
-    if (pathname === "/bookings/mine" && method === "GET") return await getMyBookingsHandler(req, res);
+    if ((pathname === "/bookings/mine" || pathname === "/bookings/my" || pathname === "/account/bookings") && method === "GET") return await getMyBookingsHandler(req, res);
     const bookingCancelMatch = pathname.match(/^\/bookings\/([^\/]+)\/cancel$/);
     if (bookingCancelMatch && method === "POST") return await cancelBookingHandler(req, res, bookingCancelMatch[1]);
     const bookingTrailMatch = pathname.match(/^\/bookings\/([^\/]+)\/trail$/);

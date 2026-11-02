@@ -119,23 +119,23 @@ export default function BookingDetailModal({
       />
 
       {/* Modal Dialog */}
-      <div className="relative z-10 w-full max-w-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl p-5 sm:p-7 text-[#f5f0eb] my-auto max-h-[92vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-2xl bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl shadow-2xl p-5 sm:p-7 text-[var(--ink)] my-auto max-h-[92vh] overflow-y-auto">
         {/* Top Header */}
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[rgba(255,255,255,0.08)]">
+        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--hairline)]">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-[#ef8f0b]/10 text-[#ef8f0b] border border-[#ef8f0b]/30">
               <Smartphone className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-[#f5f0eb]">
-                  Order Telemetry & Audit
+                <h3 className="font-bold text-base text-[var(--ink)]">
+                  Order history
                 </h3>
                 <span className="font-mono text-xs text-[#ef8f0b] font-bold">
                   {booking.id}
                 </span>
               </div>
-              <span className="text-xs text-[#807a75]">
+              <span className="text-xs text-[var(--ink-muted)]">
                 {booking.brand} {booking.deviceModel} • {booking.issueType}
               </span>
             </div>
@@ -143,16 +143,16 @@ export default function BookingDetailModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-[#807a75] hover:text-[#f5f0eb] hover:bg-[#1a1a1a] rounded-lg transition-colors"
+            className="p-1.5 text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* 9-Step Repair Lifecycle Stepper */}
-        <div className="mb-6 p-4 rounded-xl bg-[#1a1a1a] border border-[rgba(255,255,255,0.06)]">
+        <div className="mb-6 p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#807a75]">
+            <span className="text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)]">
               9-Step Repair Lifecycle Progress
             </span>
             <span className="text-xs font-mono text-[#ef8f0b] font-bold">
@@ -161,7 +161,7 @@ export default function BookingDetailModal({
           </div>
 
           <div className="relative flex items-center justify-between">
-            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-[#252525] z-0" />
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-[var(--surface-3)] z-0" />
             <div
               className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-[#ef8f0b] z-0 transition-all duration-300"
               style={{ width: `${((currentStep - 1) / 8) * 100}%` }}
@@ -182,7 +182,7 @@ export default function BookingDetailModal({
                         ? "bg-[#ef8f0b] text-black ring-4 ring-[#ef8f0b]/20"
                         : isPast
                         ? "bg-[#ef8f0b] text-black"
-                        : "bg-[#252525] text-[#807a75] border border-[rgba(255,255,255,0.08)]"
+                        : "bg-[var(--surface-3)] text-[var(--ink-muted)] border border-[var(--hairline)]"
                     }`}
                   >
                     {step.step}
@@ -192,35 +192,35 @@ export default function BookingDetailModal({
             })}
           </div>
 
-          <div className="mt-3 text-center text-xs font-semibold text-[#f5f0eb]">
+          <div className="mt-3 text-center text-xs font-semibold text-[var(--ink)]">
             Current State: <span className="text-[#ef8f0b]">{NINE_STEPS[currentStep - 1]?.title}</span>
           </div>
         </div>
 
         {/* Customer & Staff Info Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="p-4 rounded-xl bg-[#181818] border border-[rgba(255,255,255,0.06)] space-y-2 text-xs">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[#807a75] block">
+          <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] space-y-2 text-xs">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--ink-muted)] block">
               Customer Contact & Address
             </span>
-            <div className="font-semibold text-sm text-[#f5f0eb]">{booking.contactName}</div>
-            <div className="flex items-center gap-1.5 text-[#a8a09a]">
+            <div className="font-semibold text-sm text-[var(--ink)]">{booking.contactName}</div>
+            <div className="flex items-center gap-1.5 text-[var(--ink-secondary)]">
               <Phone className="w-3.5 h-3.5 text-[#ef8f0b]" />
               <span>{booking.contactPhone}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-[#a8a09a]">
+            <div className="flex items-center gap-1.5 text-[var(--ink-secondary)]">
               <Mail className="w-3.5 h-3.5 text-[#ef8f0b]" />
               <span className="truncate">{booking.contactEmail}</span>
             </div>
-            <div className="flex items-start gap-1.5 text-[#807a75] pt-1">
+            <div className="flex items-start gap-1.5 text-[var(--ink-muted)] pt-1">
               <MapPin className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0 mt-0.5" />
               <span className="leading-snug">{booking.pickupAddress}</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#181818] border border-[rgba(255,255,255,0.06)] space-y-2 text-xs">
+          <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-[#807a75]">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--ink-muted)]">
                 Staff & Logistics Hub
               </span>
               <button
@@ -231,23 +231,23 @@ export default function BookingDetailModal({
               </button>
             </div>
             <div className="text-xs">
-              <span className="text-[#807a75]">Service Centre: </span>
-              <span className="font-semibold text-[#f5f0eb]">{store?.name || booking.storeId}</span>
+              <span className="text-[var(--ink-muted)]">Service Centre: </span>
+              <span className="font-semibold text-[var(--ink)]">{store?.name || booking.storeId}</span>
             </div>
             <div className="text-xs">
-              <span className="text-[#807a75]">Assigned Courier: </span>
-              <span className="font-semibold text-[#f5f0eb]">
+              <span className="text-[var(--ink-muted)]">Assigned Courier: </span>
+              <span className="font-semibold text-[var(--ink)]">
                 {booking.assignedEmployeeName || "Unassigned"}
               </span>
             </div>
             <div className="text-xs">
-              <span className="text-[#807a75]">Assigned Tech: </span>
-              <span className="font-semibold text-[#f5f0eb]">
+              <span className="text-[var(--ink-muted)]">Assigned Tech: </span>
+              <span className="font-semibold text-[var(--ink)]">
                 {booking.technicianName || "Unassigned"}
               </span>
             </div>
             <div className="text-xs">
-              <span className="text-[#807a75]">Estimated Cost: </span>
+              <span className="text-[var(--ink-muted)]">Estimated Cost: </span>
               <span className="font-mono font-bold text-[#ef8f0b]">
                 {formatPrice(booking.estimatedCostPaise)}
               </span>
@@ -256,11 +256,11 @@ export default function BookingDetailModal({
         </div>
 
         {/* Administrative Override Bar */}
-        <div className="mb-6 p-4 rounded-xl bg-[#181818] border border-[#ef8f0b]/20">
+        <div className="mb-6 p-4 rounded-xl bg-[var(--surface-2)] border border-[#ef8f0b]/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-[#ef8f0b]" />
-              <span className="text-xs font-bold text-[#f5f0eb]">
+              <span className="text-xs font-bold text-[var(--ink)]">
                 Administrative Status Override
               </span>
             </div>
@@ -273,15 +273,15 @@ export default function BookingDetailModal({
           </div>
 
           {isOverriding && (
-            <form onSubmit={handleStatusOverride} className="mt-3 space-y-3 pt-3 border-t border-[rgba(255,255,255,0.06)]">
+            <form onSubmit={handleStatusOverride} className="mt-3 space-y-3 pt-3 border-t border-[var(--hairline)]">
               <div>
-                <label className="text-[10px] font-mono text-[#807a75] uppercase block mb-1">
+                <label className="text-[10px] font-mono text-[var(--ink-muted)] uppercase block mb-1">
                   Target Status Transition
                 </label>
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value as BookingStatus)}
-                  className="min-h-[44px] w-full bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs text-[#f5f0eb] outline-none"
+                  className="min-h-[44px] w-full bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs text-[var(--ink)] outline-none"
                 >
                   {BOOKING_STATUSES.map((st) => (
                     <option key={st} value={st}>
@@ -292,7 +292,7 @@ export default function BookingDetailModal({
               </div>
 
               <div>
-                <label className="text-[10px] font-mono text-[#807a75] uppercase block mb-1">
+                <label className="text-[10px] font-mono text-[var(--ink-muted)] uppercase block mb-1">
                   Audit Override Note (Recorded to Ledger)
                 </label>
                 <input
@@ -300,7 +300,7 @@ export default function BookingDetailModal({
                   value={overrideNote}
                   onChange={(e) => setOverrideNote(e.target.value)}
                   placeholder="e.g. Expedited by Ops Director due to expedited VIP ticket"
-                  className="min-h-[44px] w-full bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs text-[#f5f0eb] outline-none"
+                  className="min-h-[44px] w-full bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs text-[var(--ink)] outline-none"
                 />
               </div>
 
@@ -319,43 +319,43 @@ export default function BookingDetailModal({
         <div>
           <div className="flex items-center gap-2 mb-3">
             <History className="w-4 h-4 text-[#ef8f0b]" />
-            <h4 className="text-xs font-bold text-[#f5f0eb]">
+            <h4 className="text-xs font-bold text-[var(--ink)]">
               Immutable Physical Custody Audit Trail
             </h4>
           </div>
 
           <div className="space-y-2.5">
             {loadingTrail ? (
-              <div className="py-4 text-center text-xs text-[#807a75]">
+              <div className="py-4 text-center text-xs text-[var(--ink-muted)]">
                 Loading audit trail entries...
               </div>
             ) : trail.length === 0 ? (
-              <div className="py-4 text-center text-xs text-[#807a75]">
+              <div className="py-4 text-center text-xs text-[var(--ink-muted)]">
                 No trail records recorded yet.
               </div>
             ) : (
               trail.map((item, idx) => (
                 <div
                   key={item.id || idx}
-                  className="p-3 rounded-xl bg-[#181818] border border-[rgba(255,255,255,0.04)] text-xs flex items-start justify-between gap-3"
+                  className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] text-xs flex items-start justify-between gap-3"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#252525] text-[#ef8f0b]">
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-3)] text-[#ef8f0b]">
                         {item.toStatus}
                       </span>
-                      <span className="text-[#a8a09a] text-[11px]">
-                        by <strong className="text-[#f5f0eb]">{item.triggeredByName || "System"}</strong>
+                      <span className="text-[var(--ink-secondary)] text-[11px]">
+                        by <strong className="text-[var(--ink)]">{item.triggeredByName || "System"}</strong>
                       </span>
                     </div>
                     {item.notes && (
-                      <p className="text-[#807a75] text-[11px] mt-1 leading-snug">
+                      <p className="text-[var(--ink-muted)] text-[11px] mt-1 leading-snug">
                         {item.notes}
                       </p>
                     )}
                   </div>
 
-                  <span className="text-[10px] font-mono text-[#807a75] shrink-0">
+                  <span className="text-[10px] font-mono text-[var(--ink-muted)] shrink-0">
                     {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>

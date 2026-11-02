@@ -214,19 +214,13 @@ export default function SuperadminView({
   return (
     <div className="space-y-8 max-w-full">
       {/* ── Superadmin Executive Header ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#1a130b] via-[#141414] to-[#141414] border border-[#ef8f0b]/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="p-1 rounded-md bg-[#ef8f0b]/20 text-[#ef8f0b] text-xs font-mono font-bold">
-              SUPERADMIN GOVERNANCE
-            </span>
-            <span className="text-xs text-[#807a75] font-mono">Platform-Wide Hub & Staff Control</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold font-display text-[#f5f0eb]">
-            Store Hub Governance & Network Telemetry
+          <h1 className="text-xl sm:text-2xl font-bold font-display text-[var(--ink)] tracking-tight">
+            Stores &amp; Staff
           </h1>
-          <p className="text-xs text-[#a8a09a] mt-1 max-w-2xl">
-            Live Store Management (Add, Remove, Toggle status), Admin assignments across single or multiple stores, staff role governance, and real-time operational telemetry.
+          <p className="text-sm text-[var(--ink-muted)] mt-1">
+            Manage stores, admin assignments and inventory across the network.
           </p>
         </div>
 
@@ -240,7 +234,7 @@ export default function SuperadminView({
           </button>
           <button
             onClick={onOpenInviteModal}
-            className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-[rgba(255,255,255,0.1)] text-[#f5f0eb] font-semibold text-xs rounded-xl px-4 py-2.5 transition-all"
+            className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-[var(--ink)] font-semibold text-xs rounded-xl px-4 py-2.5 transition-all"
           >
             <UserPlus className="w-4 h-4 text-[#ef8f0b]" />
             <span>Invite Staff</span>
@@ -250,42 +244,42 @@ export default function SuperadminView({
 
       {/* ── Network Health KPI Metrics ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] sm:text-xs font-mono text-[#807a75] uppercase">Live Store Hubs</span>
+            <span className="text-[11px] sm:text-xs font-mono text-[var(--ink-muted)] uppercase">Stores</span>
             <Building2 className="w-4 h-4 text-[#ef8f0b]" />
           </div>
-          <div className="text-2xl sm:text-3xl font-display font-bold text-[#f5f0eb]">{stores.length}</div>
-          <div className="text-[10px] text-[#807a75] mt-1 font-mono">
+          <div className="text-2xl sm:text-3xl font-display font-bold text-[var(--ink)]">{stores.length}</div>
+          <div className="text-[10px] text-[var(--ink-muted)] mt-1 font-mono">
             {stores.filter((s) => s.isActive !== false).length} Active • {stores.filter((s) => s.isActive === false).length} Inactive
           </div>
         </div>
 
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] sm:text-xs font-mono text-[#807a75] uppercase">Network Volume</span>
+            <span className="text-[11px] sm:text-xs font-mono text-[var(--ink-muted)] uppercase">Bookings</span>
             <Activity className="w-4 h-4 text-blue-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-display font-bold text-blue-400">{totalBookings}</div>
-          <div className="text-[10px] text-[#807a75] mt-1 font-mono">{inRepairTotal} Active on Workbench</div>
+          <div className="text-[10px] text-[var(--ink-muted)] mt-1 font-mono">{inRepairTotal} in repair</div>
         </div>
 
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] sm:text-xs font-mono text-[#807a75] uppercase">Unassigned Orders</span>
+            <span className="text-[11px] sm:text-xs font-mono text-[var(--ink-muted)] uppercase">Unassigned Orders</span>
             <ShieldAlert className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-display font-bold text-amber-400">{unassignedTotal}</div>
-          <div className="text-[10px] text-[#807a75] mt-1 font-mono">Awaiting Staff Dispatch</div>
+          <div className="text-[10px] text-[var(--ink-muted)] mt-1 font-mono">awaiting assignment</div>
         </div>
 
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-4 sm:p-5">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] sm:text-xs font-mono text-[#807a75] uppercase">Parts Inventory</span>
+            <span className="text-[11px] sm:text-xs font-mono text-[var(--ink-muted)] uppercase">Low stock</span>
             <Boxes className="w-4 h-4 text-red-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-display font-bold text-red-400">{lowStockItems.length}</div>
-          <div className="text-[10px] text-[#807a75] mt-1 font-mono">SKUs Below Reorder Level</div>
+          <div className="text-[10px] text-[var(--ink-muted)] mt-1 font-mono">below reorder level</div>
         </div>
       </div>
 
@@ -293,14 +287,14 @@ export default function SuperadminView({
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
-            <h2 className="font-bold text-base text-[#f5f0eb] flex items-center gap-2">
+            <h2 className="font-bold text-base text-[var(--ink)] flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#ef8f0b]" />
-              <span>Network Store Hubs Management</span>
-              <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-[#1e1e1e] text-[#ef8f0b] border border-[#ef8f0b]/20">
+              <span>Stores</span>
+              <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-[var(--surface-3)] text-[#ef8f0b] border border-[#ef8f0b]/20">
                 {stores.length} Hubs
               </span>
             </h2>
-            <p className="text-xs text-[#807a75]">
+            <p className="text-xs text-[var(--ink-muted)]">
               Add, remove, toggle active status, and assign Store Admins (single or multi-store)
             </p>
           </div>
@@ -328,10 +322,10 @@ export default function SuperadminView({
             return (
               <div
                 key={s.id}
-                className={`p-5 rounded-2xl bg-[#141414] border transition-all flex flex-col justify-between ${
+                className={`p-5 rounded-2xl bg-[var(--surface-1)] border transition-all flex flex-col justify-between ${
                   isSelected
                     ? "border-[#ef8f0b] shadow-lg shadow-[#ef8f0b]/10 bg-[#171512]"
-                    : "border-[rgba(255,255,255,0.08)] hover:border-[#ef8f0b]/40"
+                    : "border-[var(--hairline)] hover:border-[#ef8f0b]/40"
                 } ${!isActive ? "opacity-70" : ""}`}
               >
                 <div>
@@ -339,38 +333,38 @@ export default function SuperadminView({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className={`w-2.5 h-2.5 rounded-full ${isActive ? "bg-emerald-400 shadow-sm shadow-emerald-400/50" : "bg-zinc-600"}`} />
-                      <span className="font-bold text-sm text-[#f5f0eb] truncate">{s.name}</span>
+                      <span className="font-bold text-sm text-[var(--ink)] truncate">{s.name}</span>
                     </div>
-                    <span className="font-mono text-[10px] text-[#807a75] px-2 py-0.5 bg-[#1a1a1a] rounded border border-[rgba(255,255,255,0.06)]">
+                    <span className="font-mono text-[10px] text-[var(--ink-muted)] px-2 py-0.5 bg-[var(--surface-2)] rounded border border-[var(--hairline)]">
                       {s.id}
                     </span>
                   </div>
 
-                  <p className="text-[11px] text-[#807a75] flex items-center gap-1.5 mb-3 truncate">
+                  <p className="text-[11px] text-[var(--ink-muted)] flex items-center gap-1.5 mb-3 truncate">
                     <MapPin className="w-3 h-3 text-[#ef8f0b] shrink-0" />
                     <span>{s.address}, {s.city}</span>
                   </p>
 
                   {/* Telemetry Stats */}
-                  <div className="grid grid-cols-3 gap-2 py-2.5 px-3 rounded-xl bg-[#191919] border border-[rgba(255,255,255,0.04)] text-center mb-3">
+                  <div className="grid grid-cols-3 gap-2 py-2.5 px-3 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] text-center mb-3">
                     <div>
-                      <div className="text-[10px] font-mono text-[#807a75] uppercase">Orders</div>
-                      <div className="font-bold text-xs text-[#f5f0eb] mt-0.5">{storeBookings.length}</div>
+                      <div className="text-[10px] font-mono text-[var(--ink-muted)] uppercase">Orders</div>
+                      <div className="font-bold text-xs text-[var(--ink)] mt-0.5">{storeBookings.length}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-mono text-[#807a75] uppercase">In Repair</div>
+                      <div className="text-[10px] font-mono text-[var(--ink-muted)] uppercase">In Repair</div>
                       <div className="font-bold text-xs text-blue-400 mt-0.5">{storeInRepair}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-mono text-[#807a75] uppercase">Staff</div>
-                      <div className="font-bold text-xs text-[#a8a09a] mt-0.5">{storeStaff.length}</div>
+                      <div className="text-[10px] font-mono text-[var(--ink-muted)] uppercase">Staff</div>
+                      <div className="font-bold text-xs text-[var(--ink-secondary)] mt-0.5">{storeStaff.length}</div>
                     </div>
                   </div>
 
                   {/* Assigned Store Admins */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#807a75]">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-muted)]">
                         Assigned Store Admins:
                       </span>
                       <button
@@ -382,7 +376,7 @@ export default function SuperadminView({
                     </div>
 
                     {assignedAdmins.length === 0 ? (
-                      <p className="text-[11px] text-[#666] italic">No admins specifically assigned yet</p>
+                      <p className="text-[11px] text-[var(--ink-muted)] italic">No admins specifically assigned yet</p>
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {assignedAdmins.map((admin) => (
@@ -400,13 +394,13 @@ export default function SuperadminView({
                 </div>
 
                 {/* Store Action Buttons */}
-                <div className="pt-3 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-[var(--hairline)] flex items-center justify-between gap-2">
                   <button
                     onClick={() => onStoreChange(isSelected ? "ALL" : s.id)}
                     className={`min-h-[36px] flex-1 text-xs font-semibold rounded-xl py-1.5 transition-all flex items-center justify-center gap-1 ${
                       isSelected
                         ? "bg-[#ef8f0b] text-black"
-                        : "bg-[#1e1e1e] hover:bg-[#252525] text-[#f5f0eb] border border-[rgba(255,255,255,0.08)]"
+                        : "bg-[var(--surface-3)] hover:bg-[var(--surface-3)] text-[var(--ink)] border border-[var(--hairline)]"
                     }`}
                   >
                     <span>{isSelected ? "Active Filter" : "Filter Hub"}</span>
@@ -444,11 +438,11 @@ export default function SuperadminView({
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-bold text-base text-[#f5f0eb] flex items-center gap-2">
+            <h2 className="font-bold text-base text-[var(--ink)] flex items-center gap-2">
               <Users className="w-4 h-4 text-[#ef8f0b]" />
-              <span>Role Governance & Authority Matrix</span>
+              <span>Roles & permissions</span>
             </h2>
-            <p className="text-xs text-[#807a75]">
+            <p className="text-xs text-[var(--ink-muted)]">
               Assign administrative roles and store hub access (Super Admin, Store Admin, Technician, Delivery Rider)
             </p>
           </div>
@@ -462,19 +456,19 @@ export default function SuperadminView({
           </button>
         </div>
 
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl overflow-hidden">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl overflow-hidden">
           {staff.length === 0 ? (
             <div className="py-16 text-center">
-              <Users className="w-10 h-10 text-[#807a75] mx-auto mb-2 opacity-50" />
-              <h3 className="text-sm font-bold text-[#f5f0eb]">No Staff Members</h3>
-              <p className="text-xs text-[#807a75] mt-1">
+              <Users className="w-10 h-10 text-[var(--ink-muted)] mx-auto mb-2 opacity-50" />
+              <h3 className="text-sm font-bold text-[var(--ink)]">No Staff Members</h3>
+              <p className="text-xs text-[var(--ink-muted)] mt-1">
                 No staff records in database. Click "Add Staff" or seed credentials to begin.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#1a1a1a] text-[#807a75] font-mono text-[11px] uppercase tracking-wider">
+                <thead className="bg-[var(--surface-2)] text-[var(--ink-muted)] font-mono text-[11px] uppercase tracking-wider">
                   <tr>
                     <th className="px-5 py-3.5">Staff Email</th>
                     <th className="px-5 py-3.5">Operative Name</th>
@@ -484,19 +478,19 @@ export default function SuperadminView({
                     <th className="px-5 py-3.5 text-right">Access Level</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[rgba(255,255,255,0.06)] text-[#f5f0eb]">
+                <tbody className="divide-y divide-[var(--hairline)] text-[var(--ink)]">
                   {staff.map((member) => {
                     const isUpdating = updatingRoleFor === member.id;
                     const assignedStores = (member as any).assignedStoreIds || (member.storeId ? [member.storeId] : []);
 
                     return (
-                      <tr key={member.id} className="hover:bg-[#1a1a1a]/60 transition-colors">
+                      <tr key={member.id} className="hover:bg-[var(--surface-2)] transition-colors">
                         <td className="px-5 py-3.5 font-mono text-[#ef8f0b] font-medium">
                           {member.email}
                         </td>
                         <td className="px-5 py-3.5">
-                          <div className="font-semibold text-[#f5f0eb]">{member.name}</div>
-                          <div className="text-[10px] text-[#807a75]">{member.phone || "No phone"}</div>
+                          <div className="font-semibold text-[var(--ink)]">{member.name}</div>
+                          <div className="text-[10px] text-[var(--ink-muted)]">{member.phone || "No phone"}</div>
                         </td>
                         <td className="px-5 py-3.5">
                           {assignedStores.length > 0 ? (
@@ -506,7 +500,7 @@ export default function SuperadminView({
                                 return (
                                   <span
                                     key={sid}
-                                    className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#1e1e1e] text-[#f5f0eb] border border-[rgba(255,255,255,0.08)]"
+                                    className="px-2 py-0.5 rounded text-[10px] font-mono bg-[var(--surface-3)] text-[var(--ink)] border border-[var(--hairline)]"
                                   >
                                     {st?.name || sid}
                                   </span>
@@ -514,7 +508,7 @@ export default function SuperadminView({
                               })}
                             </div>
                           ) : (
-                            <span className="text-[#666] italic">Platform wide / Unassigned</span>
+                            <span className="text-[var(--ink-muted)] italic">Platform wide / Unassigned</span>
                           )}
                         </td>
                         <td className="px-5 py-3.5">
@@ -533,7 +527,7 @@ export default function SuperadminView({
                             disabled={isUpdating}
                             value={member.role}
                             onChange={(e) => handleRoleChange(member.id, e.target.value as UserRole)}
-                            className="min-h-[38px] bg-[#1a1a1a] border border-[rgba(255,255,255,0.12)] rounded-lg px-2.5 py-1 text-xs text-[#f5f0eb] outline-none cursor-pointer focus:border-[#ef8f0b]"
+                            className="min-h-[38px] bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-lg px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer focus:border-[#ef8f0b]"
                           >
                             <option value="SUPER_ADMIN">SUPER_ADMIN (Network Director)</option>
                             <option value="ADMIN">ADMIN (Store Hub Admin)</option>
@@ -541,7 +535,7 @@ export default function SuperadminView({
                             <option value="EMPLOYEE">EMPLOYEE (Delivery Rider)</option>
                           </select>
                         </td>
-                        <td className="px-5 py-3.5 text-right font-mono text-[10px] text-[#807a75]">
+                        <td className="px-5 py-3.5 text-right font-mono text-[10px] text-[var(--ink-muted)]">
                           <span className="inline-flex items-center gap-1 text-emerald-400">
                             <Lock className="w-3 h-3" />
                             <span>Authenticated</span>
@@ -558,14 +552,14 @@ export default function SuperadminView({
       </div>
 
       {/* ── Public Support Contact Configuration ── */}
-      <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-5 sm:p-6">
+      <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-5 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-bold text-base text-[#f5f0eb] flex items-center gap-2">
+            <h2 className="font-bold text-base text-[var(--ink)] flex items-center gap-2">
               <Settings className="w-4 h-4 text-[#ef8f0b]" />
               <span>Public Support Contact & Operating Hours</span>
             </h2>
-            <p className="text-xs text-[#807a75]">
+            <p className="text-xs text-[var(--ink-muted)]">
               Customize support email, contact phone number, and operating hours displayed on the public website
             </p>
           </div>
@@ -585,7 +579,7 @@ export default function SuperadminView({
 
         <form onSubmit={handleSaveSupportSettings} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
-            <label className="block text-[11px] font-mono uppercase tracking-wider text-[#807a75] mb-1.5">
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1.5">
               Support Email
             </label>
             <input
@@ -593,11 +587,11 @@ export default function SuperadminView({
               required
               value={supportEmail}
               onChange={(e) => setSupportEmail(e.target.value)}
-              className="w-full h-10 bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+              className="w-full h-10 bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-mono uppercase tracking-wider text-[#807a75] mb-1.5">
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1.5">
               Contact Phone Number
             </label>
             <input
@@ -605,18 +599,18 @@ export default function SuperadminView({
               required
               value={supportPhone}
               onChange={(e) => setSupportPhone(e.target.value)}
-              className="w-full h-10 bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+              className="w-full h-10 bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-mono uppercase tracking-wider text-[#807a75] mb-1.5">
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1.5">
               Operating Hours
             </label>
             <input
               type="text"
               value={supportHours}
               onChange={(e) => setSupportHours(e.target.value)}
-              className="w-full h-10 bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+              className="w-full h-10 bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
             />
           </div>
           <div>
@@ -636,21 +630,21 @@ export default function SuperadminView({
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-bold text-base text-[#f5f0eb] flex items-center gap-2">
+            <h2 className="font-bold text-base text-[var(--ink)] flex items-center gap-2">
               <History className="w-4 h-4 text-[#ef8f0b]" />
               <span>Platform-Wide Custody & Status Audit Feed</span>
             </h2>
-            <p className="text-xs text-[#807a75]">
+            <p className="text-xs text-[var(--ink-muted)]">
               Real-time immutable log of state transitions across the network
             </p>
           </div>
         </div>
 
-        <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-5 space-y-3">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-5 space-y-3">
           {bookings.length === 0 ? (
             <div className="py-12 text-center">
-              <History className="w-8 h-8 text-[#807a75] mx-auto mb-2 opacity-40" />
-              <p className="text-xs text-[#807a75]">
+              <History className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-2 opacity-40" />
+              <p className="text-xs text-[var(--ink-muted)]">
                 No customer bookings recorded yet. New service orders will appear here automatically in real time.
               </p>
             </div>
@@ -659,22 +653,22 @@ export default function SuperadminView({
               <div
                 key={b.id}
                 onClick={() => onSelectBooking(b)}
-                className="p-3 rounded-xl bg-[#1a1a1a] border border-[rgba(255,255,255,0.06)] hover:border-[#ef8f0b]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all"
+                className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] hover:border-[#ef8f0b]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-xs font-bold text-[#ef8f0b]">{b.id}</span>
                   <div>
-                    <div className="text-xs font-semibold text-[#f5f0eb]">
+                    <div className="text-xs font-semibold text-[var(--ink)]">
                       {b.brand} {b.deviceModel} — {b.issueType}
                     </div>
-                    <div className="text-[11px] text-[#807a75]">
+                    <div className="text-[11px] text-[var(--ink-muted)]">
                       Customer: {b.contactName} ({b.contactPhone}) • Hub: {b.storeId}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#1e1e1e] text-[#a8a09a] border border-[rgba(255,255,255,0.08)]">
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--ink-secondary)] border border-[var(--hairline)]">
                     {b.status}
                   </span>
                   <button
@@ -698,15 +692,15 @@ export default function SuperadminView({
       {/* ══════════════════════════════════════════════════════════ */}
       {isAddStoreOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#141414] border border-[rgba(255,255,255,0.1)] rounded-2xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between pb-4 mb-5 border-b border-[rgba(255,255,255,0.08)]">
+          <div className="bg-[var(--surface-1)] border border-[var(--hairline-strong)] rounded-2xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-[var(--hairline)]">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-[#ef8f0b]" />
-                <h3 className="font-bold text-lg text-[#f5f0eb]">Add New Store Hub</h3>
+                <h3 className="font-bold text-lg text-[var(--ink)]">Add New Store Hub</h3>
               </div>
               <button
                 onClick={() => setIsAddStoreOpen(false)}
-                className="text-[#807a75] hover:text-[#f5f0eb] p-1 rounded-lg"
+                className="text-[var(--ink-muted)] hover:text-[var(--ink)] p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -721,7 +715,7 @@ export default function SuperadminView({
             <form onSubmit={handleCreateStore} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                     Store Name *
                   </label>
                   <input
@@ -730,11 +724,11 @@ export default function SuperadminView({
                     value={newStoreName}
                     onChange={(e) => setNewStoreName(e.target.value)}
                     placeholder="Flashfix — Whitefield"
-                    className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                     Store ID / Code
                   </label>
                   <input
@@ -742,13 +736,13 @@ export default function SuperadminView({
                     value={newStoreId}
                     onChange={(e) => setNewStoreId(e.target.value)}
                     placeholder="hub-whitefield"
-                    className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                   Full Address *
                 </label>
                 <input
@@ -757,13 +751,13 @@ export default function SuperadminView({
                   value={newStoreAddress}
                   onChange={(e) => setNewStoreAddress(e.target.value)}
                   placeholder="Plot 18, ITPB Main Rd, Whitefield"
-                  className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                     City
                   </label>
                   <input
@@ -771,11 +765,11 @@ export default function SuperadminView({
                     value={newStoreCity}
                     onChange={(e) => setNewStoreCity(e.target.value)}
                     placeholder="Bengaluru"
-                    className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                     Phone Contact
                   </label>
                   <input
@@ -783,14 +777,14 @@ export default function SuperadminView({
                     value={newStorePhone}
                     onChange={(e) => setNewStorePhone(e.target.value)}
                     placeholder="+91 80 4821 7704"
-                    className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                     Latitude
                   </label>
                   <input
@@ -798,11 +792,11 @@ export default function SuperadminView({
                     value={newStoreLat}
                     onChange={(e) => setNewStoreLat(e.target.value)}
                     placeholder="12.9698"
-                    className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-1">
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                     Longitude
                   </label>
                   <input
@@ -810,26 +804,26 @@ export default function SuperadminView({
                     value={newStoreLng}
                     onChange={(e) => setNewStoreLng(e.target.value)}
                     placeholder="77.7499"
-                    className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>
               </div>
 
               {/* Assign Admins for this store */}
               <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-[#807a75] mb-2">
+                <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-2">
                   Assign Store Admins:
                 </label>
                 {adminUsers.length === 0 ? (
-                  <p className="text-[11px] text-[#807a75] italic">No users with ADMIN role available.</p>
+                  <p className="text-[11px] text-[var(--ink-muted)] italic">No users with ADMIN role available.</p>
                 ) : (
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto p-2 rounded-xl bg-[#191919] border border-[rgba(255,255,255,0.06)]">
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto p-2 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)]">
                     {adminUsers.map((admin) => {
                       const isChecked = newStoreAdminIds.includes(admin.id);
                       return (
                         <label
                           key={admin.id}
-                          className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[#222] cursor-pointer text-xs"
+                          className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[var(--surface-3)] cursor-pointer text-xs"
                         >
                           <input
                             type="checkbox"
@@ -843,8 +837,8 @@ export default function SuperadminView({
                             }}
                             className="rounded border-zinc-700 text-[#ef8f0b] focus:ring-[#ef8f0b]"
                           />
-                          <span className="font-medium text-[#f5f0eb]">{admin.name}</span>
-                          <span className="text-[11px] text-[#807a75]">({admin.email})</span>
+                          <span className="font-medium text-[var(--ink)]">{admin.name}</span>
+                          <span className="text-[11px] text-[var(--ink-muted)]">({admin.email})</span>
                         </label>
                       );
                     })}
@@ -852,11 +846,11 @@ export default function SuperadminView({
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[rgba(255,255,255,0.08)]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--hairline)]">
                 <button
                   type="button"
                   onClick={() => setIsAddStoreOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-[#807a75] hover:text-[#f5f0eb]"
+                  className="px-4 py-2 rounded-xl text-xs text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 >
                   Cancel
                 </button>
@@ -878,26 +872,26 @@ export default function SuperadminView({
       {/* ══════════════════════════════════════════════════════════ */}
       {storeToAssignAdmins && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#141414] border border-[rgba(255,255,255,0.1)] rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[rgba(255,255,255,0.08)]">
+          <div className="bg-[var(--surface-1)] border border-[var(--hairline-strong)] rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--hairline)]">
               <div>
-                <h3 className="font-bold text-base text-[#f5f0eb]">Assign Store Admins</h3>
+                <h3 className="font-bold text-base text-[var(--ink)]">Assign Store Admins</h3>
                 <p className="text-xs text-[#ef8f0b] font-medium mt-0.5">{storeToAssignAdmins.name}</p>
               </div>
               <button
                 onClick={() => setStoreToAssignAdmins(null)}
-                className="text-[#807a75] hover:text-[#f5f0eb] p-1 rounded-lg"
+                className="text-[var(--ink-muted)] hover:text-[var(--ink)] p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-[#807a75] mb-4">
+            <p className="text-xs text-[var(--ink-muted)] mb-4">
               Select one or multiple administrators to manage bookings, inventory, and field staff for this store:
             </p>
 
             {adminUsers.length === 0 ? (
-              <p className="text-xs text-[#807a75] italic py-4">No staff members have ADMIN role assigned.</p>
+              <p className="text-xs text-[var(--ink-muted)] italic py-4">No staff members have ADMIN role assigned.</p>
             ) : (
               <div className="space-y-2 mb-6 max-h-56 overflow-y-auto">
                 {adminUsers.map((admin) => {
@@ -907,8 +901,8 @@ export default function SuperadminView({
                       key={admin.id}
                       className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
                         isChecked
-                          ? "bg-blue-500/10 border-blue-500/30 text-[#f5f0eb]"
-                          : "bg-[#191919] border-[rgba(255,255,255,0.06)] text-[#807a75] hover:border-[#ef8f0b]/30"
+                          ? "bg-blue-500/10 border-blue-500/30 text-[var(--ink)]"
+                          : "bg-[var(--surface-2)] border-[var(--hairline)] text-[var(--ink-muted)] hover:border-[#ef8f0b]/30"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -925,8 +919,8 @@ export default function SuperadminView({
                           className="rounded border-zinc-700 text-[#ef8f0b] focus:ring-[#ef8f0b]"
                         />
                         <div>
-                          <div className="font-semibold text-xs text-[#f5f0eb]">{admin.name}</div>
-                          <div className="text-[11px] text-[#807a75]">{admin.email}</div>
+                          <div className="font-semibold text-xs text-[var(--ink)]">{admin.name}</div>
+                          <div className="text-[11px] text-[var(--ink-muted)]">{admin.email}</div>
                         </div>
                       </div>
                       {isChecked && <UserCheck className="w-4 h-4 text-blue-400" />}
@@ -936,11 +930,11 @@ export default function SuperadminView({
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--hairline)]">
               <button
                 type="button"
                 onClick={() => setStoreToAssignAdmins(null)}
-                className="px-4 py-2 rounded-xl text-xs text-[#807a75] hover:text-[#f5f0eb]"
+                className="px-4 py-2 rounded-xl text-xs text-[var(--ink-muted)] hover:text-[var(--ink)]"
               >
                 Cancel
               </button>

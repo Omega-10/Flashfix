@@ -30,25 +30,25 @@ export default function TeamView({
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display font-bold text-xl sm:text-2xl text-[#f5f0eb]">
+          <h1 className="font-display font-bold text-xl sm:text-2xl text-[var(--ink)]">
             Operations Team & Technicians
           </h1>
-          <p className="text-xs text-[#807a75]">
+          <p className="text-xs text-[var(--ink-muted)]">
             Manage store technicians, field couriers, and hub administrative access
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs">
+          <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs">
             <StoreIcon className="w-3.5 h-3.5 text-[#ef8f0b]" />
             <select
               value={selectedStore}
               onChange={(e) => onStoreChange(e.target.value)}
-              className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer"
+              className="bg-transparent text-[var(--ink)] outline-none text-xs cursor-pointer"
             >
-              <option value="ALL" className="bg-[#141414]">All Stores</option>
+              <option value="ALL" className="bg-[var(--surface-1)]">All Stores</option>
               {STORES.map((s) => (
-                <option key={s.id} value={s.id} className="bg-[#141414]">{s.name}</option>
+                <option key={s.id} value={s.id} className="bg-[var(--surface-1)]">{s.name}</option>
               ))}
             </select>
           </div>
@@ -68,16 +68,16 @@ export default function TeamView({
         {filteredStaff.map((staff) => (
           <div
             key={staff.id}
-            className="p-5 rounded-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)] hover:border-[#ef8f0b]/30 transition-all flex flex-col justify-between"
+            className="p-5 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] hover:border-[#ef8f0b]/30 transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#1e1e1e] border border-[rgba(255,255,255,0.08)] flex items-center justify-center font-bold text-sm text-[#ef8f0b]">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--surface-3)] border border-[var(--hairline)] flex items-center justify-center font-bold text-sm text-[#ef8f0b]">
                     {staff.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-[#f5f0eb] leading-tight">
+                    <h3 className="font-bold text-sm text-[var(--ink)] leading-tight">
                       {staff.name}
                     </h3>
                     <span className="font-mono text-[10px] text-[#ef8f0b] block mt-0.5">
@@ -97,30 +97,30 @@ export default function TeamView({
                 </span>
               </div>
 
-              <div className="space-y-2 py-3 border-y border-[rgba(255,255,255,0.06)] text-xs text-[#a8a09a]">
+              <div className="space-y-2 py-3 border-y border-[var(--hairline)] text-xs text-[var(--ink-secondary)]">
                 <div className="flex items-center gap-2">
                   <Shield className="w-3.5 h-3.5 text-[#ef8f0b]" />
-                  <span className="font-mono text-[11px] text-[#f5f0eb] font-semibold">{staff.role}</span>
+                  <span className="font-mono text-[11px] text-[var(--ink)] font-semibold">{staff.role}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StoreIcon className="w-3.5 h-3.5 text-[#807a75]" />
+                  <StoreIcon className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
                   <span className="truncate">{staff.storeName || staff.storeId}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-[#807a75]" />
-                  <span className="truncate text-[#807a75]">{staff.email}</span>
+                  <Mail className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
+                  <span className="truncate text-[var(--ink-muted)]">{staff.email}</span>
                 </div>
                 {staff.phone && (
                   <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-[#807a75]" />
-                    <span className="text-[#807a75]">{staff.phone}</span>
+                    <Phone className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
+                    <span className="text-[var(--ink-muted)]">{staff.phone}</span>
                   </div>
                 )}
               </div>
             </div>
 
             <div className="mt-4 pt-3 flex items-center justify-between text-xs font-mono">
-              <span className="text-[#807a75]">Current Load:</span>
+              <span className="text-[var(--ink-muted)]">Current Load:</span>
               <span className="font-bold text-[#ef8f0b]">{staff.activeJobsCount || 0} active orders</span>
             </div>
           </div>

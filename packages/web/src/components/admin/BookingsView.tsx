@@ -95,37 +95,37 @@ export default function BookingsView({
       {/* Header and Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-display font-bold text-xl sm:text-2xl text-[#f5f0eb]">
+          <h1 className="font-display font-bold text-xl sm:text-2xl text-[var(--ink)]">
             Bookings & Dispatch Ledger
           </h1>
-          <p className="text-xs text-[#807a75]">
+          <p className="text-xs text-[var(--ink-muted)]">
             Manage, filter, and allocate staff to customer service orders
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-[#a8a09a]">
+        <div className="flex items-center gap-2 text-xs font-mono text-[var(--ink-secondary)]">
           <span>
-            Showing: <strong className="text-[#f5f0eb]">{filteredBookings.length}</strong> entries
+            Showing: <strong className="text-[var(--ink)]">{filteredBookings.length}</strong> entries
           </span>
         </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="p-3.5 sm:p-4 rounded-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)] flex flex-col lg:flex-row gap-2.5 sm:gap-3">
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-[var(--surface-1)] border border-[var(--hairline)] flex flex-col lg:flex-row gap-2.5 sm:gap-3">
         {/* Search Input */}
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#807a75]" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by ID, customer name, phone, or model..."
-            className="min-h-[44px] w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl pl-10 pr-9 py-2.5 text-xs text-[#f5f0eb] placeholder-[#807a75] outline-none focus:border-[#ef8f0b] transition-colors"
+            className="min-h-[44px] w-full bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl pl-10 pr-9 py-2.5 text-xs text-[var(--ink)] placeholder-[var(--ink-muted)] outline-none focus:border-[#ef8f0b] transition-colors"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#807a75] hover:text-[#f5f0eb] p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] hover:text-[var(--ink)] p-1"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -133,46 +133,46 @@ export default function BookingsView({
         </div>
 
         {/* Store Filter */}
-        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs min-h-[44px]">
+        <div className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs min-h-[44px]">
           <StoreIcon className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0" />
           <select
             value={selectedStore}
             onChange={(e) => onStoreChange(e.target.value)}
-            className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer w-full"
+            className="bg-transparent text-[var(--ink)] outline-none text-xs cursor-pointer w-full"
           >
-            <option value="ALL" className="bg-[#141414]">All Stores</option>
+            <option value="ALL" className="bg-[var(--surface-1)]">All Stores</option>
             {STORES.map((s) => (
-              <option key={s.id} value={s.id} className="bg-[#141414]">{s.name}</option>
+              <option key={s.id} value={s.id} className="bg-[var(--surface-1)]">{s.name}</option>
             ))}
           </select>
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs min-h-[44px]">
+        <div className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs min-h-[44px]">
           <Filter className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer w-full"
+            className="bg-transparent text-[var(--ink)] outline-none text-xs cursor-pointer w-full"
           >
-            <option value="ALL" className="bg-[#141414]">All Statuses</option>
+            <option value="ALL" className="bg-[var(--surface-1)]">All Statuses</option>
             {BOOKING_STATUSES.map((st) => (
-              <option key={st} value={st} className="bg-[#141414]">{st}</option>
+              <option key={st} value={st} className="bg-[var(--surface-1)]">{st}</option>
             ))}
           </select>
         </div>
 
         {/* Date Filter */}
-        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs min-h-[44px]">
+        <div className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs min-h-[44px]">
           <Calendar className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0" />
           <input
             type="date"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer w-full"
+            className="bg-transparent text-[var(--ink)] outline-none text-xs cursor-pointer w-full"
           />
           {dateFilter && (
-            <button onClick={() => setDateFilter("")} className="text-[#807a75] hover:text-[#f5f0eb] p-1">
+            <button onClick={() => setDateFilter("")} className="text-[var(--ink-muted)] hover:text-[var(--ink)] p-1">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
@@ -180,10 +180,10 @@ export default function BookingsView({
       </div>
 
       {/* ── Desktop Bookings Table (hidden on mobile) ── */}
-      <div className="hidden md:block bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl overflow-hidden">
+      <div className="hidden md:block bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#1a1a1a] text-[#807a75] font-mono text-[11px] uppercase tracking-wider">
+            <thead className="bg-[var(--surface-2)] text-[var(--ink-muted)] font-mono text-[11px] uppercase tracking-wider">
               <tr>
                 <th className="px-5 py-3.5">ID</th>
                 <th className="px-5 py-3.5">Customer Contact</th>
@@ -195,10 +195,10 @@ export default function BookingsView({
                 <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[rgba(255,255,255,0.06)] text-[#f5f0eb]">
+            <tbody className="divide-y divide-[var(--hairline)] text-[var(--ink)]">
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-[#807a75]">
+                  <td colSpan={8} className="px-5 py-12 text-center text-[var(--ink-muted)]">
                     No bookings found matching selected filters.
                   </td>
                 </tr>
@@ -209,30 +209,30 @@ export default function BookingsView({
                   return (
                     <tr
                       key={b.id}
-                      className="hover:bg-[#1a1a1a]/60 transition-colors cursor-pointer"
+                      className="hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
                       onClick={() => onSelectBooking(b)}
                     >
                       <td className="px-5 py-4 font-mono font-bold text-[#ef8f0b]">
                         {b.id}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="font-semibold text-[#f5f0eb]">{b.contactName}</div>
-                        <div className="text-[11px] text-[#807a75]">{b.contactPhone}</div>
-                        <div className="text-[10px] text-[#6b6460] truncate max-w-[140px]">{b.contactEmail}</div>
+                        <div className="font-semibold text-[var(--ink)]">{b.contactName}</div>
+                        <div className="text-[11px] text-[var(--ink-muted)]">{b.contactPhone}</div>
+                        <div className="text-[10px] text-[var(--ink-muted)] truncate max-w-[140px]">{b.contactEmail}</div>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 font-medium text-[#f5f0eb]">
+                        <div className="flex items-center gap-1.5 font-medium text-[var(--ink)]">
                           <Smartphone className="w-3.5 h-3.5 text-[#ef8f0b]" />
                           <span>{b.brand} {b.deviceModel}</span>
                         </div>
-                        <div className="text-[11px] text-[#a8a09a] mt-0.5">{b.issueType}</div>
+                        <div className="text-[11px] text-[var(--ink-secondary)] mt-0.5">{b.issueType}</div>
                       </td>
-                      <td className="px-5 py-4 text-[#a8a09a] text-[11px]">
+                      <td className="px-5 py-4 text-[var(--ink-secondary)] text-[11px]">
                         {getStoreName(b.storeId)}
                       </td>
-                      <td className="px-5 py-4 font-mono text-[11px] text-[#a8a09a]">
+                      <td className="px-5 py-4 font-mono text-[11px] text-[var(--ink-secondary)]">
                         <div>{b.scheduledDate}</div>
-                        <div className="text-[10px] text-[#807a75]">{b.scheduledTime}</div>
+                        <div className="text-[10px] text-[var(--ink-muted)]">{b.scheduledTime}</div>
                       </td>
                       <td className="px-5 py-4">
                         <span
@@ -249,8 +249,8 @@ export default function BookingsView({
                           </span>
                         ) : (
                           <div className="text-xs">
-                            <span className="font-medium text-[#f5f0eb] block">{b.assignedEmployeeName}</span>
-                            <span className="text-[10px] text-[#807a75] block font-mono">Tech: {b.technicianName}</span>
+                            <span className="font-medium text-[var(--ink)] block">{b.assignedEmployeeName}</span>
+                            <span className="text-[10px] text-[var(--ink-muted)] block font-mono">Tech: {b.technicianName}</span>
                           </div>
                         )}
                       </td>
@@ -267,7 +267,7 @@ export default function BookingsView({
                           ) : (
                             <button
                               onClick={() => onAssignBooking(b)}
-                              className="border border-[rgba(255,255,255,0.08)] hover:border-[#ef8f0b]/40 text-[#a8a09a] hover:text-[#ef8f0b] text-xs px-2.5 py-1.5 rounded-lg transition-colors"
+                              className="border border-[var(--hairline)] hover:border-[#ef8f0b]/40 text-[var(--ink-secondary)] hover:text-[#ef8f0b] text-xs px-2.5 py-1.5 rounded-lg transition-colors"
                               title="Reassign Staff"
                             >
                               Reassign
@@ -275,7 +275,7 @@ export default function BookingsView({
                           )}
                           <button
                             onClick={() => onSelectBooking(b)}
-                            className="p-1.5 text-[#807a75] hover:text-[#f5f0eb] hover:bg-[#1e1e1e] rounded-lg transition-colors"
+                            className="p-1.5 text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-3)] rounded-lg transition-colors"
                             title="Audit Trail & Details"
                           >
                             <Eye className="w-4 h-4" />
@@ -294,7 +294,7 @@ export default function BookingsView({
       {/* ── Mobile Stacked Cards (<= 480px width, zero horizontal overflow) ── */}
       <div className="md:hidden space-y-3">
         {filteredBookings.length === 0 ? (
-          <div className="p-8 text-center text-[#807a75] bg-[#141414] rounded-2xl border border-[rgba(255,255,255,0.08)]">
+          <div className="p-8 text-center text-[var(--ink-muted)] bg-[var(--surface-1)] rounded-2xl border border-[var(--hairline)]">
             No bookings found matching selected filters.
           </div>
         ) : (
@@ -305,7 +305,7 @@ export default function BookingsView({
               <div
                 key={booking.id}
                 onClick={() => onSelectBooking(booking)}
-                className="p-4 bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-xl space-y-2 cursor-pointer active:bg-[#1a1a1a] transition-all"
+                className="p-4 bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl space-y-2 cursor-pointer active:bg-[var(--surface-2)] transition-all"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs text-[#ef8f0b] font-bold">
@@ -316,15 +316,15 @@ export default function BookingsView({
                   </span>
                 </div>
 
-                <div className="text-sm font-semibold text-[#f5f0eb]">
+                <div className="text-sm font-semibold text-[var(--ink)]">
                   {booking.brand} {booking.deviceModel}
                 </div>
-                <div className="text-xs text-[#807a75]">{booking.issueType}</div>
+                <div className="text-xs text-[var(--ink-muted)]">{booking.issueType}</div>
 
-                <div className="text-xs text-[#a8a09a] pt-2 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between">
+                <div className="text-xs text-[var(--ink-secondary)] pt-2 border-t border-[var(--hairline)] flex items-center justify-between">
                   <div>
-                    <span className="text-[#f5f0eb] block font-medium">{booking.contactName}</span>
-                    <span className="text-[10px] text-[#807a75]">{booking.scheduledTime} • {booking.contactPhone}</span>
+                    <span className="text-[var(--ink)] block font-medium">{booking.contactName}</span>
+                    <span className="text-[10px] text-[var(--ink-muted)]">{booking.scheduledTime} • {booking.contactPhone}</span>
                   </div>
 
                   <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5">

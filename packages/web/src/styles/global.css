@@ -13,6 +13,8 @@
   --canvas:            #0a0a0a;
   --surface-1:          #111111;
   --surface-2:          #181818;
+  --surface-3:          #222222;
+  --hairline-strong:    rgba(255, 255, 255, 0.14);
   --hairline:           rgba(255, 255, 255, 0.08);
 
   /* Typography / Ink */
@@ -71,6 +73,8 @@
   --canvas:            #ede6dc;
   --surface-1:          #e4dcd0;
   --surface-2:          #d9d0c3;
+  --surface-3:          #cec4b5;
+  --hairline-strong:    rgba(50, 40, 30, 0.22);
   --hairline:           rgba(50, 40, 30, 0.12);
 
   /* Typography / Ink */
@@ -325,3 +329,20 @@
 .leaflet-popup-tip {
   background: var(--surface-1) !important;
 }
+
+/* Admin console — light theme contrast for status tints (400 shades are tuned for dark canvas) */
+.light .admin-shell .text-emerald-400 { color: #047857; }
+.light .admin-shell .text-blue-400 { color: #1d4ed8; }
+.light .admin-shell .text-amber-400 { color: #b45309; }
+.light .admin-shell .text-red-400 { color: #b91c1c; }
+.light .admin-shell .text-purple-400 { color: #6d28d9; }
+.light .admin-shell .text-cyan-400 { color: #0e7490; }
+.light .admin-shell .text-yellow-400 { color: #a16207; }
+.light .admin-shell .text-orange-400 { color: #c2410c; }
+.light .admin-shell select option { background: var(--surface-1); color: var(--ink); }
+.light .admin-shell .text-amber-300 { color: #b45309; }
+.light .admin-shell .text-blue-300 { color: #1d4ed8; }
+.light .admin-shell .text-emerald-300 { color: #047857; }
+.light .admin-shell .text-red-300 { color: #b91c1c; }
+.light .admin-shell .text-indigo-400 { color: #4338ca; }
+.light .admin-shell .text-zinc-400 { color: #52525b; }

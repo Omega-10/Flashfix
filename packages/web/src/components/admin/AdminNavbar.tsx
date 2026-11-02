@@ -4,7 +4,6 @@ import {
   Users,
   Boxes,
   Store as StoreIcon,
-  Bell,
   Wrench,
   Bike,
   Globe2,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { AdminTab, AdminRole, StoreOption } from "./types";
 import { STORES } from "./api";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 interface AdminNavbarProps {
   activeTab: AdminTab;
@@ -86,7 +86,7 @@ export default function AdminNavbar({
       case "EMPLOYEE":
         return "bg-amber-500/15 text-amber-400 border-amber-500/30";
       default:
-        return "bg-[#181818] text-[#807a75] border-[rgba(255,255,255,0.1)]";
+        return "bg-[var(--surface-2)] text-[var(--ink-muted)] border-[var(--hairline-strong)]";
     }
   }
 
@@ -109,29 +109,19 @@ export default function AdminNavbar({
   return (
     <>
       {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.08)]">
+      <header className="sticky top-0 z-40 bg-[var(--canvas)] backdrop-blur-md border-b border-[var(--hairline)]">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2">
             {/* Left: Brand & Navigation */}
             <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#ef8f0b] flex items-center justify-center font-bold text-black text-base shadow-md shadow-[#ef8f0b]/20 shrink-0">
-                  ⚡
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="font-bold text-xs sm:text-sm tracking-wide text-white">
-                      FLASHFIX
-                    </span>
-                    <span className="font-mono text-[9px] uppercase tracking-wider bg-[#ef8f0b]/10 text-[#ef8f0b] px-1.5 py-0.5 rounded border border-[#ef8f0b]/20 font-semibold">
-                      OPS
-                    </span>
-                  </div>
-                  <span className="hidden sm:block text-[10px] text-[#807a75] font-mono leading-none mt-0.5">
-                    Operations & Governance Console
-                  </span>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => onTabChange(visibleTabs[0]?.id ?? "bookings")}
+                className="heading-flashfix text-xl tracking-[0.12em] uppercase text-[var(--ink)] hover:text-[#ef8f0b] transition-colors"
+                aria-label="Go to workspace home"
+              >
+                FLASHFIX
+              </button>
 
               {/* Desktop Navigation Tabs */}
               <nav className="hidden lg:flex items-center gap-1">
@@ -144,8 +134,8 @@ export default function AdminNavbar({
                       onClick={() => onTabChange(tab.id)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                         isActive
-                          ? "bg-[#1e1e1e] text-[#ef8f0b] border border-[rgba(255,255,255,0.08)] shadow-sm"
-                          : "text-[#807a75] hover:text-[#f5f0eb] hover:bg-[#141414]"
+                          ? "bg-[var(--surface-3)] text-[#ef8f0b] border border-[var(--hairline)] shadow-sm"
+                          : "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-1)]"
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -164,19 +154,19 @@ export default function AdminNavbar({
             {/* Right: Store Switcher & Staff Profile */}
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Store Switcher */}
-              <div className="hidden sm:flex items-center gap-1.5 bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-xl px-2.5 py-1.5 text-xs">
+              <div className="hidden sm:flex items-center gap-1.5 bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl px-2.5 py-1.5 text-xs">
                 <StoreIcon className="w-3.5 h-3.5 text-[#ef8f0b] shrink-0" />
                 {currentRole === "SUPER_ADMIN" ? (
                   <select
                     value={selectedStore}
                     onChange={(e) => onStoreChange(e.target.value)}
-                    className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer font-medium max-w-[130px] md:max-w-[180px] truncate"
+                    className="bg-transparent text-[var(--ink)] outline-none text-xs cursor-pointer font-medium max-w-[130px] md:max-w-[180px] truncate"
                   >
-                    <option value="ALL" className="bg-[#141414] text-[#f5f0eb]">
+                    <option value="ALL" className="bg-[var(--surface-1)] text-[var(--ink)]">
                       All Stores (Platform)
                     </option>
                     {accessibleStores.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-[#141414] text-[#f5f0eb]">
+                      <option key={s.id} value={s.id} className="bg-[var(--surface-1)] text-[var(--ink)]">
                         {s.name}
                       </option>
                     ))}
@@ -185,44 +175,33 @@ export default function AdminNavbar({
                   <select
                     value={selectedStore}
                     onChange={(e) => onStoreChange(e.target.value)}
-                    className="bg-transparent text-[#f5f0eb] outline-none text-xs cursor-pointer font-medium max-w-[130px] md:max-w-[180px] truncate"
+                    className="bg-transparent text-[var(--ink)] outline-none text-xs cursor-pointer font-medium max-w-[130px] md:max-w-[180px] truncate"
                   >
-                    <option value="ALL" className="bg-[#141414] text-[#f5f0eb]">
+                    <option value="ALL" className="bg-[var(--surface-1)] text-[var(--ink)]">
                       My Assigned Stores ({accessibleStores.length})
                     </option>
                     {accessibleStores.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-[#141414] text-[#f5f0eb]">
+                      <option key={s.id} value={s.id} className="bg-[var(--surface-1)] text-[var(--ink)]">
                         {s.name}
                       </option>
                     ))}
                   </select>
                 ) : (
-                  <span className="text-[#f5f0eb] font-medium text-xs truncate max-w-[160px]">
+                  <span className="text-[var(--ink)] font-medium text-xs truncate max-w-[160px]">
                     {accessibleStores[0]?.name || "Assigned Store"}
                   </span>
                 )}
               </div>
 
-              {/* Notifications Alert Bell */}
-              {unassignedCount > 0 && (
-                <button
-                  onClick={() => onTabChange("bookings")}
-                  className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition-colors relative shrink-0 min-h-[38px] min-w-[38px] flex items-center justify-center"
-                  title={`${unassignedCount} unassigned orders require staff allocation`}
-                >
-                  <Bell className="w-4 h-4" />
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping" />
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full" />
-                </button>
-              )}
+              <ThemeToggle />
 
               {/* Staff User Identity Badge */}
-              <div className="flex items-center gap-2 pl-2 border-l border-[rgba(255,255,255,0.08)]">
+              <div className="flex items-center gap-2 pl-2 border-l border-[var(--hairline)]">
                 <div className="hidden md:flex flex-col items-end text-right">
-                  <span className="text-xs font-semibold text-[#f5f0eb] leading-tight">
+                  <span className="text-xs font-semibold text-[var(--ink)] leading-tight">
                     {staffUser?.name || "Staff Member"}
                   </span>
-                  <span className="text-[10px] text-[#807a75] font-mono leading-tight truncate max-w-[140px]">
+                  <span className="text-[10px] text-[var(--ink-muted)] font-mono leading-tight truncate max-w-[140px]">
                     {staffUser?.email}
                   </span>
                 </div>
@@ -237,8 +216,8 @@ export default function AdminNavbar({
 
                 <button
                   onClick={onLogout}
-                  title="Sign Out of Operations Console"
-                  className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-xl bg-[#141414] hover:bg-red-500/10 border border-[rgba(255,255,255,0.08)] hover:border-red-500/30 text-[#807a75] hover:text-red-400 transition-colors ml-1"
+                  title="Sign out"
+                  className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-xl bg-[var(--surface-1)] hover:bg-red-500/10 border border-[var(--hairline)] hover:border-red-500/30 text-[var(--ink-muted)] hover:text-red-400 transition-colors ml-1"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -247,7 +226,7 @@ export default function AdminNavbar({
           </div>
 
           {/* Tablet/Medium Subheader Navigation Row */}
-          <div className="hidden md:flex lg:hidden items-center justify-between py-2 border-t border-[rgba(255,255,255,0.08)] overflow-x-auto gap-1">
+          <div className="hidden md:flex lg:hidden items-center justify-between py-2 border-t border-[var(--hairline)] overflow-x-auto gap-1">
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -256,7 +235,7 @@ export default function AdminNavbar({
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
-                    isActive ? "bg-[#1e1e1e] text-[#ef8f0b]" : "text-[#807a75] hover:text-[#f5f0eb]"
+                    isActive ? "bg-[var(--surface-3)] text-[#ef8f0b]" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -276,7 +255,7 @@ export default function AdminNavbar({
       {/* Mobile Sticky Bottom Navigation Bar (<= 480px) */}
       <nav
         aria-label="Mobile Staff Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0d0d0d]/95 backdrop-blur-lg border-t border-[rgba(255,255,255,0.1)] px-2 py-1 safe-area-pb"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--canvas)] backdrop-blur-lg border-t border-[var(--hairline-strong)] px-2 py-1 safe-area-pb"
       >
         <div className={`grid gap-1 ${visibleTabs.length >= 5 ? "grid-cols-5" : `grid-cols-${visibleTabs.length}`}`}>
           {visibleTabs.slice(0, 5).map((tab) => {
@@ -288,8 +267,8 @@ export default function AdminNavbar({
                 onClick={() => onTabChange(tab.id)}
                 className={`min-h-[48px] flex flex-col items-center justify-center rounded-xl transition-all relative ${
                   isActive
-                    ? "text-[#ef8f0b] bg-[#1a1a1a]"
-                    : "text-[#807a75] hover:text-[#f5f0eb] active:scale-95"
+                    ? "text-[#ef8f0b] bg-[var(--surface-2)]"
+                    : "text-[var(--ink-muted)] hover:text-[var(--ink)] active:scale-95"
                 }`}
               >
                 <div className="relative">

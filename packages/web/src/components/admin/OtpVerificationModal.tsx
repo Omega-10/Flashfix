@@ -111,14 +111,14 @@ export default function OtpVerificationModal({
       />
 
       {/* Modal Dialog */}
-      <div className="relative z-10 w-full max-w-md bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl p-6 text-[#f5f0eb]">
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[rgba(255,255,255,0.08)]">
+      <div className="relative z-10 w-full max-w-md bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl shadow-2xl p-6 text-[var(--ink)]">
+        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--hairline)]">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-[#ef8f0b]/10 text-[#ef8f0b] border border-[#ef8f0b]/30">
               <KeyRound className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm sm:text-base text-[#f5f0eb]">
+              <h3 className="font-bold text-sm sm:text-base text-[var(--ink)]">
                 {config.title}
               </h3>
               <span className="font-mono text-[10px] text-[#ef8f0b]">
@@ -129,13 +129,13 @@ export default function OtpVerificationModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-[#807a75] hover:text-[#f5f0eb] hover:bg-[#1a1a1a] rounded-lg transition-colors"
+            className="p-1.5 text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-xs text-[#a8a09a] mb-5 leading-relaxed">
+        <p className="text-xs text-[var(--ink-secondary)] mb-5 leading-relaxed">
           {config.description}
         </p>
 
@@ -165,7 +165,7 @@ export default function OtpVerificationModal({
               value={digit}
               onChange={(e) => handleChange(idx, e.target.value)}
               onKeyDown={(e) => handleKeyDown(idx, e)}
-              className="min-h-[48px] w-12 text-center text-lg font-mono font-bold bg-[#1a1a1a] border border-[rgba(255,255,255,0.12)] rounded-xl text-[#f5f0eb] outline-none focus:border-[#ef8f0b] focus:ring-2 focus:ring-[#ef8f0b]/20 transition-all"
+              className="min-h-[48px] w-12 text-center text-lg font-mono font-bold bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl text-[var(--ink)] outline-none focus:border-[#ef8f0b] focus:ring-2 focus:ring-[#ef8f0b]/20 transition-all"
             />
           ))}
         </div>
@@ -175,7 +175,7 @@ export default function OtpVerificationModal({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[44px] flex-1 px-4 py-2 text-xs font-medium text-[#807a75] hover:text-[#f5f0eb] rounded-xl border border-[rgba(255,255,255,0.08)] hover:bg-[#1a1a1a]"
+            className="min-h-[44px] flex-1 px-4 py-2 text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] rounded-xl border border-[var(--hairline)] hover:bg-[var(--surface-2)]"
           >
             Cancel
           </button>
