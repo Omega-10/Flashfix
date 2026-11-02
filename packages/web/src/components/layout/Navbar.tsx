@@ -186,7 +186,7 @@ export default function Navbar() {
                         : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                   >
-                    ⚡ Flashfix
+                    Flashfix
                   </Link>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -234,9 +234,9 @@ export default function Navbar() {
             {isAuthenticated ? (
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  to={user && user.role !== "CONSUMER" ? "/admin" : "/flashfix/profile"}
+                  to="/flashfix/profile"
                   className="flex items-center gap-2 bg-[var(--surface-elevated)] hover:border-[var(--accent)] border border-[var(--surface-border)] px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-primary)] transition-all shadow-xs"
-                  title={user && user.role !== "CONSUMER" ? "Open Operations Console" : "View Profile & Bookings"}
+                  title="View Profile & Bookings"
                 >
                   <div className="w-6 h-6 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center font-bold text-xs">
                     {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
@@ -361,11 +361,11 @@ export default function Navbar() {
               >
                 {isAuthenticated ? (
                   <Link
-                    to={user && user.role !== "CONSUMER" ? "/admin" : "/flashfix/profile"}
+                    to="/flashfix/profile"
                     className="flex items-center gap-2 py-2 px-2 text-sm text-[var(--text-primary)] border-b border-[var(--surface-border)]/50"
                   >
                     <User className="w-4 h-4 text-[var(--accent)]" />
-                    <span>{user && user.role !== "CONSUMER" ? "Operations Console" : `Profile (${user?.name || user?.email})`}</span>
+                    <span>{`Profile (${user?.name || user?.email})`}</span>
                   </Link>
                 ) : (
                   <Link

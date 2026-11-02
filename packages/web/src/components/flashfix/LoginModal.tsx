@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
+import { X, Mail, ShieldCheck, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
 import { useAuthStore, UserProfile } from "@/store/authStore";
 import { isDisposableEmail } from "@flashfix/shared";
 import { OtpInput } from "@/components/ui/OtpInput";
@@ -12,10 +12,8 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const { setAuth } = useAuthStore();
-  const [step, setStep] = useState<"EMAIL" | "PASSWORD" | "OTP">("EMAIL");
+  const [step, setStep] = useState<"EMAIL" | "OTP">("EMAIL");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +41,6 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   useEffect(() => {
     if (isOpen) {
       setStep("EMAIL");
-      setPassword("");
       setOtp("");
       setError(null);
       setLoading(false);
@@ -56,7 +53,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
 
   function extractErrorMessage(res: Response, resText: string, data: any): string {
     if (data?.error?.code === "DISPOSABLE_EMAIL_NOT_ALLOWED" || data?.error?.message?.includes("disposable")) {
-      return "Disposable email domains are not allowed. Please enter your work or personal email.";
+      return "Disposable email domains are not allowed. Please enter your personal or work email.";
     }
     if (data?.error?.message) return data.error.message;
     if (data?.message) return data.message;
@@ -69,7 +66,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     return `Unable to complete sign-in (${res.status}). Please try again.`;
   }
 
-  async function handleIdentify(e?: React.FormEvent) {
+  async function handleSendOtp(e?: React.FormEvent) {
     if (e) e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
 
@@ -87,7 +84,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/identify", {
+      const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -107,61 +104,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         return;
       }
 
-      if (data?.next === "password") {
-        setStep("PASSWORD");
-      } else {
-        setStep("OTP");
-        setOtp("");
-        setTimer(60);
-        setCanResend(false);
-      }
+      setStep("OTP");
+      setOtp("");
+      setTimer(60);
+      setCanResend(false);
     } catch {
       setError("Network error while connecting to server. Please check your connection.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleStaffLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!password) {
-      setError("Please enter your password.");
-      return;
-    }
-
-    setError(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/staff-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password,
-          rememberMe: true,
-        }),
-      });
-
-      const resText = await res.text();
-      let data: any = null;
-      try {
-        data = resText ? JSON.parse(resText) : null;
-      } catch {
-        data = null;
-      }
-
-      if (!res.ok || !data?.user) {
-        setError(extractErrorMessage(res, resText, data));
-        return;
-      }
-
-      setAuth(data.user, data.token || "cookie-session");
-      if (onSuccess) onSuccess(data.user);
-      onClose();
-    } catch {
-      setError("Network error while signing in. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -223,7 +171,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       <div className="relative z-10 w-full max-w-md bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl shadow-2xl p-6 sm:p-8 text-[var(--ink)]">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-1.5 rounded-lg text-[var(--ink-3)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors"
+          className="absolute top-5 right-5 p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -234,17 +182,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
             FLASHFIX ACCOUNT
           </span>
           <h3 className="font-display font-bold text-xl text-[var(--ink)]">
-            {step === "EMAIL"
-              ? "Sign in to continue"
-              : step === "PASSWORD"
-              ? "Enter your password"
-              : "Enter verification code"}
+            {step === "EMAIL" ? "Sign in to continue" : "Enter verification code"}
           </h3>
-          <p className="text-xs text-[var(--ink-2)] mt-1">
+          <p className="text-xs text-[var(--ink-secondary)] mt-1">
             {step === "EMAIL"
               ? "Sign in with your email to link your booking and track repair status."
-              : step === "PASSWORD"
-              ? `Signing in as ${email.trim().toLowerCase()}`
               : `Code sent to ${email.trim().toLowerCase()}`}
           </p>
         </div>
@@ -257,13 +199,13 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         )}
 
         {step === "EMAIL" && (
-          <form onSubmit={handleIdentify} className="space-y-4" noValidate>
+          <form onSubmit={handleSendOtp} className="space-y-4" noValidate>
             <div>
-              <label className="block text-xs font-medium text-[var(--ink-2)] mb-1.5">
+              <label className="block text-xs font-medium text-[var(--ink-secondary)] mb-1.5">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-3)]" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)]" />
                 <input
                   type="email"
                   value={email}
@@ -271,7 +213,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
                   placeholder="you@domain.com"
                   autoFocus
                   required
-                  className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-4 text-sm text-[var(--ink)] placeholder-[var(--ink-3)] outline-none focus:border-[var(--accent)] transition-colors"
+                  className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-4 text-sm text-[var(--ink)] placeholder-[var(--ink-muted)] outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
             </div>
@@ -285,7 +227,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <span>Continue</span>
+                  <span>Send One-Time Code</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -293,7 +235,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
 
             <div className="relative py-1.5 flex items-center justify-center">
               <div className="border-t border-[var(--hairline)] w-full" />
-              <span className="bg-[var(--surface-1)] px-3 text-[11px] font-mono uppercase tracking-wider text-[var(--ink-3)]">
+              <span className="bg-[var(--surface-1)] px-3 text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)]">
                 or
               </span>
               <div className="border-t border-[var(--hairline)] w-full" />
@@ -326,54 +268,6 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
           </form>
         )}
 
-        {step === "PASSWORD" && (
-          <form onSubmit={handleStaffLogin} className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-[var(--ink-2)]">Password</label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep("EMAIL");
-                    setPassword("");
-                    setError(null);
-                  }}
-                  className="text-xs text-[var(--accent)] hover:underline"
-                >
-                  Change email
-                </button>
-              </div>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-3)]" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  autoFocus
-                  required
-                  className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-10 text-sm text-[var(--ink)] placeholder-[var(--ink-3)] outline-none focus:border-[var(--accent)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-3)] hover:text-[var(--ink)] p-1"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !password}
-              className="w-full h-11 flex items-center justify-center gap-2 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] font-semibold rounded-lg px-5 text-sm transition-all disabled:opacity-40"
-            >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <span>Sign In</span>}
-            </button>
-          </form>
-        )}
-
         {step === "OTP" && (
           <form onSubmit={(e) => handleVerifyOtp(e)} className="space-y-5">
             <div>
@@ -401,7 +295,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
               )}
             </button>
 
-            <div className="flex items-center justify-between text-xs text-[var(--ink-3)] pt-2 border-t border-[var(--hairline)]">
+            <div className="flex items-center justify-between text-xs text-[var(--ink-muted)] pt-2 border-t border-[var(--hairline)]">
               <button
                 type="button"
                 onClick={() => {
@@ -409,14 +303,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
                   setOtp("");
                   setError(null);
                 }}
-                className="text-[var(--ink-2)] hover:text-[var(--ink)]"
+                className="text-[var(--ink-secondary)] hover:text-[var(--ink)]"
               >
                 Change email
               </button>
               {canResend ? (
                 <button
                   type="button"
-                  onClick={() => handleIdentify()}
+                  onClick={() => handleSendOtp()}
                   className="text-[var(--accent)] hover:underline font-medium"
                 >
                   Resend code

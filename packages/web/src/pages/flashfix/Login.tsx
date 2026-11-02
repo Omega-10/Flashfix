@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
-import { useAuthStore, getRedirectForRole } from "@/store/authStore";
+import { Mail, ArrowRight, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 import { isDisposableEmail } from "@flashfix/shared";
 import { OtpInput } from "@/components/ui/OtpInput";
 
@@ -10,21 +10,18 @@ export default function Login() {
   const location = useLocation();
   const { user, isAuthenticated, setAuth } = useAuthStore();
 
-  const [step, setStep] = useState<"EMAIL" | "PASSWORD" | "OTP">("EMAIL");
+  const [step, setStep] = useState<"EMAIL" | "OTP">("EMAIL");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
 
-  // If already authenticated, redirect to role-specific destination or return path
+  // If already authenticated as a customer, redirect to profile or return path
   useEffect(() => {
     if (isAuthenticated && user) {
-      const returnTo = (location.state as any)?.from || getRedirectForRole(user.role);
+      const returnTo = (location.state as any)?.from || "/flashfix/profile";
       navigate(returnTo, { replace: true });
     }
   }, [isAuthenticated, user, navigate, location.state]);
@@ -59,7 +56,7 @@ export default function Login() {
 
   function extractErrorMessage(res: Response, resText: string, data: any): string {
     if (data?.error?.code === "DISPOSABLE_EMAIL_NOT_ALLOWED" || data?.error?.message?.includes("disposable")) {
-      return "Disposable email domains are not allowed. Please enter your work or personal email.";
+      return "Disposable email domains are not allowed. Please enter your personal or work email.";
     }
     if (data?.error?.message) return data.error.message;
     if (data?.message) return data.message;
@@ -72,7 +69,7 @@ export default function Login() {
     return `Unable to complete sign-in (${res.status}). Please try again.`;
   }
 
-  async function handleIdentify(e?: React.FormEvent) {
+  async function handleSendOtp(e?: React.FormEvent) {
     if (e) e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
 
@@ -90,7 +87,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/identify", {
+      const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -110,61 +107,12 @@ export default function Login() {
         return;
       }
 
-      if (data?.next === "password") {
-        setStep("PASSWORD");
-      } else {
-        setStep("OTP");
-        setOtp("");
-        setTimer(60);
-        setCanResend(false);
-      }
+      setStep("OTP");
+      setOtp("");
+      setTimer(60);
+      setCanResend(false);
     } catch {
       setError("Network error while connecting to server. Please check your connection and try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleStaffLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!password) {
-      setError("Please enter your password.");
-      return;
-    }
-
-    setError(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/staff-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password,
-          rememberMe,
-        }),
-      });
-
-      const resText = await res.text();
-      let data: any = null;
-      try {
-        data = resText ? JSON.parse(resText) : null;
-      } catch {
-        data = null;
-      }
-
-      if (!res.ok || !data?.user) {
-        setError(extractErrorMessage(res, resText, data));
-        return;
-      }
-
-      setAuth(data.user, data.token || "cookie-session");
-      const dest = (location.state as any)?.from || getRedirectForRole(data.user.role);
-      navigate(dest, { replace: true });
-    } catch {
-      setError("Could not reach the authentication server. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -190,7 +138,7 @@ export default function Login() {
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           code,
-          rememberMe,
+          rememberMe: true,
         }),
       });
 
@@ -208,7 +156,7 @@ export default function Login() {
       }
 
       setAuth(data.user, data.token || data.accessToken || "cookie-session");
-      const returnTo = (location.state as any)?.from || getRedirectForRole(data.user.role);
+      const returnTo = (location.state as any)?.from || "/flashfix/profile";
       navigate(returnTo, { replace: true });
     } catch {
       setError("Network error while verifying code. Please try again.");
@@ -224,20 +172,14 @@ export default function Login() {
           {/* Header */}
           <div className="mb-7">
             <span className="font-mono text-[11px] uppercase tracking-widest text-[var(--accent)] font-semibold block mb-1.5">
-              FLASHFIX ACCOUNT
+              FLASHFIX CUSTOMER ACCOUNT
             </span>
             <h1 className="text-2xl font-bold font-display tracking-tight text-[var(--ink)]">
-              {step === "EMAIL"
-                ? "Sign in to Flashfix"
-                : step === "PASSWORD"
-                ? "Enter your password"
-                : "Check your email"}
+              {step === "EMAIL" ? "Sign in to Flashfix" : "Check your email"}
             </h1>
-            <p className="text-sm text-[var(--ink-2)] mt-1">
+            <p className="text-sm text-[var(--ink-secondary)] mt-1">
               {step === "EMAIL"
-                ? "Enter your email to track repairs, manage bookings, or access staff operations."
-                : step === "PASSWORD"
-                ? `Signing in as ${email.trim().toLowerCase()}`
+                ? "Access your repair tracking, saved addresses, and active orders."
                 : `We sent a 6-digit verification code to ${email.trim().toLowerCase()}`}
             </p>
           </div>
@@ -255,16 +197,16 @@ export default function Login() {
 
           {/* STEP 1: EMAIL */}
           {step === "EMAIL" && (
-            <form onSubmit={handleIdentify} className="space-y-4" noValidate>
+            <form onSubmit={handleSendOtp} className="space-y-4" noValidate>
               <div>
                 <label
                   htmlFor="signin-email"
-                  className="block text-xs font-medium text-[var(--ink-2)] mb-1.5"
+                  className="block text-xs font-medium text-[var(--ink-secondary)] mb-1.5"
                 >
                   Email address
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-3)] pointer-events-none" />
+                  <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] pointer-events-none" />
                   <input
                     id="signin-email"
                     type="email"
@@ -274,7 +216,7 @@ export default function Login() {
                     autoComplete="email"
                     autoFocus
                     required
-                    className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-3.5 text-sm text-[var(--ink)] placeholder-[var(--ink-3)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors"
+                    className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-3.5 text-sm text-[var(--ink)] placeholder-[var(--ink-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors"
                   />
                 </div>
               </div>
@@ -287,11 +229,11 @@ export default function Login() {
                 {loading ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Checking account...</span>
+                    <span>Sending code...</span>
                   </>
                 ) : (
                   <>
-                    <span>Continue</span>
+                    <span>Send One-Time Code</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -299,7 +241,7 @@ export default function Login() {
 
               <div className="relative py-2 flex items-center justify-center">
                 <div className="border-t border-[var(--hairline)] w-full" />
-                <span className="bg-[var(--surface-1)] px-3 text-[11px] font-mono uppercase tracking-wider text-[var(--ink-3)]">
+                <span className="bg-[var(--surface-1)] px-3 text-[11px] font-mono uppercase tracking-wider text-[var(--ink-muted)]">
                   or
                 </span>
                 <div className="border-t border-[var(--hairline)] w-full" />
@@ -332,88 +274,11 @@ export default function Login() {
             </form>
           )}
 
-          {/* STEP 2A: STAFF PASSWORD */}
-          {step === "PASSWORD" && (
-            <form onSubmit={handleStaffLogin} className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label
-                    htmlFor="signin-password"
-                    className="block text-xs font-medium text-[var(--ink-2)]"
-                  >
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep("EMAIL");
-                      setPassword("");
-                      setError(null);
-                    }}
-                    className="text-xs text-[var(--accent)] hover:underline"
-                  >
-                    Use a different email
-                  </button>
-                </div>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-3)] pointer-events-none" />
-                  <input
-                    id="signin-password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    autoFocus
-                    required
-                    className="w-full h-11 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg pl-10 pr-10 text-sm text-[var(--ink)] placeholder-[var(--ink-3)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-3)] hover:text-[var(--ink)] p-1"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <label className="flex items-center gap-2 text-xs text-[var(--ink-2)] cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-[var(--hairline)] text-[var(--accent)] focus:ring-[var(--accent)]"
-                />
-                <span>Keep me signed in for 30 days</span>
-              </label>
-
-              <button
-                type="submit"
-                disabled={loading || !password}
-                className="w-full h-11 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* STEP 2B: CONSUMER OTP */}
+          {/* STEP 2: CONSUMER OTP */}
           {step === "OTP" && (
             <form onSubmit={(e) => handleVerifyOtp(e)} className="space-y-5">
               <div>
-                <label className="block text-xs font-medium text-[var(--ink-2)] mb-3 text-center">
+                <label className="block text-xs font-medium text-[var(--ink-secondary)] mb-3 text-center">
                   6-digit verification code
                 </label>
                 <OtpInput
@@ -451,7 +316,7 @@ export default function Login() {
                     setOtp("");
                     setError(null);
                   }}
-                  className="text-[var(--ink-2)] hover:text-[var(--ink)] transition-colors"
+                  className="text-[var(--ink-secondary)] hover:text-[var(--ink)] transition-colors"
                 >
                   Use a different email
                 </button>
@@ -459,13 +324,13 @@ export default function Login() {
                 {canResend ? (
                   <button
                     type="button"
-                    onClick={() => handleIdentify()}
+                    onClick={() => handleSendOtp()}
                     className="text-[var(--accent)] hover:underline font-medium"
                   >
                     Resend code
                   </button>
                 ) : (
-                  <span className="text-[var(--ink-3)] font-mono tabular-nums">
+                  <span className="text-[var(--ink-muted)] font-mono tabular-nums">
                     Resend in {timer}s
                   </span>
                 )}
@@ -474,7 +339,7 @@ export default function Login() {
           )}
         </div>
 
-        <div className="text-center mt-5 text-xs text-[var(--ink-3)]">
+        <div className="text-center mt-5 text-xs text-[var(--ink-muted)]">
           Need assistance with a booking?{" "}
           <Link to="/flashfix/contact" className="text-[var(--accent)] hover:underline font-medium">
             Contact Support

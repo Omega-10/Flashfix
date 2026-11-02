@@ -12,6 +12,7 @@ import BookingDetailModal from "@/components/admin/BookingDetailModal";
 import AssignStaffModal from "@/components/admin/AssignStaffModal";
 import InviteEmployeeModal from "@/components/admin/InviteEmployeeModal";
 import OtpVerificationModal from "@/components/admin/OtpVerificationModal";
+import AdminLogin from "@/pages/admin/AdminLogin";
 import {
   AdminTab,
   AdminRole,
@@ -68,28 +69,43 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
 
   const [activeTab, setActiveTab] = useState<AdminTab>(derivedTab);
   const [staffUser, setStaffUser] = useState<StaffSessionUser | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
   const [currentRole, setCurrentRole] = useState<AdminRole>("ADMIN");
   const [selectedStore, setSelectedStore] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [stores, setStores] = useState<StoreOption[]>(STORES);
+
+  function applyStaffUser(user: StaffSessionUser) {
+    setStaffUser(user);
+    const role = user.role;
+    setCurrentRole(role);
+    if (role === "SUPER_ADMIN") {
+      setSelectedStore("ALL");
+      if (!paramTab) setActiveTab("superadmin");
+    } else if (role === "TECHNICIAN") {
+      if (user.storeIds && user.storeIds.length > 0) setSelectedStore(user.storeIds[0]);
+      else if (user.storeId) setSelectedStore(user.storeId);
+      setActiveTab("technician");
+    } else if (role === "EMPLOYEE" || role === "COURIER") {
+      if (user.storeIds && user.storeIds.length > 0) setSelectedStore(user.storeIds[0]);
+      else if (user.storeId) setSelectedStore(user.storeId);
+      setActiveTab("delivery");
+    } else {
+      if (user.storeIds && user.storeIds.length > 0) setSelectedStore(user.storeIds[0]);
+      else if (user.storeId) setSelectedStore(user.storeId);
+      if (!paramTab) setActiveTab("dashboard");
+    }
+  }
 
   // Authentication & Session Guard
   useEffect(() => {
     let cancelled = false;
     async function verifyStaff() {
       const session = getStaffSession();
-      if (session?.user) {
+      if (session?.user && (session.user.role as string) !== "CONSUMER") {
         if (!cancelled) {
-          setStaffUser(session.user);
-          const role = session.user.role;
-          setCurrentRole(role);
-          if (role === "SUPER_ADMIN") {
-            setSelectedStore("ALL");
-          } else if (session.user.storeIds && session.user.storeIds.length > 0) {
-            setSelectedStore(session.user.storeIds[0]);
-          } else if (session.user.storeId) {
-            setSelectedStore(session.user.storeId);
-          }
+          applyStaffUser(session.user);
+          setCheckingAuth(false);
         }
         return;
       }
@@ -97,35 +113,37 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
       try {
         const res = await fetch("/api/auth/me", { credentials: "include" });
         if (!res.ok) {
-          if (!cancelled) navigate("/login", { replace: true });
+          if (!cancelled) {
+            setStaffUser(null);
+            setCheckingAuth(false);
+          }
           return;
         }
         const data = await res.json();
         const me = data?.user || data?.data;
         if (!me || me.role === "CONSUMER") {
-          if (!cancelled) navigate("/login", { replace: true });
+          if (!cancelled) {
+            setStaffUser(null);
+            setCheckingAuth(false);
+          }
           return;
         }
         if (!cancelled) {
-          setStaffUser(me);
-          setCurrentRole(me.role);
-          if (me.role === "SUPER_ADMIN") {
-            setSelectedStore("ALL");
-          } else if (me.storeIds && me.storeIds.length > 0) {
-            setSelectedStore(me.storeIds[0]);
-          } else if (me.storeId) {
-            setSelectedStore(me.storeId);
-          }
+          applyStaffUser(me);
+          setCheckingAuth(false);
         }
       } catch {
-        if (!cancelled) navigate("/login", { replace: true });
+        if (!cancelled) {
+          setStaffUser(null);
+          setCheckingAuth(false);
+        }
       }
     }
     verifyStaff();
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, []);
 
   // Keep state synchronized with URL param and check role authority
   useEffect(() => {
@@ -178,6 +196,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
   } | null>(null);
 
   const loadData = useCallback(async () => {
+    if (!staffUser) return;
     try {
       const [statsData, bookingsData, staffData, inventoryData, storesData] = await Promise.all([
         getDashboardStats(selectedStore),
@@ -199,19 +218,22 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
     } finally {
       setLoading(false);
     }
-  }, [selectedStore]);
+  }, [selectedStore, staffUser]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (staffUser) {
+      loadData();
+    }
+  }, [loadData, staffUser]);
 
   // Periodic 30s background sync
   useEffect(() => {
+    if (!staffUser) return;
     const timer = setInterval(() => {
       loadData();
     }, 30000);
     return () => clearInterval(timer);
-  }, [loadData]);
+  }, [loadData, staffUser]);
 
   function handleTabChange(tab: AdminTab) {
     setActiveTab(tab);
@@ -221,7 +243,8 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
   function handleLogout() {
     fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
     clearStaffSession();
-    navigate("/login", { replace: true });
+    setStaffUser(null);
+    navigate("/admin", { replace: true });
   }
 
   function handleNavigateToBookings(filter?: string) {
@@ -233,6 +256,24 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
 
   function handleAssignClick(booking: BookingRecord) {
     setBookingToAssign(booking);
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-[#f5f0eb] flex items-center justify-center">
+        <div className="w-7 h-7 border-2 border-[#ef8f0b] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!staffUser) {
+    return (
+      <AdminLogin
+        onSuccess={(user) => {
+          applyStaffUser(user);
+        }}
+      />
+    );
   }
 
   return (

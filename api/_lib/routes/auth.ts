@@ -365,7 +365,7 @@ export async function verifyOtpHandler(req: any, res: any) {
     };
 
     const token = issue(res, userPayload, rememberMe);
-    const redirectTo = getRedirectForRole(userRow.role);
+    const redirectTo = '/flashfix/profile';
 
     return res.status(200).json({
       success: true,
@@ -727,8 +727,7 @@ export async function googleAuthCallbackHandler(req: any, res: any) {
     };
 
     issue(res, userPayload, true);
-    const redirectPath = getRedirectForRole(userRow.role);
-    res.setHeader('Location', `${origin}${redirectPath}`);
+    res.setHeader('Location', `${origin}/flashfix/profile`);
     return res.status(302).end();
   } catch (err: any) {
     console.error('Google OAuth callback error:', err);

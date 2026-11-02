@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, CheckCircle, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, Search, Navigation } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useAuthStore, UserProfile } from "@/store/authStore";
@@ -64,7 +64,7 @@ export default function BookingWizard() {
   const [confirmed, setConfirmed] = useState<{ id: string } | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -129,52 +129,109 @@ export default function BookingWizard() {
     loadActiveStores();
   }, []);
 
-  // Initialize Map when Step 3 mounts
-  useEffect(() => {
-    if (step === 3 && mapRef.current && !leafletMap.current) {
-      leafletMap.current = L.map(mapRef.current, {
-        center: [step3.lat, step3.lng],
-        zoom: 13,
-      });
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-      }).addTo(leafletMap.current);
-
-      const customIcon = L.divIcon({
-        className: "",
-        html: `<div style="width:16px; height:16px; background:#ef8f0b; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-      });
-
-      markerRef.current = L.marker([step3.lat, step3.lng], { icon: customIcon, draggable: true })
-        .addTo(leafletMap.current)
-        .on("dragend", (e) => {
-          const marker = e.target;
-          const position = marker.getLatLng();
-          setStep3(p => ({ ...p, lat: position.lat, lng: position.lng }));
-        });
-
-      leafletMap.current.on("click", (e: any) => {
-        markerRef.current?.setLatLng(e.latlng);
-        setStep3(p => ({ ...p, lat: e.latlng.lat, lng: e.latlng.lng }));
-      });
+  async function reverseGeocode(lat: number, lng: number) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.display_name) {
+        setStep3((p) => ({
+          ...p,
+          lat,
+          lng,
+          address: data.display_name,
+        }));
+      }
+    } catch {
+      // ignore reverse geocode network error
     }
+  }
 
-    return () => {
-      if (step !== 3 && leafletMap.current) {
+  // Callback ref: initializes Leaflet the exact moment Step 3's DOM container mounts
+  const handleMapMount = useCallback((node: HTMLDivElement | null) => {
+    mapRef.current = node;
+    if (!node) {
+      if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;
+        markerRef.current = null;
       }
-    };
-  }, [step]);
+      return;
+    }
+
+    if (leafletMap.current) {
+      leafletMap.current.remove();
+      leafletMap.current = null;
+    }
+
+    const map = L.map(node, {
+      center: [step3.lat, step3.lng],
+      zoom: 13,
+    });
+    leafletMap.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(map);
+
+    const customIcon = L.divIcon({
+      className: "",
+      html: `<div style="width:18px; height:18px; background:#ef8f0b; border-radius:50%; border:3px solid #141210; box-shadow:0 2px 8px rgba(0,0,0,0.45);"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+
+    markerRef.current = L.marker([step3.lat, step3.lng], {
+      icon: customIcon,
+      draggable: true,
+    })
+      .addTo(map)
+      .on("dragend", (e) => {
+        const marker = e.target;
+        const position = marker.getLatLng();
+        setStep3((p) => ({ ...p, lat: position.lat, lng: position.lng }));
+        reverseGeocode(position.lat, position.lng);
+      });
+
+    map.on("click", (e: any) => {
+      markerRef.current?.setLatLng(e.latlng);
+      setStep3((p) => ({ ...p, lat: e.latlng.lat, lng: e.latlng.lng }));
+      reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Ensure tiles fill container after Framer Motion entrance transition completes
+    requestAnimationFrame(() => map.invalidateSize());
+    setTimeout(() => map.invalidateSize(), 200);
+    setTimeout(() => map.invalidateSize(), 450);
+  }, []);
+
+  function handleLocateMe() {
+    if (!navigator.geolocation) return;
+    setIsSearching(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const newLat = pos.coords.latitude;
+        const newLng = pos.coords.longitude;
+        leafletMap.current?.setView([newLat, newLng], 16);
+        markerRef.current?.setLatLng([newLat, newLng]);
+        setStep3((p) => ({ ...p, lat: newLat, lng: newLng }));
+        reverseGeocode(newLat, newLng).finally(() => setIsSearching(false));
+      },
+      () => {
+        setIsSearching(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
 
   async function handleSearch() {
-    if (!searchQuery) return;
+    if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.trim())}`);
       const data = await res.json();
       if (data && data.length > 0) {
         const { lat, lon, display_name } = data[0];
@@ -236,6 +293,9 @@ export default function BookingWizard() {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token && token !== "cookie-session") {
         headers.Authorization = `Bearer ${token}`;
+      }
+      if (user?.email) {
+        headers["x-user-email"] = user.email;
       }
       const res = await fetch("/api/bookings", {
         method: "POST",
@@ -473,11 +533,27 @@ export default function BookingWizard() {
                       onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                       className="flex-1 bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-amber)] transition-colors"
                     />
-                    <button onClick={handleSearch} disabled={isSearching} className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-4 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={handleSearch}
+                      disabled={isSearching}
+                      title="Search area"
+                      className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center"
+                    >
                       <Search className="w-4 h-4 text-[var(--text-primary)]" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={handleLocateMe}
+                      disabled={isSearching}
+                      title="Use my current GPS location"
+                      className="bg-[var(--surface-bg)] border border-[var(--surface-border)] px-3.5 rounded-xl hover:border-[var(--accent-amber)] transition-colors flex items-center justify-center gap-1.5 text-xs font-medium text-[var(--accent-amber)]"
+                    >
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Locate Me</span>
+                    </button>
                   </div>
-                  <div ref={mapRef} className="w-full h-[250px] rounded-xl overflow-hidden border border-[var(--surface-border)] relative z-0" />
+                  <div ref={handleMapMount} className="w-full h-[250px] rounded-xl overflow-hidden border border-[var(--surface-border)] relative z-0" />
                   <p className="text-[10px] text-[var(--text-muted)] mt-2 italic">Drag the pin or click on the map to set exact coordinates.</p>
                 </div>
 

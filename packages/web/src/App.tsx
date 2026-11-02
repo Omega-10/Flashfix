@@ -17,18 +17,19 @@ import FortixContact from "@/pages/fortix/Contact";
 
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminPage from "@/pages/admin/AdminPage";
+import AdminLogin from "@/pages/admin/AdminLogin";
 
 const router = createBrowserRouter([
   {
     path: "/admin/login",
-    element: <Navigate to="/login" replace />,
+    element: <AdminLogin />,
   },
   // Dedicated Admin & Staff Operations Routes (isolated outside RootLayout & Lenis SmoothScroll)
   {
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+      { index: true, element: <AdminPage /> },
       { path: ":tab", element: <AdminPage /> },
     ],
   },

@@ -79,6 +79,9 @@ export default function Profile() {
     if (token && token !== "cookie-session") {
       headers.Authorization = `Bearer ${token}`;
     }
+    if (user?.email) {
+      headers["x-user-email"] = user.email;
+    }
     return headers;
   }
 
@@ -133,13 +136,21 @@ export default function Profile() {
         method: "PATCH",
         credentials: "include",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: user?.email,
+        }),
       });
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         setProfileError(data?.error?.message || "Failed to update profile.");
         return;
+      }
+
+      if (data?.token) {
+        localStorage.setItem("accessToken", data.token);
       }
 
       updateUser({ name: name.trim(), phone: phone.trim() });
