@@ -11,6 +11,7 @@ import {
   Boxes,
   Truck,
   Eye,
+  RefreshCw,
 } from "lucide-react";
 import { BookingRecord, InventoryRecord } from "./types";
 import { markRepairComplete, startReturnDelivery, STORES } from "./api";
@@ -110,7 +111,15 @@ export default function TechnicianView({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={onRefreshData}
+            className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-xs font-semibold text-[var(--ink)] transition-all"
+            title="Refresh repair queue"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[#ef8f0b]" />
+            <span>Refresh</span>
+          </button>
           <span className="px-3 py-1.5 rounded-xl bg-[var(--surface-3)] border border-[var(--hairline)] text-xs font-mono text-[var(--ink-secondary)]">
             Active Lab Load: <strong className="text-[#ef8f0b]">{activeWorkbenchQueue.length} devices</strong>
           </span>

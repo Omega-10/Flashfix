@@ -15,6 +15,8 @@ import {
   LogOut,
   Wrench,
   AlertCircle,
+  XCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import LoginModal from "@/components/flashfix/LoginModal";
@@ -50,6 +52,31 @@ export default function Profile() {
   // Bookings state
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  async function handleCancelBooking(bookingId: string) {
+    if (!confirm(`Are you sure you want to cancel booking #${bookingId}?`)) return;
+    setCancellingId(bookingId);
+    setProfileError(null);
+    try {
+      const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/cancel`, {
+        method: "POST",
+        credentials: "include",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ note: "Cancelled by customer from profile" }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setProfileError(data?.error?.message || "Could not cancel booking.");
+      } else {
+        await fetchBookings();
+      }
+    } catch {
+      setProfileError("Network error while cancelling booking.");
+    } finally {
+      setCancellingId(null);
+    }
+  }
 
   // Saved addresses state
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
@@ -527,6 +554,14 @@ export default function Profile() {
                 <h2 className="font-semibold text-lg text-[var(--ink)]">
                   Active Repairs ({activeBookings.length})
                 </h2>
+                <button
+                  onClick={fetchBookings}
+                  disabled={loadingBookings}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--ink-2)] hover:text-[var(--ink)] px-3 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--hairline)] transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-[var(--accent)] ${loadingBookings ? "animate-spin" : ""}`} />
+                  <span>Refresh</span>
+                </button>
               </div>
 
               {loadingBookings ? (
@@ -596,20 +631,33 @@ export default function Profile() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-1">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                         <span className="text-xs text-[var(--ink-2)]">
                           Estimate:{" "}
                           <strong className="text-[var(--ink)] font-mono">
                             {formatCost(b.estimatedCostPaise, b.finalCostPaise)}
                           </strong>
                         </span>
-                        <Link
-                          to={`/flashfix/track/${b.id}`}
-                          className="inline-flex items-center gap-1.5 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] font-semibold text-xs px-4 py-2 rounded-lg transition-all"
-                        >
-                          <span>Track Repair</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          {["PENDING", "CONFIRMED", "PICKUP_EN_ROUTE", "PICKUP_OTP_SENT"].includes(b.status) && (
+                            <button
+                              type="button"
+                              disabled={cancellingId === b.id}
+                              onClick={() => handleCancelBooking(b.id)}
+                              className="inline-flex items-center gap-1.5 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-[var(--danger)] font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>{cancellingId === b.id ? "Cancelling..." : "Cancel Booking"}</span>
+                            </button>
+                          )}
+                          <Link
+                            to={`/flashfix/track/${b.id}`}
+                            className="inline-flex items-center gap-1.5 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] font-semibold text-xs px-4 py-2 rounded-lg transition-all"
+                          >
+                            <span>Track Repair</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   ))}

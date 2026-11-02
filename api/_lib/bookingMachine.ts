@@ -93,7 +93,7 @@ export const TRANSITIONS: Record<string, TransitionConfig> = {
     defaultNote: 'Device delivered to customer and payment collected',
   },
   cancel: {
-    from: ['PENDING', 'CONFIRMED', 'PICKUP_EN_ROUTE'],
+    from: ['PENDING', 'CONFIRMED', 'PICKUP_EN_ROUTE', 'PICKUP_OTP_SENT'],
     to: 'CANCELLED',
     roles: ['CONSUMER', 'ADMIN', 'SUPER_ADMIN'],
     allowOwner: true,
@@ -197,8 +197,15 @@ export async function executeTransition(
     const booking = currentRes.rows[0];
 
     // 3. Ownership & Store Scope Checks
-    if (isOwner && booking.user_id !== session.sub) {
-      throw new HttpError(403, 'FORBIDDEN', 'You do not own this booking.');
+    if (isOwner) {
+      const sameUserId = booking.user_id && booking.user_id === session.sub;
+      const sameEmail =
+        booking.contact_email &&
+        session.email &&
+        booking.contact_email.toLowerCase().trim() === session.email.toLowerCase().trim();
+      if (!sameUserId && !sameEmail) {
+        throw new HttpError(403, 'FORBIDDEN', 'You do not own this booking.');
+      }
     }
     if (!isOwner && session.role !== 'SUPER_ADMIN') {
       requireStoreAccess(session, booking.store_id);

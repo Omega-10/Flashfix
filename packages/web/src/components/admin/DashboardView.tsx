@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Calendar,
   Clock,
@@ -10,6 +11,7 @@ import {
   UserCheck,
   Eye,
   Store as StoreIcon,
+  RefreshCw,
 } from "lucide-react";
 import { DashboardStats, BookingRecord } from "./types";
 import { STORES } from "./api";
@@ -20,6 +22,7 @@ interface DashboardViewProps {
   onSelectBooking: (booking: BookingRecord) => void;
   onNavigateToBookings: (filter?: string) => void;
   onAssignBooking: (booking: BookingRecord) => void;
+  onRefreshData?: () => void;
 }
 
 export default function DashboardView({
@@ -28,7 +31,16 @@ export default function DashboardView({
   onSelectBooking,
   onNavigateToBookings,
   onAssignBooking,
+  onRefreshData,
 }: DashboardViewProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  function handleRefresh() {
+    if (!onRefreshData) return;
+    setIsRefreshing(true);
+    onRefreshData();
+    setTimeout(() => setIsRefreshing(false), 600);
+  }
   function getStatusBadge(status: string) {
     switch (status) {
       case "PENDING":
@@ -234,13 +246,25 @@ export default function DashboardView({
             </p>
           </div>
 
-          <button
-            onClick={() => onNavigateToBookings()}
-            className="text-xs font-medium text-[#ef8f0b] hover:underline flex items-center gap-1 min-h-[44px] sm:min-h-0"
-          >
-            <span>View All ({recentBookings.length})</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-3">
+            {onRefreshData && (
+              <button
+                onClick={handleRefresh}
+                className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-xs font-semibold text-[var(--ink)] transition-all"
+                title="Refresh recent orders"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-[#ef8f0b] ${isRefreshing ? "animate-spin" : ""}`} />
+                <span>Refresh</span>
+              </button>
+            )}
+            <button
+              onClick={() => onNavigateToBookings()}
+              className="text-xs font-medium text-[#ef8f0b] hover:underline flex items-center gap-1 min-h-[44px] sm:min-h-0"
+            >
+              <span>View All ({recentBookings.length})</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
         </div>
 
         {/* Desktop Table View */}

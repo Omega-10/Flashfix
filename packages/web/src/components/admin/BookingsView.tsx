@@ -8,6 +8,7 @@ import {
   Eye,
   X,
   Store as StoreIcon,
+  RefreshCw,
 } from "lucide-react";
 import { BookingRecord } from "./types";
 import { STORES } from "./api";
@@ -20,6 +21,7 @@ interface BookingsViewProps {
   onSelectBooking: (booking: BookingRecord) => void;
   onAssignBooking: (booking: BookingRecord) => void;
   initialStatusFilter?: string;
+  onRefreshData?: () => void;
 }
 
 export default function BookingsView({
@@ -29,10 +31,19 @@ export default function BookingsView({
   onSelectBooking,
   onAssignBooking,
   initialStatusFilter = "ALL",
+  onRefreshData,
 }: BookingsViewProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
   const [dateFilter, setDateFilter] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  function handleRefresh() {
+    if (!onRefreshData) return;
+    setIsRefreshing(true);
+    onRefreshData();
+    setTimeout(() => setIsRefreshing(false), 600);
+  }
 
   const filteredBookings = bookings.filter((b) => {
     // Store filter
@@ -103,10 +114,20 @@ export default function BookingsView({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-[var(--ink-secondary)]">
+        <div className="flex items-center gap-3 text-xs font-mono text-[var(--ink-secondary)]">
           <span>
             Showing: <strong className="text-[var(--ink)]">{filteredBookings.length}</strong> entries
           </span>
+          {onRefreshData && (
+            <button
+              onClick={handleRefresh}
+              className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-xs font-semibold font-sans text-[var(--ink)] transition-all"
+              title="Refresh bookings ledger"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#ef8f0b] ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </button>
+          )}
         </div>
       </div>
 

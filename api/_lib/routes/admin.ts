@@ -14,7 +14,7 @@ export async function getDashboardHandler(req: any, res: any) {
     requireRole(session, 'ADMIN', 'SUPER_ADMIN');
 
     const url = new URL(req.url || '', 'http://localhost');
-    let storeId = url.searchParams.get('storeId');
+    let storeId = url.searchParams.get('storeId') || req.query?.storeId || null;
     if (storeId === 'ALL') storeId = null;
 
     if (storeId && session.role !== 'SUPER_ADMIN') {
@@ -65,7 +65,7 @@ export async function getTeamHandler(req: any, res: any) {
     requireRole(session, 'ADMIN', 'SUPER_ADMIN');
 
     const url = new URL(req.url || '', 'http://localhost');
-    let storeId = url.searchParams.get('storeId');
+    let storeId = url.searchParams.get('storeId') || req.query?.storeId || null;
     if (storeId === 'ALL') storeId = null;
 
     if (storeId && session.role !== 'SUPER_ADMIN') {
@@ -165,7 +165,7 @@ export async function getInventoryHandler(req: any, res: any) {
     requireRole(session, 'ADMIN', 'SUPER_ADMIN', 'TECHNICIAN');
 
     const url = new URL(req.url || '', 'http://localhost');
-    let storeId = url.searchParams.get('storeId');
+    let storeId = url.searchParams.get('storeId') || req.query?.storeId || null;
     if (storeId === 'ALL') storeId = null;
 
     if (storeId && session.role !== 'SUPER_ADMIN') {
@@ -214,7 +214,7 @@ export async function getAdminStoresHandler(req: any, res: any) {
     requireRole(session, 'ADMIN', 'SUPER_ADMIN');
 
     const url = new URL(req.url || '', 'http://localhost');
-    let storeId = url.searchParams.get('storeId');
+    let storeId = url.searchParams.get('storeId') || req.query?.storeId || null;
     if (storeId === 'ALL') storeId = null;
 
     let allowedStoreIds: string[] | null = null;
@@ -394,7 +394,7 @@ export async function toggleStoreHandler(req: any, res: any, storeId: string) {
 
 /**
  * DELETE /admin/stores/:id
- * Removes a store and unassigns admins. Requires SUPER_ADMIN.
+ * Removes a store and unassigns admins/bookings/staff/inventory. Requires SUPER_ADMIN.
  */
 export async function deleteStoreHandler(req: any, res: any, storeId: string) {
   try {
@@ -406,6 +406,16 @@ export async function deleteStoreHandler(req: any, res: any, storeId: string) {
       return res.status(500).json({ error: { message: 'Database connection unavailable.' } });
     }
 
+    // Ensure bookings.store_id can be nulled when a store is removed
+    try {
+      await db.query(`ALTER TABLE bookings ALTER COLUMN store_id DROP NOT NULL`);
+    } catch {
+      // Ignore if already nullable
+    }
+
+    await db.query(`UPDATE bookings SET store_id = NULL WHERE store_id = $1`, [storeId]);
+    await db.query(`UPDATE users SET store_id = NULL WHERE store_id = $1`, [storeId]);
+    await db.query(`DELETE FROM inventory_items WHERE store_id = $1`, [storeId]);
     await db.query(`DELETE FROM store_admins WHERE store_id = $1`, [storeId]);
     const delRes = await db.query(`DELETE FROM stores WHERE id = $1 RETURNING id`, [storeId]);
 
@@ -511,7 +521,7 @@ export async function getAdminBookingsHandler(req: any, res: any) {
     requireRole(session, 'ADMIN', 'SUPER_ADMIN', 'TECHNICIAN', 'EMPLOYEE');
 
     const url = new URL(req.url || '', 'http://localhost');
-    let storeId = url.searchParams.get('storeId');
+    let storeId = url.searchParams.get('storeId') || req.query?.storeId || null;
     if (storeId === 'ALL') storeId = null;
 
     if (storeId && session.role !== 'SUPER_ADMIN') {
@@ -520,10 +530,10 @@ export async function getAdminBookingsHandler(req: any, res: any) {
       storeId = session.storeId || (session.storeIds?.[0] || null);
     }
 
-    const status = url.searchParams.get('status');
+    const status = url.searchParams.get('status') || req.query?.status || null;
     const filterStatus = status && status !== 'ALL' ? status : null;
-    const search = url.searchParams.get('search');
-    const filterSearch = search ? `%${search.trim().toLowerCase()}%` : null;
+    const search = url.searchParams.get('search') || req.query?.search || null;
+    const filterSearch = search ? `%${String(search).trim().toLowerCase()}%` : null;
 
     const db = getPool();
     if (!db) return res.status(200).json({ success: true, data: [] });
@@ -537,6 +547,7 @@ export async function getAdminBookingsHandler(req: any, res: any) {
          b.issue_type as "issueType",
          b.issue_description as "issueDescription",
          b.store_id as "storeId",
+         s.name as "storeName",
          b.scheduled_date as "scheduledDate",
          b.scheduled_time as "scheduledTime",
          b.pickup_address as "pickupAddress",
@@ -558,10 +569,11 @@ export async function getAdminBookingsHandler(req: any, res: any) {
          b.created_at as "createdAt",
          b.updated_at as "updatedAt"
        FROM bookings b
+       LEFT JOIN stores s ON b.store_id = s.id
        LEFT JOIN users u1 ON b.assigned_employee_id = u1.id
        LEFT JOIN users u2 ON b.technician_id = u2.id
        WHERE ($1::text IS NULL OR b.store_id = $1)
-         AND ($2::text IS NULL OR b.status = $2)
+         AND ($2::text IS NULL OR b.status::text = $2)
          AND ($3::text IS NULL OR (
            LOWER(b.id) LIKE $3 OR 
            LOWER(b.contact_name) LIKE $3 OR 
@@ -854,10 +866,10 @@ export async function updateSettingsHandler(req: any, res: any) {
 
     for (const [k, v] of entries) {
       await db.query(
-        `INSERT INTO system_settings (key, value, updated_by, updated_at)
-         VALUES ($1, $2, $3, NOW())
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
-        [k, v, session.sub]
+        `INSERT INTO system_settings (key, value, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [k, v]
       );
     }
 

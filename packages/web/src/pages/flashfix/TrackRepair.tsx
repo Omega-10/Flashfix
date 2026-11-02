@@ -179,6 +179,34 @@ export default function TrackRepair() {
   // Cancellation state
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [cancellingListId, setCancellingListId] = useState<string | null>(null);
+
+  async function handleCancelFromList(bookingId: string) {
+    if (!confirm(`Are you sure you want to cancel booking #${bookingId}?`)) return;
+    setCancellingListId(bookingId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/cancel`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...getHeaders(),
+        },
+        body: JSON.stringify({ note: "Cancelled by customer" }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error?.message || "Could not cancel this booking.");
+      } else {
+        await loadUserBookings();
+      }
+    } catch {
+      setError("Network error while cancelling booking.");
+    } finally {
+      setCancellingListId(null);
+    }
+  }
 
   useEffect(() => {
     initAuth();
@@ -474,12 +502,23 @@ export default function TrackRepair() {
                       {activeBookings.length}
                     </span>
                   </h2>
-                  <Link
-                    to="/flashfix/book"
-                    className="text-xs text-[var(--accent)] hover:underline font-semibold"
-                  >
-                    + Book New Repair
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => loadUserBookings()}
+                      disabled={loadingUserBookings}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--ink-secondary)] hover:text-[var(--ink)] px-3 py-1.5 rounded-xl bg-[var(--surface-1)] border border-[var(--hairline)] transition-colors"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-[var(--accent)] ${loadingUserBookings ? "animate-spin" : ""}`} />
+                      <span>Refresh</span>
+                    </button>
+                    <Link
+                      to="/flashfix/book"
+                      className="text-xs text-[var(--accent)] hover:underline font-semibold"
+                    >
+                      + Book New Repair
+                    </Link>
+                  </div>
                 </div>
 
                 {activeBookings.length === 0 ? (
@@ -527,13 +566,26 @@ export default function TrackRepair() {
                               </p>
                             </div>
 
-                            <Link
-                              to={`/flashfix/track/${encodeURIComponent(b.id)}`}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:brightness-105 text-[var(--accent-ink)] font-semibold text-xs whitespace-nowrap transition-all self-start sm:self-center"
-                            >
-                              <span>Track Live Progress</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </Link>
+                            <div className="flex items-center gap-2 self-start sm:self-center">
+                              {["PENDING", "CONFIRMED", "PICKUP_EN_ROUTE", "PICKUP_OTP_SENT"].includes(b.status) && (
+                                <button
+                                  type="button"
+                                  disabled={cancellingListId === b.id}
+                                  onClick={() => handleCancelFromList(b.id)}
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-[var(--danger)] font-semibold text-xs whitespace-nowrap transition-colors disabled:opacity-50"
+                                >
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  <span>{cancellingListId === b.id ? "Cancelling..." : "Cancel"}</span>
+                                </button>
+                              )}
+                              <Link
+                                to={`/flashfix/track/${encodeURIComponent(b.id)}`}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:brightness-105 text-[var(--accent-ink)] font-semibold text-xs whitespace-nowrap transition-all"
+                              >
+                                <span>Track Live Progress</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </Link>
+                            </div>
                           </div>
 
                           {/* Step progress bar */}
@@ -680,7 +732,7 @@ export default function TrackRepair() {
   }
 
   const currentStep = mapStatusToStepIndex(booking.status);
-  const canCancel = ["PENDING", "CONFIRMED", "PICKUP_EN_ROUTE"].includes(booking.status);
+  const canCancel = ["PENDING", "CONFIRMED", "PICKUP_EN_ROUTE", "PICKUP_OTP_SENT"].includes(booking.status);
   const costDisplay =
     typeof (booking.finalCostPaise ?? booking.estimatedCostPaise) === "number" &&
     (booking.finalCostPaise ?? booking.estimatedCostPaise)! > 0

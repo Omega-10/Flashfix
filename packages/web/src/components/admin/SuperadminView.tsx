@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ShieldAlert,
   Building2,
@@ -17,7 +17,12 @@ import {
   Settings,
   Save,
   CheckCircle2,
+  RefreshCw,
+  Search,
+  LocateFixed,
 } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { BookingRecord, StaffMember, InventoryRecord, StoreOption } from "./types";
 import {
   STORES,
@@ -67,11 +72,219 @@ export default function SuperadminView({
   const [newStoreName, setNewStoreName] = useState("");
   const [newStoreId, setNewStoreId] = useState("");
   const [newStoreAddress, setNewStoreAddress] = useState("");
-  const [newStoreCity, setNewStoreCity] = useState("Bengaluru");
+  const [newStoreCity, setNewStoreCity] = useState("Hyderabad");
   const [newStorePhone, setNewStorePhone] = useState("+91 80 4821 7700");
-  const [newStoreLat, setNewStoreLat] = useState("12.9352");
-  const [newStoreLng, setNewStoreLng] = useState("77.6245");
+  const [newStoreLat, setNewStoreLat] = useState("17.4483");
+  const [newStoreLng, setNewStoreLng] = useState("78.3742");
   const [newStoreAdminIds, setNewStoreAdminIds] = useState<string[]>([]);
+
+  // Interactive Map Pinpoint State for "Add New Store" Modal
+  const storeMapRef = useRef<L.Map | null>(null);
+  const storeMarkerRef = useRef<L.Marker | null>(null);
+  const storeGeoWatchRef = useRef<number | null>(null);
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapSearching, setMapSearching] = useState(false);
+  const [mapStatusMsg, setMapStatusMsg] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const reverseGeocodeStore = useCallback(async (lat: number, lng: number) => {
+    setNewStoreLat(lat.toFixed(6));
+    setNewStoreLng(lng.toFixed(6));
+
+    // 1. Nominatim street-level reverse geocode
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.display_name) {
+          setNewStoreAddress(data.display_name);
+          const addr = data.address || {};
+          const detectedCity = addr.city || addr.town || addr.state_district || addr.county;
+          if (detectedCity) setNewStoreCity(detectedCity);
+          return;
+        }
+      }
+    } catch {
+      // fall through
+    }
+
+    // 2. Photon fallback
+    try {
+      const res = await fetch(`https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`);
+      if (res.ok) {
+        const data = await res.json();
+        const props = data?.features?.[0]?.properties;
+        if (props) {
+          const parts = [
+            props.name,
+            props.housenumber,
+            props.street,
+            props.district || props.suburb || props.locality,
+            props.city || props.town,
+            props.state,
+            props.postcode,
+          ].filter(Boolean);
+          if (parts.length > 0) {
+            setNewStoreAddress(Array.from(new Set(parts)).join(", "));
+            if (props.city || props.town) setNewStoreCity(props.city || props.town);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleStoreMapMount = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) {
+        if (storeGeoWatchRef.current !== null && navigator.geolocation) {
+          navigator.geolocation.clearWatch(storeGeoWatchRef.current);
+          storeGeoWatchRef.current = null;
+        }
+        if (storeMapRef.current) {
+          storeMapRef.current.remove();
+          storeMapRef.current = null;
+          storeMarkerRef.current = null;
+        }
+        return;
+      }
+
+      if (storeMapRef.current) {
+        storeMapRef.current.remove();
+        storeMapRef.current = null;
+      }
+
+      const initLat = parseFloat(newStoreLat) || 17.4483;
+      const initLng = parseFloat(newStoreLng) || 78.3742;
+
+      const map = L.map(node, {
+        center: [initLat, initLng],
+        zoom: 14,
+      });
+      storeMapRef.current = map;
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap",
+      }).addTo(map);
+
+      const pinIcon = L.divIcon({
+        className: "",
+        html: `<div style="width:20px; height:20px; background:#ef8f0b; border-radius:50%; border:3px solid #141210; box-shadow:0 2px 10px rgba(0,0,0,0.5);"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
+
+      storeMarkerRef.current = L.marker([initLat, initLng], {
+        icon: pinIcon,
+        draggable: true,
+      })
+        .addTo(map)
+        .on("dragend", (e) => {
+          const pos = e.target.getLatLng();
+          reverseGeocodeStore(pos.lat, pos.lng);
+        });
+
+      map.on("click", (e: any) => {
+        storeMarkerRef.current?.setLatLng(e.latlng);
+        reverseGeocodeStore(e.latlng.lat, e.latlng.lng);
+      });
+
+      requestAnimationFrame(() => map.invalidateSize());
+      setTimeout(() => map.invalidateSize(), 200);
+    },
+    [reverseGeocodeStore]
+  );
+
+  async function handleSearchStoreLocation() {
+    if (!mapSearchQuery.trim()) return;
+    setMapSearching(true);
+    setMapStatusMsg(null);
+    try {
+      const q = encodeURIComponent(mapSearchQuery.trim());
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${q}&addressdetails=1&limit=1`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const hit = data[0];
+          const lat = parseFloat(hit.lat);
+          const lng = parseFloat(hit.lon);
+          storeMapRef.current?.setView([lat, lng], 16, { animate: true });
+          storeMarkerRef.current?.setLatLng([lat, lng]);
+          setNewStoreLat(lat.toFixed(6));
+          setNewStoreLng(lng.toFixed(6));
+          if (hit.display_name) setNewStoreAddress(hit.display_name);
+          const addr = hit.address || {};
+          const city = addr.city || addr.town || addr.state_district;
+          if (city) setNewStoreCity(city);
+          setMapStatusMsg(`Pinned: ${hit.display_name.split(",").slice(0, 2).join(", ")}`);
+          return;
+        }
+      }
+      setMapStatusMsg("Location not found. Try a broader area name or click the map.");
+    } catch {
+      setMapStatusMsg("Search failed. Click directly on the map to pin the store.");
+    } finally {
+      setMapSearching(false);
+    }
+  }
+
+  function handleLocateStoreMe() {
+    if (!navigator.geolocation) {
+      setMapStatusMsg("Geolocation is not supported by your browser.");
+      return;
+    }
+    if (storeGeoWatchRef.current !== null) {
+      navigator.geolocation.clearWatch(storeGeoWatchRef.current);
+      storeGeoWatchRef.current = null;
+    }
+    setMapSearching(true);
+    setMapStatusMsg("Detecting current GPS coordinates...");
+
+    let bestAccuracy = Infinity;
+    const stopWatch = () => {
+      if (storeGeoWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(storeGeoWatchRef.current);
+        storeGeoWatchRef.current = null;
+      }
+      setMapSearching(false);
+    };
+
+    const timer = setTimeout(stopWatch, 7000);
+    storeGeoWatchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        if (accuracy < bestAccuracy) {
+          bestAccuracy = accuracy;
+          storeMapRef.current?.setView([latitude, longitude], 17, { animate: true });
+          storeMarkerRef.current?.setLatLng([latitude, longitude]);
+          reverseGeocodeStore(latitude, longitude);
+          setMapStatusMsg(`Locked GPS location (±${Math.round(accuracy)}m)`);
+        }
+        if (accuracy <= 40) {
+          clearTimeout(timer);
+          stopWatch();
+        }
+      },
+      (err) => {
+        clearTimeout(timer);
+        stopWatch();
+        setMapStatusMsg(err.code === 1 ? "Location permission denied." : "Could not read GPS.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  function handleManualRefresh() {
+    setIsRefreshing(true);
+    onRefreshData();
+    setTimeout(() => setIsRefreshing(false), 600);
+  }
 
   // Customizable Public Support Contact Settings
   const [supportEmail, setSupportEmail] = useState("support@flashfix.in");
@@ -168,22 +381,31 @@ export default function SuperadminView({
 
   async function handleToggleStore(storeId: string) {
     setStoreActionLoading(true);
+    setStoreError(null);
     try {
       await toggleStoreStatus(storeId);
       onRefreshData();
+    } catch (err: any) {
+      setStoreError(err?.message || "Failed to toggle store status.");
     } finally {
       setStoreActionLoading(false);
     }
   }
 
   async function handleDeleteStore(storeId: string, storeName: string) {
-    if (!confirm(`Are you sure you want to permanently remove "${storeName}"? Associated records and admin assignments will be removed.`)) {
+    if (!confirm(`Are you sure you want to permanently remove "${storeName}"? Associated records and admin assignments will be unlinked.`)) {
       return;
     }
     setStoreActionLoading(true);
+    setStoreError(null);
     try {
       await deleteStore(storeId);
+      if (selectedStore === storeId) {
+        onStoreChange("ALL");
+      }
       onRefreshData();
+    } catch (err: any) {
+      setStoreError(err?.message || "Failed to delete store.");
     } finally {
       setStoreActionLoading(false);
     }
@@ -225,6 +447,14 @@ export default function SuperadminView({
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <button
+            onClick={handleManualRefresh}
+            className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-[var(--ink)] font-semibold text-xs rounded-xl px-4 py-2.5 transition-all"
+            title="Refresh all stores, bookings, and staff"
+          >
+            <RefreshCw className={`w-4 h-4 text-[#ef8f0b] ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
           <button
             onClick={() => setIsAddStoreOpen(true)}
             className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[#ef8f0b] hover:bg-[#d87c09] text-black font-semibold text-xs rounded-xl px-4 py-2.5 transition-all shadow-md shadow-[#ef8f0b]/20"
@@ -309,6 +539,15 @@ export default function SuperadminView({
             </button>
           </div>
         </div>
+
+        {storeError && !isAddStoreOpen && !storeToAssignAdmins && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-center justify-between">
+            <span>{storeError}</span>
+            <button onClick={() => setStoreError(null)} className="text-red-400 hover:underline ml-2">
+              Dismiss
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {stores.map((s) => {
@@ -628,19 +867,30 @@ export default function SuperadminView({
 
       {/* ── Global Audit & Administrative Overrides ── */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <h2 className="font-bold text-base text-[var(--ink)] flex items-center gap-2">
               <History className="w-4 h-4 text-[#ef8f0b]" />
               <span>Platform-Wide Custody & Status Audit Feed</span>
+              <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-[var(--surface-3)] text-[#ef8f0b] border border-[#ef8f0b]/20">
+                {bookings.length}
+              </span>
             </h2>
             <p className="text-xs text-[var(--ink-muted)]">
-              Real-time immutable log of state transitions across the network
+              Real-time immutable log of customer bookings and state transitions across the network
             </p>
           </div>
+
+          <button
+            onClick={handleManualRefresh}
+            className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-xs font-semibold text-[var(--ink)] transition-all"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#ef8f0b] ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>Refresh Feed</span>
+          </button>
         </div>
 
-        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-5 space-y-3">
+        <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-2xl p-5 space-y-3 max-h-[480px] overflow-y-auto">
           {bookings.length === 0 ? (
             <div className="py-12 text-center">
               <History className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-2 opacity-40" />
@@ -649,40 +899,44 @@ export default function SuperadminView({
               </p>
             </div>
           ) : (
-            bookings.slice(0, 5).map((b) => (
-              <div
-                key={b.id}
-                onClick={() => onSelectBooking(b)}
-                className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] hover:border-[#ef8f0b]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs font-bold text-[#ef8f0b]">{b.id}</span>
-                  <div>
-                    <div className="text-xs font-semibold text-[var(--ink)]">
-                      {b.brand} {b.deviceModel} — {b.issueType}
-                    </div>
-                    <div className="text-[11px] text-[var(--ink-muted)]">
-                      Customer: {b.contactName} ({b.contactPhone}) • Hub: {b.storeId}
+            bookings.map((b) => {
+              const storeObj = stores.find((s) => s.id === b.storeId);
+              const hubLabel = (b as any).storeName || storeObj?.name || b.storeId || "Unassigned Hub";
+              return (
+                <div
+                  key={b.id}
+                  onClick={() => onSelectBooking(b)}
+                  className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--hairline)] hover:border-[#ef8f0b]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-xs font-bold text-[#ef8f0b]">{b.id}</span>
+                    <div>
+                      <div className="text-xs font-semibold text-[var(--ink)]">
+                        {b.brand} {b.deviceModel} — {b.issueType}
+                      </div>
+                      <div className="text-[11px] text-[var(--ink-muted)]">
+                        Customer: {b.contactName} ({b.contactPhone}) • Hub: {hubLabel}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--ink-secondary)] border border-[var(--hairline)]">
-                    {b.status}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectBooking(b);
-                    }}
-                    className="min-h-[44px] text-xs font-semibold text-[#ef8f0b] hover:underline"
-                  >
-                    Inspect & Override →
-                  </button>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--ink-secondary)] border border-[var(--hairline)]">
+                      {b.status}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectBooking(b);
+                      }}
+                      className="min-h-[44px] text-xs font-semibold text-[#ef8f0b] hover:underline"
+                    >
+                      Inspect & Override →
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -741,6 +995,64 @@ export default function SuperadminView({
                 </div>
               </div>
 
+              {/* Interactive Map Pinpoint + Locate Me */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)]">
+                    Store Location Pinpoint *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleLocateStoreMe}
+                    disabled={mapSearching}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#ef8f0b] hover:underline disabled:opacity-50"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    <span>Locate Me</span>
+                  </button>
+                </div>
+
+                {/* Area Search Bar */}
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={mapSearchQuery}
+                    onChange={(e) => setMapSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSearchStoreLocation();
+                      }
+                    }}
+                    placeholder="Search store area (e.g. Madhapur, Hyderabad or Whitefield)"
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSearchStoreLocation}
+                    disabled={mapSearching}
+                    className="px-3.5 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-[var(--ink)] text-xs flex items-center gap-1"
+                  >
+                    <Search className="w-3.5 h-3.5 text-[#ef8f0b]" />
+                    <span>Find</span>
+                  </button>
+                </div>
+
+                <div
+                  ref={handleStoreMapMount}
+                  className="w-full h-52 rounded-xl border border-[var(--hairline-strong)] overflow-hidden bg-[var(--surface-2)] z-0"
+                />
+                <div className="flex items-center justify-between mt-1.5 text-[10px] font-mono text-[var(--ink-muted)]">
+                  <span>Click on map or drag pin to auto-fill address & coordinates</span>
+                  <span>
+                    {Number(newStoreLat).toFixed(4)}, {Number(newStoreLng).toFixed(4)}
+                  </span>
+                </div>
+                {mapStatusMsg && (
+                  <p className="text-[11px] text-[#ef8f0b] mt-1 font-mono">{mapStatusMsg}</p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
                   Full Address *
@@ -750,7 +1062,7 @@ export default function SuperadminView({
                   required
                   value={newStoreAddress}
                   onChange={(e) => setNewStoreAddress(e.target.value)}
-                  placeholder="Plot 18, ITPB Main Rd, Whitefield"
+                  placeholder="Auto-filled from map pin or type store street address"
                   className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                 />
               </div>
@@ -764,7 +1076,7 @@ export default function SuperadminView({
                     type="text"
                     value={newStoreCity}
                     onChange={(e) => setNewStoreCity(e.target.value)}
-                    placeholder="Bengaluru"
+                    placeholder="Hyderabad"
                     className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>
@@ -777,33 +1089,6 @@ export default function SuperadminView({
                     value={newStorePhone}
                     onChange={(e) => setNewStorePhone(e.target.value)}
                     placeholder="+91 80 4821 7704"
-                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
-                    Latitude
-                  </label>
-                  <input
-                    type="text"
-                    value={newStoreLat}
-                    onChange={(e) => setNewStoreLat(e.target.value)}
-                    placeholder="12.9698"
-                    className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] mb-1">
-                    Longitude
-                  </label>
-                  <input
-                    type="text"
-                    value={newStoreLng}
-                    onChange={(e) => setNewStoreLng(e.target.value)}
-                    placeholder="77.7499"
                     className="w-full bg-[var(--surface-2)] border border-[var(--hairline-strong)] rounded-xl px-3.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>

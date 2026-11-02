@@ -7,6 +7,7 @@ import {
   Mail,
   History,
   Shield,
+  RefreshCw,
 } from "lucide-react";
 import { BookingRecord, AuditTrailItem } from "./types";
 import { getBookingTrail, updateBookingStatus, STORES } from "./api";
@@ -317,11 +318,26 @@ export default function BookingDetailModal({
 
         {/* Immutable Audit Trail */}
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <History className="w-4 h-4 text-[#ef8f0b]" />
-            <h4 className="text-xs font-bold text-[var(--ink)]">
-              Immutable Physical Custody Audit Trail
-            </h4>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-[#ef8f0b]" />
+              <h4 className="text-xs font-bold text-[var(--ink)]">
+                Immutable Physical Custody Audit Trail
+              </h4>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setLoadingTrail(true);
+                getBookingTrail(booking.id)
+                  .then((items) => setTrail(items))
+                  .finally(() => setLoadingTrail(false));
+              }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#ef8f0b] hover:underline"
+            >
+              <RefreshCw className={`w-3 h-3 ${loadingTrail ? "animate-spin" : ""}`} />
+              <span>Refresh Log</span>
+            </button>
           </div>
 
           <div className="space-y-2.5">

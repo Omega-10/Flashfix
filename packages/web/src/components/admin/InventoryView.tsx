@@ -5,6 +5,7 @@ import {
   Store as StoreIcon,
   Plus,
   Minus,
+  RefreshCw,
 } from "lucide-react";
 import { InventoryRecord } from "./types";
 import { STORES, updateInventoryStock } from "./api";
@@ -13,15 +14,25 @@ interface InventoryViewProps {
   inventory: InventoryRecord[];
   selectedStore: string;
   onStoreChange: (storeId: string) => void;
+  onRefreshData?: () => void;
 }
 
 export default function InventoryView({
   inventory,
   selectedStore,
   onStoreChange,
+  onRefreshData,
 }: InventoryViewProps) {
   const [search, setSearch] = useState("");
   const [localInventory, setLocalInventory] = useState<InventoryRecord[]>(inventory);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  function handleRefresh() {
+    if (!onRefreshData) return;
+    setIsRefreshing(true);
+    onRefreshData();
+    setTimeout(() => setIsRefreshing(false), 600);
+  }
 
   const filteredItems = (localInventory.length ? localInventory : inventory).filter((item) => {
     if (selectedStore !== "ALL" && item.storeId !== selectedStore) return false;
@@ -69,6 +80,16 @@ export default function InventoryView({
         </div>
 
         <div className="flex items-center gap-3">
+          {onRefreshData && (
+            <button
+              onClick={handleRefresh}
+              className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-1)] hover:bg-[var(--surface-2)] border border-[var(--hairline-strong)] text-xs font-semibold text-[var(--ink)] transition-all"
+              title="Refresh inventory stock"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#ef8f0b] ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </button>
+          )}
           <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl px-3 py-2 text-xs">
             <StoreIcon className="w-3.5 h-3.5 text-[#ef8f0b]" />
             <select

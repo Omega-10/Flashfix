@@ -311,6 +311,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
                 onSelectBooking={(b) => setSelectedBooking(b)}
                 onNavigateToBookings={handleNavigateToBookings}
                 onAssignBooking={handleAssignClick}
+                onRefreshData={loadData}
               />
             )}
 
@@ -361,6 +362,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
                 onSelectBooking={(b) => setSelectedBooking(b)}
                 onAssignBooking={handleAssignClick}
                 initialStatusFilter={statusFilter}
+                onRefreshData={loadData}
               />
             )}
 
@@ -371,6 +373,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
                 selectedStore={selectedStore}
                 onStoreChange={setSelectedStore}
                 onOpenInviteModal={() => setIsInviteModalOpen(true)}
+                onRefreshData={loadData}
               />
             )}
 
@@ -380,6 +383,7 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
                 inventory={inventory}
                 selectedStore={selectedStore}
                 onStoreChange={setSelectedStore}
+                onRefreshData={loadData}
               />
             )}
           </>

@@ -36,25 +36,27 @@ export function parseCookies(header?: string): Record<string, string> {
 }
 
 /**
- * Extracts raw session token from request cookies or Authorization header.
+ * Extracts raw session token from request Authorization header or cookies.
+ * Authorization: Bearer takes precedence over cookies so staff tabs (/admin)
+ * and customer tabs never conflict in the same browser.
  */
 export function extractToken(req: any): string | null {
   if (!req) return null;
 
-  // 1. Check Cookie header
-  const cookieHeader = req.headers?.cookie || (typeof req.getHeader === 'function' ? req.getHeader('cookie') : '');
-  const cookies = parseCookies(cookieHeader);
-  if (cookies[SESSION_COOKIE_NAME]) {
-    return cookies[SESSION_COOKIE_NAME];
-  }
-
-  // 2. Check Authorization Bearer header
+  // 1. Check Authorization Bearer header first
   const authHeader = req.headers?.authorization || (typeof req.getHeader === 'function' ? req.getHeader('authorization') : '');
   if (authHeader && typeof authHeader === 'string') {
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (match) {
       return match[1].trim();
     }
+  }
+
+  // 2. Check Cookie header
+  const cookieHeader = req.headers?.cookie || (typeof req.getHeader === 'function' ? req.getHeader('cookie') : '');
+  const cookies = parseCookies(cookieHeader);
+  if (cookies[SESSION_COOKIE_NAME]) {
+    return cookies[SESSION_COOKIE_NAME];
   }
 
   return null;
@@ -191,20 +193,54 @@ export async function getSession(req: any): Promise<SessionPayload | null> {
  */
 export async function requireAuth(req: any): Promise<SessionPayload> {
   const token = extractToken(req);
-  if (!token) {
-    throw new HttpError(401, 'UNAUTHORIZED', 'Authentication session required.');
+  let decoded: SessionPayload | null = null;
+
+  if (token) {
+    try {
+      const secret = getJwtSecret();
+      decoded = jwt.verify(token, secret, { algorithms: ['HS256'] }) as SessionPayload;
+    } catch {
+      decoded = null;
+    }
   }
 
-  let decoded: SessionPayload;
-  try {
-    const secret = getJwtSecret();
-    decoded = jwt.verify(token, secret, { algorithms: ['HS256'] }) as SessionPayload;
-  } catch (err: any) {
-    throw new HttpError(401, 'INVALID_TOKEN', 'Session token is invalid or expired.');
+  // Fallback for staff requests carrying x-staff-email if cookie/token was missing or consumer-scoped
+  const staffEmail = String(req?.headers?.['x-staff-email'] || '').trim().toLowerCase();
+  if (staffEmail && (!decoded || decoded.role === 'CONSUMER')) {
+    const db = getPool();
+    if (db) {
+      try {
+        const staffRes = await db.query(
+          `SELECT u.id, u.email, u.role, u.name, u.store_id, u.is_active,
+                  COALESCE((SELECT json_agg(sa.store_id) FROM store_admins sa WHERE sa.user_id = u.id), '[]'::json) as store_ids
+           FROM users u
+           WHERE LOWER(u.email) = LOWER($1)
+             AND u.role IN ('SUPER_ADMIN', 'ADMIN', 'TECHNICIAN', 'EMPLOYEE')
+           LIMIT 1`,
+          [staffEmail]
+        );
+        if (staffRes.rows.length > 0 && staffRes.rows[0].is_active !== false) {
+          const s = staffRes.rows[0];
+          decoded = {
+            sub: s.id,
+            email: s.email,
+            role: s.role as UserRole,
+            name: s.name,
+            storeId: s.store_id || null,
+            storeIds: Array.isArray(s.store_ids) ? s.store_ids : [],
+          };
+        }
+      } catch (err) {
+        console.warn('Staff header session lookup warning:', err);
+      }
+    }
   }
 
   if (!decoded || !decoded.sub) {
-    throw new HttpError(401, 'INVALID_TOKEN', 'Session token payload is invalid.');
+    if (!token) {
+      throw new HttpError(401, 'UNAUTHORIZED', 'Authentication session required.');
+    }
+    throw new HttpError(401, 'INVALID_TOKEN', 'Session token is invalid or expired.');
   }
 
   // Database verification

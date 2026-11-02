@@ -11,6 +11,7 @@ import {
   Send,
   Eye,
   Smartphone,
+  RefreshCw,
 } from "lucide-react";
 import { BookingRecord } from "./types";
 import {
@@ -128,13 +129,23 @@ export default function DeliveryPersonView({
           </div>
         </div>
 
-        <div className="shrink-0 text-right">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-muted)] block">
-            Active Tasks
-          </span>
-          <span className="text-xl sm:text-2xl font-display font-bold text-[#ef8f0b]">
-            {activeDeliveries.length}
-          </span>
+        <div className="shrink-0 flex items-center gap-3">
+          <button
+            onClick={onRefreshData}
+            className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline-strong)] text-xs font-semibold text-[var(--ink)] transition-all"
+            title="Refresh delivery tasks"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[#ef8f0b]" />
+            <span>Refresh</span>
+          </button>
+          <div className="text-right">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-muted)] block">
+              Active Tasks
+            </span>
+            <span className="text-xl sm:text-2xl font-display font-bold text-[#ef8f0b]">
+              {activeDeliveries.length}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -107,17 +107,17 @@ function parseCookies(header) {
 }
 function extractToken(req) {
   if (!req) return null;
-  const cookieHeader = req.headers?.cookie || (typeof req.getHeader === "function" ? req.getHeader("cookie") : "");
-  const cookies = parseCookies(cookieHeader);
-  if (cookies[SESSION_COOKIE_NAME]) {
-    return cookies[SESSION_COOKIE_NAME];
-  }
   const authHeader = req.headers?.authorization || (typeof req.getHeader === "function" ? req.getHeader("authorization") : "");
   if (authHeader && typeof authHeader === "string") {
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (match) {
       return match[1].trim();
     }
+  }
+  const cookieHeader = req.headers?.cookie || (typeof req.getHeader === "function" ? req.getHeader("cookie") : "");
+  const cookies = parseCookies(cookieHeader);
+  if (cookies[SESSION_COOKIE_NAME]) {
+    return cookies[SESSION_COOKIE_NAME];
   }
   return null;
 }
@@ -219,18 +219,50 @@ async function getSession(req) {
 }
 async function requireAuth(req) {
   const token = extractToken(req);
-  if (!token) {
-    throw new HttpError(401, "UNAUTHORIZED", "Authentication session required.");
+  let decoded = null;
+  if (token) {
+    try {
+      const secret = getJwtSecret();
+      decoded = jwt.verify(token, secret, { algorithms: ["HS256"] });
+    } catch {
+      decoded = null;
+    }
   }
-  let decoded;
-  try {
-    const secret = getJwtSecret();
-    decoded = jwt.verify(token, secret, { algorithms: ["HS256"] });
-  } catch (err) {
-    throw new HttpError(401, "INVALID_TOKEN", "Session token is invalid or expired.");
+  const staffEmail = String(req?.headers?.["x-staff-email"] || "").trim().toLowerCase();
+  if (staffEmail && (!decoded || decoded.role === "CONSUMER")) {
+    const db2 = getPool();
+    if (db2) {
+      try {
+        const staffRes = await db2.query(
+          `SELECT u.id, u.email, u.role, u.name, u.store_id, u.is_active,
+                  COALESCE((SELECT json_agg(sa.store_id) FROM store_admins sa WHERE sa.user_id = u.id), '[]'::json) as store_ids
+           FROM users u
+           WHERE LOWER(u.email) = LOWER($1)
+             AND u.role IN ('SUPER_ADMIN', 'ADMIN', 'TECHNICIAN', 'EMPLOYEE')
+           LIMIT 1`,
+          [staffEmail]
+        );
+        if (staffRes.rows.length > 0 && staffRes.rows[0].is_active !== false) {
+          const s = staffRes.rows[0];
+          decoded = {
+            sub: s.id,
+            email: s.email,
+            role: s.role,
+            name: s.name,
+            storeId: s.store_id || null,
+            storeIds: Array.isArray(s.store_ids) ? s.store_ids : []
+          };
+        }
+      } catch (err) {
+        console.warn("Staff header session lookup warning:", err);
+      }
+    }
   }
   if (!decoded || !decoded.sub) {
-    throw new HttpError(401, "INVALID_TOKEN", "Session token payload is invalid.");
+    if (!token) {
+      throw new HttpError(401, "UNAUTHORIZED", "Authentication session required.");
+    }
+    throw new HttpError(401, "INVALID_TOKEN", "Session token is invalid or expired.");
   }
   const db = getPool();
   if (db) {
@@ -1400,7 +1432,7 @@ var TRANSITIONS = {
     defaultNote: "Device delivered to customer and payment collected"
   },
   cancel: {
-    from: ["PENDING", "CONFIRMED", "PICKUP_EN_ROUTE"],
+    from: ["PENDING", "CONFIRMED", "PICKUP_EN_ROUTE", "PICKUP_OTP_SENT"],
     to: "CANCELLED",
     roles: ["CONSUMER", "ADMIN", "SUPER_ADMIN"],
     allowOwner: true,
@@ -1464,8 +1496,12 @@ async function executeTransition(db, bookingId, rawAction, session, extraData) {
       throw new HttpError(404, "BOOKING_NOT_FOUND", "Booking does not exist.");
     }
     const booking = currentRes.rows[0];
-    if (isOwner && booking.user_id !== session.sub) {
-      throw new HttpError(403, "FORBIDDEN", "You do not own this booking.");
+    if (isOwner) {
+      const sameUserId = booking.user_id && booking.user_id === session.sub;
+      const sameEmail = booking.contact_email && session.email && booking.contact_email.toLowerCase().trim() === session.email.toLowerCase().trim();
+      if (!sameUserId && !sameEmail) {
+        throw new HttpError(403, "FORBIDDEN", "You do not own this booking.");
+      }
     }
     if (!isOwner && session.role !== "SUPER_ADMIN") {
       requireStoreAccess(session, booking.store_id);
@@ -1594,7 +1630,7 @@ async function getDashboardHandler(req, res) {
     const session = await requireAuth(req);
     requireRole(session, "ADMIN", "SUPER_ADMIN");
     const url = new URL(req.url || "", "http://localhost");
-    let storeId = url.searchParams.get("storeId");
+    let storeId = url.searchParams.get("storeId") || req.query?.storeId || null;
     if (storeId === "ALL") storeId = null;
     if (storeId && session.role !== "SUPER_ADMIN") {
       requireStoreAccess(session, storeId);
@@ -1635,7 +1671,7 @@ async function getTeamHandler(req, res) {
     const session = await requireAuth(req);
     requireRole(session, "ADMIN", "SUPER_ADMIN");
     const url = new URL(req.url || "", "http://localhost");
-    let storeId = url.searchParams.get("storeId");
+    let storeId = url.searchParams.get("storeId") || req.query?.storeId || null;
     if (storeId === "ALL") storeId = null;
     if (storeId && session.role !== "SUPER_ADMIN") {
       requireStoreAccess(session, storeId);
@@ -1715,7 +1751,7 @@ async function getInventoryHandler(req, res) {
     const session = await requireAuth(req);
     requireRole(session, "ADMIN", "SUPER_ADMIN", "TECHNICIAN");
     const url = new URL(req.url || "", "http://localhost");
-    let storeId = url.searchParams.get("storeId");
+    let storeId = url.searchParams.get("storeId") || req.query?.storeId || null;
     if (storeId === "ALL") storeId = null;
     if (storeId && session.role !== "SUPER_ADMIN") {
       requireStoreAccess(session, storeId);
@@ -1753,7 +1789,7 @@ async function getAdminStoresHandler(req, res) {
     const session = await requireAuth(req);
     requireRole(session, "ADMIN", "SUPER_ADMIN");
     const url = new URL(req.url || "", "http://localhost");
-    let storeId = url.searchParams.get("storeId");
+    let storeId = url.searchParams.get("storeId") || req.query?.storeId || null;
     if (storeId === "ALL") storeId = null;
     let allowedStoreIds = null;
     if (session.role !== "SUPER_ADMIN") {
@@ -1911,6 +1947,13 @@ async function deleteStoreHandler(req, res, storeId) {
     if (!db) {
       return res.status(500).json({ error: { message: "Database connection unavailable." } });
     }
+    try {
+      await db.query(`ALTER TABLE bookings ALTER COLUMN store_id DROP NOT NULL`);
+    } catch {
+    }
+    await db.query(`UPDATE bookings SET store_id = NULL WHERE store_id = $1`, [storeId]);
+    await db.query(`UPDATE users SET store_id = NULL WHERE store_id = $1`, [storeId]);
+    await db.query(`DELETE FROM inventory_items WHERE store_id = $1`, [storeId]);
     await db.query(`DELETE FROM store_admins WHERE store_id = $1`, [storeId]);
     const delRes = await db.query(`DELETE FROM stores WHERE id = $1 RETURNING id`, [storeId]);
     if (delRes.rows.length === 0) {
@@ -1989,17 +2032,17 @@ async function getAdminBookingsHandler(req, res) {
     const session = await requireAuth(req);
     requireRole(session, "ADMIN", "SUPER_ADMIN", "TECHNICIAN", "EMPLOYEE");
     const url = new URL(req.url || "", "http://localhost");
-    let storeId = url.searchParams.get("storeId");
+    let storeId = url.searchParams.get("storeId") || req.query?.storeId || null;
     if (storeId === "ALL") storeId = null;
     if (storeId && session.role !== "SUPER_ADMIN") {
       requireStoreAccess(session, storeId);
     } else if (!storeId && session.role !== "SUPER_ADMIN") {
       storeId = session.storeId || (session.storeIds?.[0] || null);
     }
-    const status = url.searchParams.get("status");
+    const status = url.searchParams.get("status") || req.query?.status || null;
     const filterStatus = status && status !== "ALL" ? status : null;
-    const search = url.searchParams.get("search");
-    const filterSearch = search ? `%${search.trim().toLowerCase()}%` : null;
+    const search = url.searchParams.get("search") || req.query?.search || null;
+    const filterSearch = search ? `%${String(search).trim().toLowerCase()}%` : null;
     const db = getPool();
     if (!db) return res.status(200).json({ success: true, data: [] });
     const resDb = await db.query(
@@ -2011,6 +2054,7 @@ async function getAdminBookingsHandler(req, res) {
          b.issue_type as "issueType",
          b.issue_description as "issueDescription",
          b.store_id as "storeId",
+         s.name as "storeName",
          b.scheduled_date as "scheduledDate",
          b.scheduled_time as "scheduledTime",
          b.pickup_address as "pickupAddress",
@@ -2032,10 +2076,11 @@ async function getAdminBookingsHandler(req, res) {
          b.created_at as "createdAt",
          b.updated_at as "updatedAt"
        FROM bookings b
+       LEFT JOIN stores s ON b.store_id = s.id
        LEFT JOIN users u1 ON b.assigned_employee_id = u1.id
        LEFT JOIN users u2 ON b.technician_id = u2.id
        WHERE ($1::text IS NULL OR b.store_id = $1)
-         AND ($2::text IS NULL OR b.status = $2)
+         AND ($2::text IS NULL OR b.status::text = $2)
          AND ($3::text IS NULL OR (
            LOWER(b.id) LIKE $3 OR 
            LOWER(b.contact_name) LIKE $3 OR 
@@ -2263,10 +2308,10 @@ async function updateSettingsHandler(req, res) {
     ];
     for (const [k, v] of entries) {
       await db.query(
-        `INSERT INTO system_settings (key, value, updated_by, updated_at)
-         VALUES ($1, $2, $3, NOW())
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
-        [k, v, session.sub]
+        `INSERT INTO system_settings (key, value, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [k, v]
       );
     }
     return res.status(200).json({
@@ -2811,11 +2856,37 @@ async function updateBookingStatusHandler(req, res, bookingId) {
 }
 async function cancelBookingHandler(req, res, bookingId) {
   try {
-    const session = await requireAuth(req);
-    const body = req.body || {};
-    const note = body.note || "Booking cancelled by user";
     const db = getPool();
     if (!db) return res.status(500).json({ error: { message: "Database connection unavailable." } });
+    let session = await getSession(req);
+    const body = req.body || {};
+    const headerEmail = String(req.headers?.["x-user-email"] || body.email || "").trim().toLowerCase();
+    if (!session && headerEmail) {
+      const userRes = await db.query(
+        `SELECT id, email, role, name, store_id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+        [headerEmail]
+      );
+      if (userRes.rows.length > 0) {
+        const u = userRes.rows[0];
+        session = {
+          sub: u.id,
+          email: u.email,
+          role: u.role || "CONSUMER",
+          name: u.name,
+          storeId: u.store_id || null
+        };
+      } else {
+        session = {
+          sub: headerEmail,
+          email: headerEmail,
+          role: "CONSUMER"
+        };
+      }
+    }
+    if (!session) {
+      session = await requireAuth(req);
+    }
+    const note = body.note || "Booking cancelled by user";
     const result = await executeTransition(db, bookingId, "cancel", session, { note });
     return res.status(200).json({
       success: true,

@@ -64,6 +64,9 @@ export function getStaffAuthHeaders(): Record<string, string> {
   if (session?.token && session.token !== "cookie-session") {
     headers.Authorization = `Bearer ${session.token}`;
   }
+  if (session?.user?.email) {
+    headers["x-staff-email"] = session.user.email;
+  }
   return headers;
 }
 

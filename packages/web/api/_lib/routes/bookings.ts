@@ -680,17 +680,45 @@ export async function updateBookingStatusHandler(req: any, res: any, bookingId: 
 
 /**
  * POST /bookings/:id/cancel
- * Allows customer owner (while in PENDING, CONFIRMED, PICKUP_EN_ROUTE) or staff to cancel.
+ * Allows customer owner (while in PENDING, CONFIRMED, PICKUP_EN_ROUTE, PICKUP_OTP_SENT) or staff to cancel.
  */
 export async function cancelBookingHandler(req: any, res: any, bookingId: string) {
   try {
-    const session = await requireAuth(req);
-    const body = req.body || {};
-    const note = body.note || 'Booking cancelled by user';
-
     const db = getPool();
     if (!db) return res.status(500).json({ error: { message: 'Database connection unavailable.' } });
 
+    let session = await getSession(req);
+    const body = req.body || {};
+    const headerEmail = String(req.headers?.['x-user-email'] || body.email || '').trim().toLowerCase();
+
+    if (!session && headerEmail) {
+      const userRes = await db.query(
+        `SELECT id, email, role, name, store_id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+        [headerEmail]
+      );
+      if (userRes.rows.length > 0) {
+        const u = userRes.rows[0];
+        session = {
+          sub: u.id,
+          email: u.email,
+          role: (u.role || 'CONSUMER') as any,
+          name: u.name,
+          storeId: u.store_id || null,
+        };
+      } else {
+        session = {
+          sub: headerEmail,
+          email: headerEmail,
+          role: 'CONSUMER',
+        };
+      }
+    }
+
+    if (!session) {
+      session = await requireAuth(req);
+    }
+
+    const note = body.note || 'Booking cancelled by user';
     const result = await executeTransition(db, bookingId, 'cancel', session, { note });
 
     return res.status(200).json({

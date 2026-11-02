@@ -1,9 +1,11 @@
+import { useState } from "react";
 import {
   UserPlus,
   Shield,
   Store as StoreIcon,
   Phone,
   Mail,
+  RefreshCw,
 } from "lucide-react";
 import { StaffMember } from "./types";
 import { STORES } from "./api";
@@ -13,6 +15,7 @@ interface TeamViewProps {
   selectedStore: string;
   onStoreChange: (storeId: string) => void;
   onOpenInviteModal: () => void;
+  onRefreshData?: () => void;
 }
 
 export default function TeamView({
@@ -20,7 +23,16 @@ export default function TeamView({
   selectedStore,
   onStoreChange,
   onOpenInviteModal,
+  onRefreshData,
 }: TeamViewProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  function handleRefresh() {
+    if (!onRefreshData) return;
+    setIsRefreshing(true);
+    onRefreshData();
+    setTimeout(() => setIsRefreshing(false), 600);
+  }
   const filteredStaff = selectedStore === "ALL"
     ? staffList
     : staffList.filter((s) => s.storeId === selectedStore);
@@ -52,6 +64,17 @@ export default function TeamView({
               ))}
             </select>
           </div>
+
+          {onRefreshData && (
+            <button
+              onClick={handleRefresh}
+              className="min-h-[44px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--surface-1)] hover:bg-[var(--surface-2)] border border-[var(--hairline-strong)] text-xs font-semibold text-[var(--ink)] transition-all"
+              title="Refresh staff directory"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#ef8f0b] ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenInviteModal}
