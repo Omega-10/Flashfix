@@ -42,6 +42,16 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
   const navigate = useNavigate();
 
   // Validate or determine active tab from route param or prop
+  const tabAliasMap: Record<string, AdminTab> = {
+    overview: "dashboard",
+    runs: "delivery",
+    queue: "technician",
+    staff: "team",
+    stores: "superadmin",
+    settings: "superadmin",
+  };
+  const resolvedParamTab = paramTab ? (tabAliasMap[paramTab] || paramTab) : undefined;
+
   const validTabs: AdminTab[] = [
     "dashboard",
     "superadmin",
@@ -52,8 +62,8 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
     "inventory",
   ];
 
-  const derivedTab = (paramTab && validTabs.includes(paramTab as AdminTab)
-    ? (paramTab as AdminTab)
+  const derivedTab = (resolvedParamTab && validTabs.includes(resolvedParamTab as AdminTab)
+    ? (resolvedParamTab as AdminTab)
     : initialTab || "dashboard");
 
   const [activeTab, setActiveTab] = useState<AdminTab>(derivedTab);
@@ -65,49 +75,62 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
 
   // Authentication & Session Guard
   useEffect(() => {
-    const session = getStaffSession();
-    if (!session || !session.token) {
-      navigate("/admin/login", { replace: true });
-      return;
-    }
+    let cancelled = false;
+    async function verifyStaff() {
+      const session = getStaffSession();
+      if (session?.user) {
+        if (!cancelled) {
+          setStaffUser(session.user);
+          const role = session.user.role;
+          setCurrentRole(role);
+          if (role === "SUPER_ADMIN") {
+            setSelectedStore("ALL");
+          } else if (session.user.storeIds && session.user.storeIds.length > 0) {
+            setSelectedStore(session.user.storeIds[0]);
+          } else if (session.user.storeId) {
+            setSelectedStore(session.user.storeId);
+          }
+        }
+        return;
+      }
 
-    setStaffUser(session.user);
-    const role = session.user.role;
-    setCurrentRole(role);
-
-    // Initial store context based on staff permissions
-    if (role === "SUPER_ADMIN") {
-      setSelectedStore("ALL");
-    } else if (session.user.storeIds && session.user.storeIds.length > 0) {
-      setSelectedStore(session.user.storeIds[0]);
-    } else if (session.user.storeId) {
-      setSelectedStore(session.user.storeId);
-    }
-
-    // Role-based initial tab routing if landing on root or unauthorized tab
-    if (!paramTab) {
-      switch (role) {
-        case "SUPER_ADMIN":
-          navigate("/admin/superadmin", { replace: true });
-          break;
-        case "ADMIN":
-          navigate("/admin/dashboard", { replace: true });
-          break;
-        case "TECHNICIAN":
-          navigate("/admin/technician", { replace: true });
-          break;
-        case "COURIER":
-          navigate("/admin/delivery", { replace: true });
-          break;
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (!res.ok) {
+          if (!cancelled) navigate("/login", { replace: true });
+          return;
+        }
+        const data = await res.json();
+        const me = data?.user || data?.data;
+        if (!me || me.role === "CONSUMER") {
+          if (!cancelled) navigate("/login", { replace: true });
+          return;
+        }
+        if (!cancelled) {
+          setStaffUser(me);
+          setCurrentRole(me.role);
+          if (me.role === "SUPER_ADMIN") {
+            setSelectedStore("ALL");
+          } else if (me.storeIds && me.storeIds.length > 0) {
+            setSelectedStore(me.storeIds[0]);
+          } else if (me.storeId) {
+            setSelectedStore(me.storeId);
+          }
+        }
+      } catch {
+        if (!cancelled) navigate("/login", { replace: true });
       }
     }
-  }, [navigate, paramTab]);
+    verifyStaff();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
 
   // Keep state synchronized with URL param and check role authority
   useEffect(() => {
-    if (paramTab && validTabs.includes(paramTab as AdminTab)) {
-      const tab = paramTab as AdminTab;
-      // Guard against unauthorized tabs
+    if (resolvedParamTab && validTabs.includes(resolvedParamTab as AdminTab)) {
+      const tab = resolvedParamTab as AdminTab;
       if (tab === "superadmin" && currentRole !== "SUPER_ADMIN") {
         navigate("/admin/dashboard", { replace: true });
         return;
@@ -116,13 +139,18 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
         navigate("/admin/dashboard", { replace: true });
         return;
       }
-      if (tab === "delivery" && currentRole !== "SUPER_ADMIN" && currentRole !== "COURIER") {
+      if (
+        tab === "delivery" &&
+        currentRole !== "SUPER_ADMIN" &&
+        currentRole !== "COURIER" &&
+        currentRole !== "EMPLOYEE"
+      ) {
         navigate("/admin/dashboard", { replace: true });
         return;
       }
       setActiveTab(tab);
     }
-  }, [paramTab, currentRole, navigate]);
+  }, [resolvedParamTab, currentRole, navigate]);
 
   // Operational telemetry state
   const [stats, setStats] = useState<DashboardStats>({
@@ -191,8 +219,9 @@ export default function AdminPage({ initialTab }: AdminPageProps) {
   }
 
   function handleLogout() {
+    fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
     clearStaffSession();
-    navigate("/admin/login", { replace: true });
+    navigate("/login", { replace: true });
   }
 
   function handleNavigateToBookings(filter?: string) {

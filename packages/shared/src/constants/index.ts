@@ -1,5 +1,5 @@
 // User Roles
-export const USER_ROLES = ['CONSUMER', 'EMPLOYEE', 'ADMIN', 'SUPER_ADMIN'] as const;
+export const USER_ROLES = ['CONSUMER', 'EMPLOYEE', 'ADMIN', 'SUPER_ADMIN', 'TECHNICIAN'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 // Booking Statuses (11-step lifecycle state machine)

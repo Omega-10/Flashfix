@@ -48,13 +48,13 @@ export default function AdminNavbar({
     { id: "superadmin" as AdminTab, label: "Superadmin", icon: Globe2, roles: ["SUPER_ADMIN"] },
     { id: "dashboard" as AdminTab, label: "Store Admin", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "ADMIN"] },
     { id: "technician" as AdminTab, label: "Technician", icon: Wrench, roles: ["SUPER_ADMIN", "TECHNICIAN"] },
-    { id: "delivery" as AdminTab, label: "Delivery", icon: Bike, roles: ["SUPER_ADMIN", "COURIER"] },
+    { id: "delivery" as AdminTab, label: "Delivery", icon: Bike, roles: ["SUPER_ADMIN", "COURIER", "EMPLOYEE"] },
     {
       id: "bookings" as AdminTab,
       label: "Bookings",
       icon: CalendarCheck,
       badge: unassignedCount > 0 ? unassignedCount : undefined,
-      roles: ["SUPER_ADMIN", "ADMIN", "TECHNICIAN", "COURIER"],
+      roles: ["SUPER_ADMIN", "ADMIN", "TECHNICIAN", "COURIER", "EMPLOYEE"],
     },
     { id: "team" as AdminTab, label: "Staff", icon: Users, roles: ["SUPER_ADMIN", "ADMIN"] },
     { id: "inventory" as AdminTab, label: "Inventory", icon: Boxes, roles: ["SUPER_ADMIN", "ADMIN", "TECHNICIAN"] },
@@ -83,6 +83,7 @@ export default function AdminNavbar({
       case "TECHNICIAN":
         return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
       case "COURIER":
+      case "EMPLOYEE":
         return "bg-amber-500/15 text-amber-400 border-amber-500/30";
       default:
         return "bg-[#181818] text-[#807a75] border-[rgba(255,255,255,0.1)]";
@@ -98,6 +99,7 @@ export default function AdminNavbar({
       case "TECHNICIAN":
         return "TECHNICIAN";
       case "COURIER":
+      case "EMPLOYEE":
         return "DELIVERY RIDER";
       default:
         return role;

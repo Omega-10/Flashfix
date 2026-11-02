@@ -60,6 +60,7 @@ export default function BookingWizard() {
   const [loadingStores, setLoadingStores] = useState(false);
   
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<{ id: string } | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -229,26 +230,29 @@ export default function BookingWizard() {
 
   async function submit() {
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const token = localStorage.getItem("accessToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token && token !== "cookie-session") {
+        headers.Authorization = `Bearer ${token}`;
+      }
       const res = await fetch("/api/bookings", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        credentials: "include",
+        headers,
         body: JSON.stringify({
           brand: step1.brand,
           deviceModel: step1.device,
           issueType: step2.issue,
-          storeId: step4.storeId || stores[0]?.id || "store-001",
+          storeId: step4.storeId || stores[0]?.id || undefined,
           scheduledDate: step4.date,
           scheduledTime: step4.time,
           pickupAddress: step3.address,
           pickupLat: step3.lat,
           pickupLng: step3.lng,
           contactName: step3.name,
-          contactEmail: user?.email || "consumer@flashfix.in",
+          contactEmail: user?.email || undefined,
           contactPhone: step3.phone,
         }),
       });
@@ -258,14 +262,10 @@ export default function BookingWizard() {
         setConfirmed({ id: data?.data?.id || data?.id });
         sessionStorage.removeItem("ff_booking_draft");
       } else {
-        const fallbackId = "FF-" + Math.floor(100000 + Math.random() * 900000);
-        setConfirmed({ id: fallbackId });
-        sessionStorage.removeItem("ff_booking_draft");
+        setSubmitError(data?.error?.message || "Unable to submit booking. Please check your details and try again.");
       }
     } catch {
-      const fallbackId = "FF-" + Math.floor(100000 + Math.random() * 900000);
-      setConfirmed({ id: fallbackId });
-      sessionStorage.removeItem("ff_booking_draft");
+      setSubmitError("Network error while creating your booking. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -621,7 +621,7 @@ export default function BookingWizard() {
 
                 {/* Summary */}
                 <div className="bg-[var(--surface-bg)] rounded-xl p-5 space-y-2 border border-[var(--surface-border)]">
-                  <p className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest mb-4">Protocol Summary</p>
+                  <p className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest mb-4">Booking Summary</p>
                   {[
                     ["Device", step1.device],
                     ["Issue", step2.issue],
@@ -635,6 +635,12 @@ export default function BookingWizard() {
                     </div>
                   ))}
                 </div>
+
+                {submitError && (
+                  <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+                    {submitError}
+                  </div>
+                )}
 
                 <div className="flex gap-3">
                   <button onClick={() => setStep(3)} className="flex items-center justify-center px-6 py-4 rounded-xl border border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">

@@ -4,26 +4,34 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // Root API handlers
-import rootSendOtpModule, {
+import rootCatchallModule from '../../../api/[...route].ts';
+import {
   resolveBrevoConfig as rootResolveBrevoConfig,
   sanitizeEnvValue as rootSanitizeEnvValue,
-  decodeFallbackKey as rootDecodeFallbackKey,
   isEnvTruthy as rootIsEnvTruthy,
-} from '../../../api/auth/send-otp.ts';
-import rootCatchallModule from '../../../api/[...route].ts';
+} from '../../../api/_brevo.ts';
 
-const rootSendOtpHandler: any = typeof rootSendOtpModule === 'function' ? rootSendOtpModule : (rootSendOtpModule as any).default;
 const rootCatchallHandler: any = typeof rootCatchallModule === 'function' ? rootCatchallModule : (rootCatchallModule as any).default;
 
+// Helper to invoke catchall send-otp handler
+async function rootSendOtpHandler(req: any, res: any) {
+  const syntheticReq = {
+    ...req,
+    method: req.method || 'POST',
+    url: req.url || 'http://localhost/api/auth/send-otp',
+    query: { route: ['auth', 'send-otp'] },
+    body: req.body,
+  };
+  return rootCatchallHandler(syntheticReq, res);
+}
+
 // packages/web API handlers
-import webSendOtpHandler, {
+import webCatchallHandler from '../api/[...route].ts';
+import {
   resolveBrevoConfig as webResolveBrevoConfig,
   sanitizeEnvValue as webSanitizeEnvValue,
-  decodeFallbackKey as webDecodeFallbackKey,
   isEnvTruthy as webIsEnvTruthy,
-} from '../api/auth/send-otp.ts';
-import webCatchallHandler from '../api/[...route].ts';
-import { resolveBrevoConfig as brevoModuleResolve } from '../api/_brevo.ts';
+} from '../api/_brevo.ts';
 
 interface MockRes {
   statusCode: number;
@@ -58,9 +66,8 @@ function createMockRes(): MockRes {
   return res;
 }
 
-// Mirror helper function from Login.tsx and LoginModal.tsx for error extraction stress tests
-function getStatusText(status: number, statusText?: string): string {
-  if (statusText && statusText.trim()) return statusText.trim();
+function getStatusText(status: number, fallback?: string): string {
+  if (fallback) return fallback;
   switch (status) {
     case 400: return "Bad Request";
     case 401: return "Unauthorized";
@@ -94,7 +101,7 @@ function extractErrorMessage(res: { status: number; statusText?: string }, resTe
 }
 
 // ============================================================================
-// SUITE 1: Node ESM Import Integrity & AST / Source Code Validation
+// SUITE 1: Node ESM Import Integrity & Consolidated API Parity
 // ============================================================================
 describe('Challenger M1 Suite 1: Node ESM Import Integrity across api/ and packages/web/api/', () => {
   const repoRootDir = path.resolve(import.meta.dirname, '../../..');
@@ -107,11 +114,13 @@ describe('Challenger M1 Suite 1: Node ESM Import Integrity across api/ and packa
   });
 
   const apiFiles = [
-    'auth/send-otp.ts',
-    'auth/verify-otp.ts',
-    'stores/nearby.ts',
     '[...route].ts',
     '_brevo.ts',
+    '_lib/env.ts',
+    '_lib/db.ts',
+    '_lib/session.ts',
+    '_lib/authz.ts',
+    '_lib/email.ts',
   ];
 
   for (const relFile of apiFiles) {
@@ -126,7 +135,6 @@ describe('Challenger M1 Suite 1: Node ESM Import Integrity across api/ and packa
       const webContent = fs.readFileSync(webFilePath, 'utf8');
 
       // Regular expression matching relative imports without explicit extensions
-      // e.g. import ... from './_brevo' or import ... from '../_brevo'
       const extensionlessImportRegex = /import\s+.*from\s+['"]\.\.?[^'"]*?(?<!\.(ts|js|json))['"]/g;
 
       const rootMatches = rootContent.match(extensionlessImportRegex) || [];
@@ -144,9 +152,7 @@ describe('Challenger M1 Suite 1: Node ESM Import Integrity across api/ and packa
   }
 
   test('Dynamic ESM import of root and web handlers succeeds at runtime', async () => {
-    assert.strictEqual(typeof rootSendOtpHandler, 'function');
     assert.strictEqual(typeof rootCatchallHandler, 'function');
-    assert.strictEqual(typeof webSendOtpHandler, 'function');
     assert.strictEqual(typeof webCatchallHandler, 'function');
   });
 });
@@ -173,7 +179,6 @@ describe('Challenger M1 Suite 2: vercel.json Output Directory & Routing Rewrites
     const raw = fs.readFileSync(rootVercelPath, 'utf8');
     const parsed = JSON.parse(raw);
     const sourcePattern = parsed.rewrites[0].source;
-    // Test the exact regex pattern in Vercel's rewrite rule
     const regex = new RegExp(`^${sourcePattern}$`);
 
     // SPA routes should match and be rewritten to /index.html
@@ -287,7 +292,7 @@ describe('Challenger M1 Suite 3: Brevo Key Sanitization & Env Alias Adversarial 
     }
   });
 
-  describe('Alias Precedence & Fallback Verification', () => {
+  describe('Alias Precedence & Zero Fallback Verification', () => {
     test('Alias: BREVO_KEY is used when BREVO_API_KEY is missing', () => {
       process.env.BREVO_KEY = ' \t"key-from-brevo-key"\r\n ';
       const cfg = rootResolveBrevoConfig();
@@ -309,22 +314,7 @@ describe('Challenger M1 Suite 3: Brevo Key Sanitization & Env Alias Adversarial 
       assert.strictEqual(cfg.source, 'env:VITE_BREVO_API_KEY');
     });
 
-    test('Fallback: XOR hex fallback is used when all env vars are absent and fallback allowed', () => {
-      const cfg = rootResolveBrevoConfig();
-      assert.strictEqual(cfg.source, 'fallback:xor_hex');
-      assert.strictEqual(cfg.apiKey, rootDecodeFallbackKey());
-      assert.ok(cfg.apiKey.startsWith('x' + 'key' + 'sib-'));
-    });
-
-    test('Disabled Fallback: BREVO_DISABLE_FALLBACK=1 results in empty key and source none', () => {
-      process.env.BREVO_DISABLE_FALLBACK = '1';
-      const cfg = rootResolveBrevoConfig();
-      assert.strictEqual(cfg.apiKey, '');
-      assert.strictEqual(cfg.source, 'none');
-    });
-
-    test('Disabled Fallback: BREVO_DISABLE_FALLBACK="true" results in empty key and source none', () => {
-      process.env.BREVO_DISABLE_FALLBACK = 'true';
+    test('Zero hardcoded fallback: missing env vars returns empty key', () => {
       const cfg = rootResolveBrevoConfig();
       assert.strictEqual(cfg.apiKey, '');
       assert.strictEqual(cfg.source, 'none');
@@ -387,8 +377,8 @@ describe('Challenger M1 Suite 3: Brevo Key Sanitization & Env Alias Adversarial 
       assert.strictEqual(interceptedHeaders['api-key'], 'sendinblue-emp-test');
     });
 
-    test('When credentials missing and fallback disabled, handler returns 500 BREVO_API_KEY_MISSING and NEVER calls fetch', async () => {
-      process.env.BREVO_DISABLE_FALLBACK = '1';
+    test('When credentials missing in production, handler returns 500 and NEVER calls fetch', async () => {
+      process.env.NODE_ENV = 'production';
       let fetchCalled = false;
       globalThis.fetch = (async () => {
         fetchCalled = true;

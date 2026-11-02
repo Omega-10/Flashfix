@@ -121,12 +121,12 @@ export default function DeliveryPersonView({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm sm:text-base text-[#f5f0eb] truncate">
-                Vikram Reddy
+                Delivery Route Console
               </span>
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
             </div>
             <p className="text-[11px] text-[#807a75] font-mono truncate">
-              Mobile Courier • Madhapur Flagship Lab
+              Assigned Pickups & Return Deliveries
             </p>
           </div>
         </div>

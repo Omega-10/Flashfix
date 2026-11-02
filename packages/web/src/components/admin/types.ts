@@ -113,3 +113,9 @@ export interface StaffSession {
   token: string;
   user: StaffSessionUser;
 }
+
+export interface SupportSettings {
+  supportEmail: string;
+  supportPhone: string;
+  supportHours: string;
+}

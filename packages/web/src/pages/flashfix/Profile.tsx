@@ -1,49 +1,50 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   User,
   Phone,
   Mail,
   MapPin,
   Smartphone,
-  Shield,
   Edit3,
   Save,
   Plus,
   Trash2,
   ExternalLink,
   CheckCircle2,
-  Calendar,
   LogOut,
   Wrench,
+  AlertCircle,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import LoginModal from "@/components/flashfix/LoginModal";
-import { SavedAddress } from "@flashfix/shared";
+import { SavedAddress, BookingStatus } from "@flashfix/shared";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 interface BookingItem {
   id: string;
   brand: string;
   deviceModel: string;
   issueType: string;
-  status: string;
+  status: BookingStatus;
   scheduledDate: string;
   scheduledTime: string;
   pickupAddress: string;
   createdAt: string | Date;
   estimatedCostPaise?: number | null;
+  finalCostPaise?: number | null;
 }
 
 export default function Profile() {
   const { user, isAuthenticated, logout, updateUser, initAuth } = useAuthStore();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  
+
   // Profile edit state
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Bookings state
@@ -52,9 +53,12 @@ export default function Profile() {
 
   // Saved addresses state
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [newAddressLabel, setNewAddressLabel] = useState("Home");
   const [newAddressText, setNewAddressText] = useState("");
+  const [newAddressLandmark, setNewAddressLandmark] = useState("");
+  const [addressError, setAddressError] = useState<string | null>(null);
 
   useEffect(() => {
     initAuth();
@@ -69,106 +73,52 @@ export default function Profile() {
     }
   }, [user]);
 
+  function getAuthHeaders(): Record<string, string> {
+    const token = localStorage.getItem("accessToken");
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token && token !== "cookie-session") {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   async function fetchBookings() {
     setLoadingBookings(true);
-    const token = localStorage.getItem("accessToken");
     try {
       const res = await fetch("/api/bookings/mine", {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await res.json().catch(() => null);
-      if (res.ok && (data?.data || Array.isArray(data))) {
+      if (res.ok && (Array.isArray(data?.data) || Array.isArray(data))) {
         setBookings(data.data || data);
       } else {
-        // Fallback demo bookings for authenticated user
-        setBookings([
-          {
-            id: "FF-839201",
-            brand: "Apple",
-            deviceModel: "iPhone 15 Pro",
-            issueType: "Screen Replacement",
-            status: "IN_REPAIR",
-            scheduledDate: new Date().toISOString().split("T")[0],
-            scheduledTime: "11:00 AM",
-            pickupAddress: "Hitech City, Madhapur, Hyderabad",
-            createdAt: new Date().toISOString(),
-            estimatedCostPaise: 449900,
-          },
-          {
-            id: "FF-720194",
-            brand: "Samsung",
-            deviceModel: "Galaxy S23 Ultra",
-            issueType: "Battery Replacement",
-            status: "DELIVERED",
-            scheduledDate: "2026-10-18",
-            scheduledTime: "2:00 PM",
-            pickupAddress: "Banjara Hills, Road No. 12, Hyderabad",
-            createdAt: "2026-10-18T08:30:00.000Z",
-            estimatedCostPaise: 299900,
-          },
-        ]);
+        setBookings([]);
       }
     } catch {
-      setBookings([
-        {
-          id: "FF-839201",
-          brand: "Apple",
-          deviceModel: "iPhone 15 Pro",
-          issueType: "Screen Replacement",
-          status: "IN_REPAIR",
-          scheduledDate: new Date().toISOString().split("T")[0],
-          scheduledTime: "11:00 AM",
-          pickupAddress: "Hitech City, Madhapur, Hyderabad",
-          createdAt: new Date().toISOString(),
-          estimatedCostPaise: 449900,
-        },
-      ]);
+      setBookings([]);
     } finally {
       setLoadingBookings(false);
     }
   }
 
   async function fetchAddresses() {
-    const token = localStorage.getItem("accessToken");
+    setLoadingAddresses(true);
     try {
-      const res = await fetch("/api/users/addresses", {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+      const res = await fetch("/api/account/addresses", {
+        credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await res.json().catch(() => null);
-      if (res.ok && (data?.data || Array.isArray(data))) {
+      if (res.ok && (Array.isArray(data?.data) || Array.isArray(data))) {
         setAddresses(data.data || data);
       } else {
-        const saved = localStorage.getItem("ff_saved_addresses");
-        if (saved) {
-          setAddresses(JSON.parse(saved));
-        } else {
-          const defaultAddresses: SavedAddress[] = [
-            {
-              id: "addr-1",
-              userId: user?.id || "u-default",
-              label: "Home",
-              address: "Flat 402, Lotus Towers, Kondapur, Hyderabad, 500084",
-              landmark: "Near Botanical Garden",
-              lat: 17.4645,
-              lng: 78.3615,
-              isDefault: true,
-              createdAt: new Date(),
-            },
-          ];
-          setAddresses(defaultAddresses);
-          localStorage.setItem("ff_saved_addresses", JSON.stringify(defaultAddresses));
-        }
+        setAddresses([]);
       }
     } catch {
-      // Local fallback
-      const saved = localStorage.getItem("ff_saved_addresses");
-      if (saved) {
-        setAddresses(JSON.parse(saved));
-      }
+      setAddresses([]);
+    } finally {
+      setLoadingAddresses(false);
     }
   }
 
@@ -176,85 +126,92 @@ export default function Profile() {
     e.preventDefault();
     setSaving(true);
     setSaveSuccess(false);
+    setProfileError(null);
 
     try {
-      const token = localStorage.getItem("accessToken");
-      await fetch("/api/auth/me", {
+      const res = await fetch("/api/auth/me", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ name, phone }),
+        credentials: "include",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
       });
 
-      updateUser({ name, phone });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setProfileError(data?.error?.message || "Failed to update profile.");
+        return;
+      }
+
+      updateUser({ name: name.trim(), phone: phone.trim() });
       setSaveSuccess(true);
       setIsEditing(false);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch {
-      updateUser({ name, phone });
-      setSaveSuccess(true);
-      setIsEditing(false);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setProfileError("Network error while saving profile.");
     } finally {
       setSaving(false);
     }
   }
 
-  function handleAddAddress(e: React.FormEvent) {
+  async function handleAddAddress(e: React.FormEvent) {
     e.preventDefault();
     if (!newAddressText.trim()) return;
+    setAddressError(null);
 
-    const newAddr: SavedAddress = {
-      id: "addr-" + Date.now(),
-      userId: user?.id || "u-default",
-      label: newAddressLabel,
-      address: newAddressText.trim(),
-      lat: 17.3850,
-      lng: 78.4867,
-      isDefault: addresses.length === 0,
-      createdAt: new Date(),
-    };
+    try {
+      const res = await fetch("/api/account/addresses", {
+        method: "POST",
+        credentials: "include",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          label: newAddressLabel,
+          address: newAddressText.trim(),
+          landmark: newAddressLandmark.trim() || undefined,
+          isDefault: addresses.length === 0,
+        }),
+      });
 
-    const updated = [...addresses, newAddr];
-    setAddresses(updated);
-    localStorage.setItem("ff_saved_addresses", JSON.stringify(updated));
-    setNewAddressText("");
-    setIsAddingAddress(false);
-  }
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setAddressError(data?.error?.message || "Could not save address.");
+        return;
+      }
 
-  function handleDeleteAddress(id: string) {
-    const updated = addresses.filter((a) => a.id !== id);
-    setAddresses(updated);
-    localStorage.setItem("ff_saved_addresses", JSON.stringify(updated));
-  }
-
-  function getStatusBadge(status: string) {
-    switch (status) {
-      case "PENDING":
-        return { label: "Pending Assignment", color: "bg-amber-500/10 text-amber-400 border-amber-500/30" };
-      case "CONFIRMED":
-        return { label: "Technician Assigned", color: "bg-blue-500/10 text-blue-400 border-blue-500/30" };
-      case "PICKUP_EN_ROUTE":
-      case "PICKUP_OTP_SENT":
-        return { label: "Pickup En Route", color: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30" };
-      case "IN_TRANSIT":
-        return { label: "In Transit to Lab", color: "bg-purple-500/10 text-purple-400 border-purple-500/30" };
-      case "IN_REPAIR":
-      case "CUSTODY_OTP_SENT":
-        return { label: "Repairing in Lab", color: "bg-amber-500/10 text-amber-400 border-amber-500/30" };
-      case "REPAIR_COMPLETE":
-        return { label: "Repair Completed", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" };
-      case "RETURN_EN_ROUTE":
-        return { label: "Return Delivery En Route", color: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30" };
-      case "DELIVERED":
-        return { label: "Delivered & Verified", color: "bg-green-500/10 text-green-400 border-green-500/30" };
-      case "CANCELLED":
-        return { label: "Cancelled", color: "bg-zinc-500/10 text-zinc-400 border-zinc-500/30" };
-      default:
-        return { label: status, color: "bg-zinc-500/10 text-zinc-400 border-zinc-500/30" };
+      const savedAddr = data?.data || data;
+      if (savedAddr) {
+        setAddresses((prev) => [savedAddr, ...prev]);
+      } else {
+        await fetchAddresses();
+      }
+      setNewAddressText("");
+      setNewAddressLandmark("");
+      setIsAddingAddress(false);
+    } catch {
+      setAddressError("Network error while saving address.");
     }
+  }
+
+  async function handleDeleteAddress(id: string) {
+    try {
+      const res = await fetch(`/api/account/addresses/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        setAddresses((prev) => prev.filter((a) => a.id !== id));
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function formatCost(estimated?: number | null, finalCost?: number | null): string {
+    const val = finalCost ?? estimated;
+    if (typeof val === "number" && val > 0) {
+      return `₹${(val / 100).toLocaleString("en-IN")}`;
+    }
+    return "Quote pending";
   }
 
   const activeBookings = bookings.filter(
@@ -266,27 +223,23 @@ export default function Profile() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="pt-32 pb-24 min-h-screen bg-[var(--surface-bg)] text-[var(--text-primary)]">
+      <div className="pt-32 pb-24 min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
         <div className="section-container max-w-lg text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-2xl p-10 shadow-xl"
-          >
-            <div className="w-16 h-16 rounded-full bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/30 flex items-center justify-center mx-auto mb-6 text-[var(--accent-amber)]">
-              <User className="w-8 h-8" />
+          <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl p-10 shadow-sm">
+            <div className="w-14 h-14 rounded-full bg-[var(--accent-soft)] border border-[var(--hairline-strong)] flex items-center justify-center mx-auto mb-5 text-[var(--accent)]">
+              <User className="w-7 h-7" />
             </div>
-            <h1 className="font-display font-bold text-2xl mb-3">Consumer Profile</h1>
-            <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
-              Sign in to view your device repair history, track live service orders in real-time, and manage your saved pickup locations.
+            <h1 className="font-display font-bold text-2xl mb-2">My Account</h1>
+            <p className="text-sm text-[var(--ink-2)] mb-7 leading-relaxed">
+              Sign in to view your repair history, track active bookings in real time, and manage your saved pickup addresses.
             </p>
             <button
               onClick={() => setIsLoginModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 bg-[var(--accent-amber)] hover:bg-[#d87c09] text-black font-semibold rounded-xl px-8 py-3.5 text-sm transition-all shadow-md shadow-[var(--accent-amber)]/20"
+              className="inline-flex items-center justify-center gap-2 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] font-semibold rounded-lg px-7 py-3 text-sm transition-all"
             >
               Sign In to Your Account
             </button>
-          </motion.div>
+          </div>
         </div>
 
         <LoginModal
@@ -298,30 +251,28 @@ export default function Profile() {
   }
 
   return (
-    <div className="pt-28 pb-24 min-h-screen bg-[var(--surface-bg)] text-[var(--text-primary)]">
+    <div className="pt-28 pb-24 min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <div className="section-container max-w-5xl">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-mono text-xs uppercase tracking-widest text-[var(--accent-amber)] font-semibold">
-                Customer Operations Portal
-              </span>
-            </div>
+            <span className="font-mono text-xs uppercase tracking-widest text-[var(--accent)] font-semibold block mb-1">
+              CUSTOMER ACCOUNT
+            </span>
             <h1 className="font-display font-bold text-3xl">My Account & Bookings</h1>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
               to="/flashfix/book"
-              className="inline-flex items-center gap-2 bg-[var(--accent-amber)] hover:bg-[#d87c09] text-black text-xs font-semibold rounded-xl px-5 py-2.5 transition-all"
+              className="inline-flex items-center gap-2 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] text-xs font-semibold rounded-lg px-5 py-2.5 transition-all"
             >
               <Wrench className="w-3.5 h-3.5" />
-              Book New Repair
+              Book a Repair
             </Link>
             <button
-              onClick={logout}
-              className="inline-flex items-center gap-1.5 border border-[var(--surface-border)] hover:border-red-500/40 hover:text-red-400 text-xs text-[var(--text-secondary)] font-medium rounded-xl px-4 py-2.5 transition-colors"
+              onClick={() => logout()}
+              className="inline-flex items-center gap-1.5 border border-[var(--hairline)] hover:border-red-500/40 hover:text-[var(--danger)] text-xs text-[var(--ink-2)] font-medium rounded-lg px-4 py-2.5 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out
@@ -330,29 +281,35 @@ export default function Profile() {
         </div>
 
         {saveSuccess && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3 text-xs text-emerald-400">
+          <div className="mb-6 p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2.5 text-xs text-[var(--success)]">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Profile details updated successfully.</span>
+            <span>Profile details updated.</span>
+          </div>
+        )}
+
+        {profileError && (
+          <div className="mb-6 p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2.5 text-xs text-[var(--danger)]">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{profileError}</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: User Profile Card & Saved Addresses */}
-          <div className="space-y-8">
-            {/* User Profile Card */}
-            <div className="bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-2xl p-6">
+          {/* Left Column: Account Details & Saved Addresses */}
+          <div className="space-y-6">
+            {/* Account Card */}
+            <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl p-6">
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-[var(--accent-amber)]/20 border border-[var(--accent-amber)]/40 flex items-center justify-center text-lg font-bold text-[var(--accent-amber)]">
+                  <div className="w-11 h-11 rounded-full bg-[var(--accent-soft)] border border-[var(--hairline-strong)] flex items-center justify-center text-base font-bold text-[var(--accent)]">
                     {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                   </div>
                   <div>
-                    <h2 className="font-semibold text-base text-[var(--text-primary)]">
-                      {user.name || "Flashfix Member"}
+                    <h2 className="font-semibold text-base text-[var(--ink)]">
+                      {user.name || user.email.split("@")[0]}
                     </h2>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-[var(--accent-amber)] bg-[var(--accent-amber)]/10 px-2 py-0.5 rounded-full border border-[var(--accent-amber)]/20 mt-1">
-                      <Shield className="w-3 h-3" />
-                      {user.role}
+                    <span className="text-xs text-[var(--ink-3)] font-mono">
+                      {user.email}
                     </span>
                   </div>
                 </div>
@@ -360,7 +317,7 @@ export default function Profile() {
                 {!isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-bg)] rounded-lg transition-colors"
+                    className="p-1.5 text-[var(--ink-3)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
                     title="Edit Profile"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -371,20 +328,20 @@ export default function Profile() {
               {isEditing ? (
                 <form onSubmit={handleSaveProfile} className="space-y-4">
                   <div>
-                    <label className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                    <label className="text-xs font-medium text-[var(--ink-2)] block mb-1.5">
                       Full Name
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent-amber)]"
+                      className="w-full h-10 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg px-3 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                    <label className="text-xs font-medium text-[var(--ink-2)] block mb-1.5">
                       Phone Number
                     </label>
                     <input
@@ -392,7 +349,7 @@ export default function Profile() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91..."
-                      className="w-full bg-[var(--surface-bg)] border border-[var(--surface-border)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent-amber)]"
+                      className="w-full h-10 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-lg px-3 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
                     />
                   </div>
 
@@ -400,14 +357,14 @@ export default function Profile() {
                     <button
                       type="button"
                       onClick={() => setIsEditing(false)}
-                      className="flex-1 py-2 rounded-xl border border-[var(--surface-border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      className="flex-1 py-2 rounded-lg border border-[var(--hairline)] text-xs text-[var(--ink-2)] hover:text-[var(--ink)]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex-1 py-2 rounded-xl bg-[var(--accent-amber)] hover:bg-[#d87c09] text-black font-semibold text-xs flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2 rounded-lg bg-[var(--accent)] text-[var(--accent-ink)] font-semibold text-xs flex items-center justify-center gap-1.5"
                     >
                       <Save className="w-3.5 h-3.5" />
                       {saving ? "Saving..." : "Save"}
@@ -415,36 +372,32 @@ export default function Profile() {
                   </div>
                 </form>
               ) : (
-                <div className="space-y-3 pt-3 border-t border-[var(--surface-border)] text-xs">
-                  <div className="flex items-center gap-2.5 text-[var(--text-secondary)]">
-                    <Mail className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                <div className="space-y-2.5 pt-3 border-t border-[var(--hairline)] text-xs">
+                  <div className="flex items-center gap-2.5 text-[var(--ink-2)]">
+                    <Mail className="w-4 h-4 text-[var(--ink-3)] shrink-0" />
                     <span className="truncate">{user.email}</span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-[var(--text-secondary)]">
-                    <Phone className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
-                    <span>{user.phone || "No phone added yet"}</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-[var(--text-muted)] text-[11px] font-mono">
-                    <Calendar className="w-4 h-4 shrink-0" />
-                    <span>Member ID: {user.id.substring(0, 10)}</span>
+                  <div className="flex items-center gap-2.5 text-[var(--ink-2)]">
+                    <Phone className="w-4 h-4 text-[var(--ink-3)] shrink-0" />
+                    <span>{user.phone || "No phone number added"}</span>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Saved Addresses Section */}
-            <div className="bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-2xl p-6">
+            <div className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-[var(--accent-amber)]" />
-                  <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                  <MapPin className="w-4 h-4 text-[var(--accent)]" />
+                  <h3 className="font-semibold text-sm text-[var(--ink)]">
                     Saved Addresses
                   </h3>
                 </div>
                 {!isAddingAddress && (
                   <button
                     onClick={() => setIsAddingAddress(true)}
-                    className="p-1 text-[var(--accent-amber)] hover:bg-[var(--surface-bg)] rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
+                    className="p-1 text-[var(--accent)] hover:underline flex items-center gap-1 text-xs font-medium"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add
@@ -452,8 +405,14 @@ export default function Profile() {
                 )}
               </div>
 
+              {addressError && (
+                <div className="mb-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-[var(--danger)]">
+                  {addressError}
+                </div>
+              )}
+
               {isAddingAddress && (
-                <form onSubmit={handleAddAddress} className="mb-4 p-3.5 rounded-xl bg-[var(--surface-bg)] border border-[var(--surface-border)] space-y-3">
+                <form onSubmit={handleAddAddress} className="mb-4 p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--hairline)] space-y-3">
                   <div className="flex gap-2">
                     {["Home", "Office", "Other"].map((lbl) => (
                       <button
@@ -462,8 +421,8 @@ export default function Profile() {
                         onClick={() => setNewAddressLabel(lbl)}
                         className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                           newAddressLabel === lbl
-                            ? "border-[var(--accent-amber)] bg-[var(--accent-amber)]/10 text-[var(--accent-amber)]"
-                            : "border-[var(--surface-border)] text-[var(--text-muted)]"
+                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] font-medium"
+                            : "border-[var(--hairline)] text-[var(--ink-3)]"
                         }`}
                       >
                         {lbl}
@@ -473,57 +432,71 @@ export default function Profile() {
                   <textarea
                     value={newAddressText}
                     onChange={(e) => setNewAddressText(e.target.value)}
-                    placeholder="Enter complete building & street address..."
-                    className="w-full bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-lg p-2.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent-amber)] resize-none h-16"
+                    placeholder="Flat, building, street, city, PIN code..."
+                    className="w-full bg-[var(--surface-1)] border border-[var(--hairline)] rounded-lg p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)] resize-none h-16"
                     required
+                  />
+                  <input
+                    type="text"
+                    value={newAddressLandmark}
+                    onChange={(e) => setNewAddressLandmark(e.target.value)}
+                    placeholder="Landmark (optional)"
+                    className="w-full bg-[var(--surface-1)] border border-[var(--hairline)] rounded-lg px-2.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
                   />
                   <div className="flex gap-2 justify-end">
                     <button
                       type="button"
                       onClick={() => setIsAddingAddress(false)}
-                      className="px-3 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      className="px-3 py-1.5 text-xs text-[var(--ink-3)] hover:text-[var(--ink)]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-3 py-1 text-xs bg-[var(--accent-amber)] text-black font-semibold rounded-lg hover:bg-[#d87c09]"
+                      className="px-3.5 py-1.5 text-xs bg-[var(--accent)] text-[var(--accent-ink)] font-semibold rounded-lg"
                     >
-                      Save Location
+                      Save Address
                     </button>
                   </div>
                 </form>
               )}
 
               <div className="space-y-3">
-                {addresses.length === 0 ? (
-                  <p className="text-xs text-[var(--text-muted)] italic">
-                    No saved addresses yet. Save locations during checkout or add one above.
+                {loadingAddresses ? (
+                  <p className="text-xs text-[var(--ink-3)]">Loading addresses...</p>
+                ) : addresses.length === 0 ? (
+                  <p className="text-xs text-[var(--ink-3)]">
+                    No saved addresses yet. Click &ldquo;Add&rdquo; to save a pickup address.
                   </p>
                 ) : (
                   addresses.map((addr) => (
                     <div
                       key={addr.id}
-                      className="p-3 rounded-xl bg-[var(--surface-bg)] border border-[var(--surface-border)] flex items-start justify-between gap-3 text-xs"
+                      className="p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--hairline)] flex items-start justify-between gap-3 text-xs"
                     >
                       <div>
                         <div className="flex items-center gap-1.5 mb-1">
-                          <span className="font-semibold text-[var(--text-primary)]">
+                          <span className="font-semibold text-[var(--ink)]">
                             {addr.label || "Saved Address"}
                           </span>
                           {addr.isDefault && (
-                            <span className="text-[9px] font-mono bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded">
-                              DEFAULT
+                            <span className="text-[10px] font-mono bg-[var(--surface-3)] text-[var(--ink-2)] px-1.5 py-0.5 rounded">
+                              Default
                             </span>
                           )}
                         </div>
-                        <p className="text-[var(--text-secondary)] leading-relaxed">
+                        <p className="text-[var(--ink-2)] leading-relaxed">
                           {addr.address}
                         </p>
+                        {addr.landmark && (
+                          <p className="text-[11px] text-[var(--ink-3)] mt-0.5">
+                            Landmark: {addr.landmark}
+                          </p>
+                        )}
                       </div>
                       <button
                         onClick={() => handleDeleteAddress(addr.id)}
-                        className="text-[var(--text-muted)] hover:text-red-400 p-1 transition-colors"
+                        className="text-[var(--ink-3)] hover:text-[var(--danger)] p-1 transition-colors"
                         title="Delete Address"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -535,161 +508,148 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Right Column (2 spans): Active & Past Bookings */}
+          {/* Right Column: Active & Past Bookings */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Active Bookings Section */}
+            {/* Active Bookings */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-amber)] animate-pulse" />
-                  <h2 className="font-semibold text-lg text-[var(--text-primary)]">
-                    Active Repairs & Dispatch ({activeBookings.length})
-                  </h2>
-                </div>
+                <h2 className="font-semibold text-lg text-[var(--ink)]">
+                  Active Repairs ({activeBookings.length})
+                </h2>
               </div>
 
               {loadingBookings ? (
-                <div className="p-8 text-center bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-2xl">
-                  <div className="w-6 h-6 border-2 border-[var(--accent-amber)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <span className="text-xs text-[var(--text-muted)]">Loading repair lifecycle...</span>
+                <div className="p-8 text-center bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl">
+                  <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <span className="text-xs text-[var(--ink-3)]">Loading your bookings...</span>
                 </div>
               ) : activeBookings.length === 0 ? (
-                <div className="p-8 text-center bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-2xl">
-                  <Smartphone className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3 opacity-40" />
-                  <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">
-                    No active repairs in progress
+                <div className="p-8 text-center bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl">
+                  <Smartphone className="w-9 h-9 text-[var(--ink-3)] mx-auto mb-3 opacity-60" />
+                  <h3 className="text-sm font-semibold text-[var(--ink)] mb-1">
+                    No active repairs
                   </h3>
-                  <p className="text-xs text-[var(--text-muted)] mb-4">
-                    Book a rapid doorstep phone repair now and track progress live.
+                  <p className="text-xs text-[var(--ink-3)] mb-5">
+                    You do not have any repairs in progress right now.
                   </p>
                   <Link
                     to="/flashfix/book"
-                    className="inline-flex items-center gap-2 bg-[var(--accent-amber)] text-black text-xs font-semibold rounded-xl px-5 py-2.5 hover:bg-[#d87c09]"
+                    className="inline-flex items-center gap-2 bg-[var(--accent)] text-[var(--accent-ink)] text-xs font-semibold rounded-lg px-5 py-2.5"
                   >
-                    Start Service Request
+                    Book a Repair
                   </Link>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {activeBookings.map((b) => {
-                    const badge = getStatusBadge(b.status);
-                    return (
-                      <div
-                        key={b.id}
-                        className="bg-[var(--surface-elevated)] border border-[var(--surface-border)] hover:border-[var(--accent-amber)]/40 rounded-2xl p-5 sm:p-6 transition-all duration-200"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                          <div>
-                            <span className="font-mono text-[11px] text-[var(--text-muted)] tracking-wider">
-                              PROTOCOL ID: <strong className="text-[var(--text-primary)]">{b.id}</strong>
-                            </span>
-                            <h3 className="font-semibold text-base text-[var(--text-primary)] mt-0.5">
-                              {b.brand} {b.deviceModel}
-                            </h3>
-                          </div>
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border self-start sm:self-auto ${badge.color}`}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                            {badge.label}
+                  {activeBookings.map((b) => (
+                    <div
+                      key={b.id}
+                      className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl p-5 sm:p-6 transition-all"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <div>
+                          <span className="font-mono text-xs text-[var(--ink-3)]">
+                            Booking ID: <strong className="text-[var(--ink)]">{b.id}</strong>
+                          </span>
+                          <h3 className="font-semibold text-base text-[var(--ink)] mt-0.5">
+                            {b.brand} {b.deviceModel}
+                          </h3>
+                        </div>
+                        <StatusPill status={b.status} />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-4 p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--hairline)]">
+                        <div>
+                          <span className="text-[var(--ink-3)] block text-[11px] mb-0.5">
+                            Service
+                          </span>
+                          <span className="text-[var(--ink)] font-medium">
+                            {b.issueType}
                           </span>
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-5 p-3.5 rounded-xl bg-[var(--surface-bg)] border border-[var(--surface-border)]">
-                          <div>
-                            <span className="text-[var(--text-muted)] block text-[10px] uppercase font-mono tracking-wider">
-                              Diagnosed Issue
-                            </span>
-                            <span className="text-[var(--text-primary)] font-medium">
-                              {b.issueType}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-[var(--text-muted)] block text-[10px] uppercase font-mono tracking-wider">
-                              Scheduled Arrival
-                            </span>
-                            <span className="text-[var(--text-primary)] font-medium">
-                              {b.scheduledDate} at {b.scheduledTime}
-                            </span>
-                          </div>
-                          <div className="sm:col-span-2">
-                            <span className="text-[var(--text-muted)] block text-[10px] uppercase font-mono tracking-wider">
-                              Pickup Address
-                            </span>
-                            <span className="text-[var(--text-secondary)] truncate block">
-                              {b.pickupAddress}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2">
-                          <span className="text-xs text-[var(--text-muted)]">
-                            Estimated: <strong className="text-[var(--text-primary)] font-mono">₹{((b.estimatedCostPaise || 349900) / 100).toLocaleString("en-IN")}</strong>
+                        <div>
+                          <span className="text-[var(--ink-3)] block text-[11px] mb-0.5">
+                            Scheduled Window
                           </span>
-                          <Link
-                            to={`/flashfix/track/${b.id}`}
-                            className="inline-flex items-center gap-1.5 bg-[var(--accent-amber)] hover:bg-[#d87c09] text-black font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-sm shadow-[var(--accent-amber)]/20"
-                          >
-                            <span>Live Track Repair</span>
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </Link>
+                          <span className="text-[var(--ink)] font-medium">
+                            {b.scheduledDate} · {b.scheduledTime}
+                          </span>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <span className="text-[var(--ink-3)] block text-[11px] mb-0.5">
+                            Pickup Address
+                          </span>
+                          <span className="text-[var(--ink-2)] block">
+                            {b.pickupAddress}
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs text-[var(--ink-2)]">
+                          Estimate:{" "}
+                          <strong className="text-[var(--ink)] font-mono">
+                            {formatCost(b.estimatedCostPaise, b.finalCostPaise)}
+                          </strong>
+                        </span>
+                        <Link
+                          to={`/flashfix/track/${b.id}`}
+                          className="inline-flex items-center gap-1.5 bg-[var(--accent)] hover:opacity-95 text-[var(--accent-ink)] font-semibold text-xs px-4 py-2 rounded-lg transition-all"
+                        >
+                          <span>Track Repair</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Past Completed Bookings Section */}
+            {/* Past Bookings */}
             <div>
-              <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-4">
-                Past Completed Services ({pastBookings.length})
+              <h2 className="font-semibold text-lg text-[var(--ink)] mb-4">
+                Past Bookings ({pastBookings.length})
               </h2>
 
               {pastBookings.length === 0 ? (
-                <div className="p-6 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--surface-border)] text-xs text-[var(--text-muted)] text-center">
-                  No previous service orders logged.
+                <div className="p-6 rounded-xl bg-[var(--surface-1)] border border-[var(--hairline)] text-xs text-[var(--ink-3)] text-center">
+                  No past bookings yet.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {pastBookings.map((b) => {
-                    const badge = getStatusBadge(b.status);
-                    return (
-                      <div
-                        key={b.id}
-                        className="bg-[var(--surface-elevated)] border border-[var(--surface-border)] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-mono font-medium text-[var(--text-primary)]">
-                              {b.id}
-                            </span>
-                            <span className="text-[var(--text-muted)]">•</span>
-                            <span className="text-[var(--text-secondary)] font-medium">
-                              {b.brand} {b.deviceModel}
-                            </span>
-                          </div>
-                          <span className="text-[var(--text-muted)] text-[11px]">
-                            {b.issueType} — Completed on {b.scheduledDate}
+                  {pastBookings.map((b) => (
+                    <div
+                      key={b.id}
+                      className="bg-[var(--surface-1)] border border-[var(--hairline)] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono font-medium text-[var(--ink)]">
+                            {b.id}
+                          </span>
+                          <span className="text-[var(--ink-3)]">·</span>
+                          <span className="text-[var(--ink-2)] font-medium">
+                            {b.brand} {b.deviceModel}
                           </span>
                         </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${badge.color}`}>
-                            {badge.label}
-                          </span>
-                          <Link
-                            to={`/flashfix/track/${b.id}`}
-                            className="text-[var(--text-muted)] hover:text-[var(--accent-amber)] p-1 transition-colors"
-                            title="View Audit Trail"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </Link>
-                        </div>
+                        <span className="text-[var(--ink-3)] text-[11px]">
+                          {b.issueType} · {b.scheduledDate}
+                        </span>
                       </div>
-                    );
-                  })}
+
+                      <div className="flex items-center gap-3">
+                        <StatusPill status={b.status} />
+                        <Link
+                          to={`/flashfix/track/${b.id}`}
+                          className="text-[var(--ink-3)] hover:text-[var(--accent)] p-1 transition-colors"
+                          title="View Details"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

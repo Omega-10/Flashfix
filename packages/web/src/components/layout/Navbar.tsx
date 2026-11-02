@@ -142,9 +142,9 @@ export default function Navbar() {
             {/* User Account / Sign In */}
             {isAuthenticated ? (
               <Link
-                to="/flashfix/profile"
+                to={user && user.role !== "CONSUMER" ? "/admin" : "/flashfix/profile"}
                 className="flex items-center gap-2 bg-[var(--surface-elevated)] hover:border-[var(--accent-amber)] border border-[var(--surface-border)] px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-primary)] transition-all"
-                title="View Profile & Bookings"
+                title={user && user.role !== "CONSUMER" ? "Open Operations Console" : "View Profile & Bookings"}
               >
                 <div className="w-6 h-6 rounded-full bg-[var(--accent-amber)] text-black flex items-center justify-center font-bold text-xs">
                   {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
@@ -153,7 +153,7 @@ export default function Navbar() {
               </Link>
             ) : (
               <Link
-                to="/flashfix/login"
+                to="/login"
                 className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-full border border-[var(--surface-border)] hover:border-[var(--accent-amber)] text-[var(--text-primary)] hover:text-[var(--accent-amber)] transition-all bg-[var(--surface-elevated)]/60"
               >
                 <LogIn className="w-3.5 h-3.5 text-[var(--accent-amber)]" />
@@ -226,15 +226,15 @@ export default function Navbar() {
               {/* Mobile Auth button */}
               {isAuthenticated ? (
                 <Link
-                  to="/flashfix/profile"
+                  to={user && user.role !== "CONSUMER" ? "/admin" : "/flashfix/profile"}
                   className="flex items-center gap-2 py-2 text-sm text-[var(--text-primary)] border-b border-[var(--surface-border)]"
                 >
                   <User className="w-4 h-4 text-[var(--accent-amber)]" />
-                  <span>My Profile ({user?.name || user?.email})</span>
+                  <span>{user && user.role !== "CONSUMER" ? "Operations Console" : `My Profile (${user?.name || user?.email})`}</span>
                 </Link>
               ) : (
                 <Link
-                  to="/flashfix/login"
+                  to="/login"
                   className="flex items-center gap-2 py-2 text-sm text-[var(--accent-amber)] font-medium border-b border-[var(--surface-border)]"
                 >
                   <LogIn className="w-4 h-4 text-[var(--accent-amber)]" />

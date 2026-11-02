@@ -6,31 +6,30 @@ import {
   InventoryRecord,
   StoreOption,
   StaffSession,
+  SupportSettings,
 } from "./types";
 import { BookingStatus, UserRole } from "@flashfix/shared";
 
-// Active in-memory stores cache (populated from live DB /api/admin/stores)
-export let STORES: StoreOption[] = [
-  { id: "store-001", name: "Flashfix — Koramangala", city: "Bengaluru", address: "12th Main, 4th Block", phone: "+91 80 4821 7701", isActive: true },
-  { id: "store-002", name: "Flashfix — Indiranagar", city: "Bengaluru", address: "100 Feet Road", phone: "+91 80 4821 7702", isActive: true },
-  { id: "store-003", name: "Flashfix — HSR Layout", city: "Bengaluru", address: "Sector 2, HSR Layout", phone: "+91 80 4821 7703", isActive: true },
-];
+// Active stores cache (populated exclusively from /api/admin/stores)
+export let STORES: StoreOption[] = [];
 
-// Clean empty states: absolutely NO hardcoded mock bookings, staff, or inventory!
-let bookingsState: BookingRecord[] = [];
-let staffState: StaffMember[] = [];
-let inventoryState: InventoryRecord[] = [];
-
-// ─────────────────────────────────────────────────────────────
-// Staff Session & RBAC Authentication
-// ─────────────────────────────────────────────────────────────
 const STAFF_SESSION_KEY = "flashfix_staff_session";
 
 export function getStaffSession(): StaffSession | null {
   try {
     const raw = localStorage.getItem(STAFF_SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as StaffSession;
+    if (raw) {
+      return JSON.parse(raw) as StaffSession;
+    }
+    const ffUser = localStorage.getItem("ff_user");
+    if (ffUser) {
+      const parsed = JSON.parse(ffUser);
+      if (parsed && parsed.role && parsed.role !== "CONSUMER") {
+        const token = localStorage.getItem("accessToken") || "cookie-session";
+        return { token, user: parsed };
+      }
+    }
+    return null;
   } catch {
     return null;
   }
@@ -47,52 +46,54 @@ export function setStaffSession(session: StaffSession): void {
 export function clearStaffSession(): void {
   try {
     localStorage.removeItem(STAFF_SESSION_KEY);
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("ff_user");
   } catch {
     // ignore
   }
 }
 
 export function isStaffAuthenticated(): boolean {
-  return !!getStaffSession()?.token;
+  return !!getStaffSession()?.user;
 }
 
 export function getStaffAuthHeaders(): Record<string, string> {
   const session = getStaffSession();
-  if (session?.token) {
-    return {
-      "Authorization": `Bearer ${session.token}`,
-      "Content-Type": "application/json",
-    };
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (session?.token && session.token !== "cookie-session") {
+    headers.Authorization = `Bearer ${session.token}`;
   }
-  return { "Content-Type": "application/json" };
+  return headers;
 }
 
 export async function adminLogin(email: string, password: string): Promise<StaffSession> {
-  const res = await fetch("/api/admin/auth/login", {
+  const res = await fetch("/api/auth/staff-login", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password, rememberMe: true }),
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data?.success) {
+  if (!res.ok || !data?.user) {
     throw new Error(data?.error?.message || "Invalid credentials or staff privileges not assigned.");
   }
 
   const session: StaffSession = {
-    token: data.token,
+    token: data.token || "cookie-session",
     user: data.user,
   };
   setStaffSession(session);
   return session;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Store Governance & Multi-Store Management (R4)
-// ─────────────────────────────────────────────────────────────
 export async function getStores(): Promise<StoreOption[]> {
   try {
-    const res = await fetch("/api/admin/stores", { headers: getStaffAuthHeaders() });
+    const res = await fetch("/api/admin/stores", {
+      credentials: "include",
+      headers: getStaffAuthHeaders(),
+    });
     if (res.ok) {
       const data = await res.json();
       const list = data.data || data;
@@ -120,6 +121,7 @@ export async function createStore(storeData: {
 }): Promise<StoreOption> {
   const res = await fetch("/api/admin/stores", {
     method: "POST",
+    credentials: "include",
     headers: getStaffAuthHeaders(),
     body: JSON.stringify(storeData),
   });
@@ -129,51 +131,43 @@ export async function createStore(storeData: {
     throw new Error(data?.error?.message || "Failed to create store.");
   }
 
-  await getStores(); // Refresh local STORES cache
+  await getStores();
   return data.data;
 }
 
 export async function toggleStoreStatus(storeId: string): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/admin/stores/${storeId}/toggle`, {
-      method: "POST",
-      headers: getStaffAuthHeaders(),
-      body: JSON.stringify({ storeId, action: "toggle" }),
-    });
-    if (res.ok) {
-      await getStores();
-      return true;
-    }
-  } catch (err) {
-    console.warn("toggleStoreStatus error:", err);
+  const res = await fetch(`/api/admin/stores/${encodeURIComponent(storeId)}/toggle`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify({ storeId, action: "toggle" }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || "Failed to toggle store status.");
   }
-
-  // Local optimistic update
-  STORES = STORES.map((s) => (s.id === storeId ? { ...s, isActive: !s.isActive } : s));
+  await getStores();
   return true;
 }
 
 export async function deleteStore(storeId: string): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/admin/stores/${storeId}`, {
-      method: "DELETE",
-      headers: getStaffAuthHeaders(),
-    });
-    if (res.ok) {
-      await getStores();
-      return true;
-    }
-  } catch (err) {
-    console.warn("deleteStore error:", err);
+  const res = await fetch(`/api/admin/stores/${encodeURIComponent(storeId)}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || "Failed to delete store.");
   }
-
-  STORES = STORES.filter((s) => s.id !== storeId);
+  await getStores();
   return true;
 }
 
 export async function assignStoreAdmins(storeId: string, adminUserIds: string[]): Promise<boolean> {
   const res = await fetch("/api/admin/stores/assign-admins", {
     method: "POST",
+    credentials: "include",
     headers: getStaffAuthHeaders(),
     body: JSON.stringify({ storeId, adminUserIds, action: "assign_admins" }),
   });
@@ -187,14 +181,14 @@ export async function assignStoreAdmins(storeId: string, adminUserIds: string[])
   return true;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Operations Telemetry (Live DB with Clean Empty States)
-// ─────────────────────────────────────────────────────────────
 export async function getDashboardStats(storeId?: string): Promise<DashboardStats> {
   try {
     const res = await fetch(
-      `/api/admin/dashboard${storeId && storeId !== "ALL" ? `?storeId=${storeId}` : ""}`,
-      { headers: getStaffAuthHeaders() }
+      `/api/admin/dashboard${storeId && storeId !== "ALL" ? `?storeId=${encodeURIComponent(storeId)}` : ""}`,
+      {
+        credentials: "include",
+        headers: getStaffAuthHeaders(),
+      }
     );
     if (res.ok) {
       const data = await res.json();
@@ -204,17 +198,12 @@ export async function getDashboardStats(storeId?: string): Promise<DashboardStat
     console.warn("Failed to fetch dashboard stats:", err);
   }
 
-  // Clean empty state calculation from session bookings
-  const filtered = storeId && storeId !== "ALL"
-    ? bookingsState.filter((b) => b.storeId === storeId)
-    : bookingsState;
-
   return {
-    todayTotal: filtered.length,
-    pending: filtered.filter((b) => b.status === "PENDING").length,
-    inRepair: filtered.filter((b) => b.status === "IN_REPAIR" || b.status === "CUSTODY_OTP_SENT").length,
-    delivered: filtered.filter((b) => b.status === "DELIVERED").length,
-    unassignedCount: filtered.filter((b) => !b.assignedEmployeeId && b.status !== "CANCELLED").length,
+    todayTotal: 0,
+    pending: 0,
+    inRepair: 0,
+    delivered: 0,
+    unassignedCount: 0,
   };
 }
 
@@ -230,6 +219,7 @@ export async function getBookingsList(filters?: {
     if (filters?.search) params.append("search", filters.search);
 
     const res = await fetch(`/api/admin/bookings?${params.toString()}`, {
+      credentials: "include",
       headers: getStaffAuthHeaders(),
     });
     if (res.ok) {
@@ -242,39 +232,23 @@ export async function getBookingsList(filters?: {
   } catch (err) {
     console.warn("Failed to fetch bookings list:", err);
   }
-
-  let list = [...bookingsState];
-  if (filters?.storeId && filters.storeId !== "ALL") {
-    list = list.filter((b) => b.storeId === filters.storeId);
-  }
-  if (filters?.status && filters.status !== "ALL") {
-    list = list.filter((b) => b.status === filters.status);
-  }
-  if (filters?.search) {
-    const q = filters.search.toLowerCase().trim();
-    list = list.filter(
-      (b) =>
-        b.id.toLowerCase().includes(q) ||
-        b.contactName.toLowerCase().includes(q) ||
-        b.contactPhone.toLowerCase().includes(q) ||
-        b.deviceModel.toLowerCase().includes(q) ||
-        b.brand.toLowerCase().includes(q)
-    );
-  }
-  return list;
+  return [];
 }
 
 export async function getBookingById(id: string): Promise<BookingRecord | null> {
   try {
-    const res = await fetch(`/api/bookings/${id}`, { headers: getStaffAuthHeaders() });
+    const res = await fetch(`/api/bookings/${encodeURIComponent(id)}`, {
+      credentials: "include",
+      headers: getStaffAuthHeaders(),
+    });
     if (res.ok) {
       const data = await res.json();
       return data.data || data;
     }
   } catch {
-    // Fall back to local
+    // ignore
   }
-  return bookingsState.find((b) => b.id === id) || null;
+  return null;
 }
 
 export async function assignStaffToBooking(
@@ -282,38 +256,13 @@ export async function assignStaffToBooking(
   employeeId: string,
   technicianId?: string
 ): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/admin/bookings/${bookingId}/assign`, {
-      method: "POST",
-      headers: getStaffAuthHeaders(),
-      body: JSON.stringify({ employeeId, technicianId }),
-    });
-    if (res.ok) {
-      return true;
-    }
-  } catch {
-    // Local fallback
-  }
-
-  const emp = staffState.find((s) => s.id === employeeId);
-  const tech = staffState.find((s) => s.id === technicianId);
-
-  bookingsState = bookingsState.map((b) => {
-    if (b.id === bookingId) {
-      return {
-        ...b,
-        status: "CONFIRMED" as BookingStatus,
-        assignedEmployeeId: employeeId,
-        assignedEmployeeName: emp?.name || "Mobile Courier",
-        technicianId: technicianId || employeeId,
-        technicianName: tech?.name || "Lab Specialist",
-        updatedAt: new Date().toISOString(),
-      };
-    }
-    return b;
+  const res = await fetch(`/api/admin/bookings/${encodeURIComponent(bookingId)}/assign`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify({ employeeId, technicianId }),
   });
-
-  return true;
+  return res.ok;
 }
 
 export async function updateBookingStatus(
@@ -321,42 +270,28 @@ export async function updateBookingStatus(
   status: BookingStatus,
   note?: string
 ): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/admin/bookings/${bookingId}/status`, {
-      method: "PATCH",
-      headers: getStaffAuthHeaders(),
-      body: JSON.stringify({ status, note }),
-    });
-    if (res.ok) return true;
-  } catch {
-    // Proceed
-  }
-
-  bookingsState = bookingsState.map((b) => {
-    if (b.id === bookingId) {
-      return {
-        ...b,
-        status,
-        notes: note ? (b.notes ? `${b.notes} | ${note}` : note) : b.notes,
-        updatedAt: new Date().toISOString(),
-      };
-    }
-    return b;
+  const res = await fetch(`/api/admin/bookings/${encodeURIComponent(bookingId)}/status`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify({ status, note }),
   });
-
-  return true;
+  return res.ok;
 }
 
 export async function getBookingTrail(bookingId: string): Promise<AuditTrailItem[]> {
   try {
-    const res = await fetch(`/api/bookings/${bookingId}/trail`, { headers: getStaffAuthHeaders() });
+    const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/trail`, {
+      credentials: "include",
+      headers: getStaffAuthHeaders(),
+    });
     if (res.ok) {
       const data = await res.json();
       const list = data.data || data;
       if (Array.isArray(list)) return list;
     }
   } catch {
-    // Return empty
+    // ignore
   }
   return [];
 }
@@ -364,8 +299,11 @@ export async function getBookingTrail(bookingId: string): Promise<AuditTrailItem
 export async function getTeamMembers(storeId?: string): Promise<StaffMember[]> {
   try {
     const res = await fetch(
-      `/api/admin/team${storeId && storeId !== "ALL" ? `?storeId=${storeId}` : ""}`,
-      { headers: getStaffAuthHeaders() }
+      `/api/admin/team${storeId && storeId !== "ALL" ? `?storeId=${encodeURIComponent(storeId)}` : ""}`,
+      {
+        credentials: "include",
+        headers: getStaffAuthHeaders(),
+      }
     );
     if (res.ok) {
       const data = await res.json();
@@ -377,48 +315,28 @@ export async function getTeamMembers(storeId?: string): Promise<StaffMember[]> {
   } catch (err) {
     console.warn("Failed to fetch team members:", err);
   }
-
-  if (storeId && storeId !== "ALL") {
-    return staffState.filter((s) => s.storeId === storeId);
-  }
-  return staffState;
+  return [];
 }
 
 export async function inviteTeamMember(data: {
   email: string;
   name: string;
-  role: "EMPLOYEE" | "ADMIN" | "TECHNICIAN";
+  phone?: string;
+  password?: string;
+  role: "EMPLOYEE" | "ADMIN" | "TECHNICIAN" | "SUPER_ADMIN";
   storeId: string;
 }): Promise<StaffMember> {
-  try {
-    const res = await fetch("/api/admin/team/invite", {
-      method: "POST",
-      headers: getStaffAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (res.ok) {
-      const resData = await res.json();
-      return resData.data || resData;
-    }
-  } catch {
-    // Fallback
+  const res = await fetch("/api/admin/team", {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  const resData = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(resData?.error?.message || "Failed to add staff member.");
   }
-
-  const store = STORES.find((s) => s.id === data.storeId);
-  const newStaff: StaffMember = {
-    id: "emp-" + Math.floor(100 + Math.random() * 900),
-    name: data.name,
-    email: data.email,
-    role: data.role as UserRole,
-    storeId: data.storeId,
-    storeName: store?.name || "Flashfix Store",
-    status: "INVITED",
-    activeJobsCount: 0,
-    createdAt: new Date().toISOString(),
-  };
-
-  staffState = [newStaff, ...staffState];
-  return newStaff;
+  return resData.data || resData;
 }
 
 export async function updateTeamMemberRole(
@@ -426,28 +344,23 @@ export async function updateTeamMemberRole(
   newRole: UserRole,
   storeId?: string
 ): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/admin/team/${staffId}/role`, {
-      method: "PATCH",
-      headers: getStaffAuthHeaders(),
-      body: JSON.stringify({ role: newRole, storeId }),
-    });
-    if (res.ok) return true;
-  } catch {
-    // In-memory update
-  }
-
-  staffState = staffState.map((s) =>
-    s.id === staffId ? { ...s, role: newRole, ...(storeId ? { storeId } : {}) } : s
-  );
-  return true;
+  const res = await fetch(`/api/admin/team/${encodeURIComponent(staffId)}/role`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify({ role: newRole, storeId }),
+  });
+  return res.ok;
 }
 
 export async function getInventory(storeId?: string): Promise<InventoryRecord[]> {
   try {
     const res = await fetch(
-      `/api/admin/inventory${storeId && storeId !== "ALL" ? `?storeId=${storeId}` : ""}`,
-      { headers: getStaffAuthHeaders() }
+      `/api/admin/inventory${storeId && storeId !== "ALL" ? `?storeId=${encodeURIComponent(storeId)}` : ""}`,
+      {
+        credentials: "include",
+        headers: getStaffAuthHeaders(),
+      }
     );
     if (res.ok) {
       const data = await res.json();
@@ -459,188 +372,165 @@ export async function getInventory(storeId?: string): Promise<InventoryRecord[]>
   } catch (err) {
     console.warn("Failed to fetch inventory:", err);
   }
+  return [];
+}
 
-  if (storeId && storeId !== "ALL") {
-    return inventoryState.filter((i) => i.storeId === storeId);
+export async function upsertInventoryItem(data: {
+  id?: string;
+  storeId: string;
+  partName: string;
+  sku: string;
+  compatibleWith: string[] | string;
+  quantity: number;
+  minThreshold: number;
+  unitCostPaise: number;
+}): Promise<InventoryRecord> {
+  const res = await fetch("/api/admin/inventory", {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  const resData = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(resData?.error?.message || "Failed to save inventory item.");
   }
-  return inventoryState;
+  return resData.data;
 }
 
 export async function updateInventoryStock(
   itemId: string,
   newQuantity: number
 ): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/admin/inventory/${itemId}/stock`, {
-      method: "PATCH",
-      headers: getStaffAuthHeaders(),
-      body: JSON.stringify({ quantity: newQuantity }),
-    });
-    if (res.ok) return true;
-  } catch {
-    // Proceed
-  }
-
-  inventoryState = inventoryState.map((i) =>
-    i.id === itemId ? { ...i, quantity: newQuantity, updatedAt: new Date().toISOString() } : i
-  );
-  return true;
+  const res = await fetch(`/api/admin/inventory/${encodeURIComponent(itemId)}/stock`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify({ quantity: newQuantity }),
+  });
+  return res.ok;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Physical Handover & Two-Factor OTP Operations
-// ─────────────────────────────────────────────────────────────
-export async function startPickupRoute(bookingId: string): Promise<boolean> {
+export async function getSupportSettings(): Promise<SupportSettings> {
   try {
-    const res = await fetch(`/api/bookings/${bookingId}/start-pickup`, {
-      method: "POST",
-      headers: getStaffAuthHeaders(),
-    });
-    if (res.ok) return true;
-  } catch {
-    // Fallback
-  }
-  return updateBookingStatus(bookingId, "PICKUP_EN_ROUTE", "Courier started transit towards customer doorstep");
-}
-
-export async function sendPickupOtp(bookingId: string): Promise<{ success: boolean; otp?: string; message?: string }> {
-  const generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
-  try {
-    const res = await fetch(`/api/bookings/${bookingId}/send-pickup-otp`, {
-      method: "POST",
-      headers: getStaffAuthHeaders(),
-    });
+    const res = await fetch("/api/settings", { credentials: "include" });
     if (res.ok) {
-      const data = await res.json();
-      return { success: true, otp: data.otp || generatedOtp, message: "Pickup OTP dispatched to customer via email" };
+      const body = await res.json();
+      return body.data || body;
     }
   } catch {
-    // Fallback
+    // ignore
   }
+  return {
+    supportEmail: "support@flashfix.in",
+    supportPhone: "+91 80 4821 7700",
+    supportHours: "9 AM – 9 PM, Mon–Sun",
+  };
+}
 
-  bookingsState = bookingsState.map((b) =>
-    b.id === bookingId ? { ...b, status: "PICKUP_OTP_SENT" as BookingStatus, pickupOtp: generatedOtp } : b
-  );
-  return { success: true, otp: generatedOtp, message: `Doorstep OTP [${generatedOtp}] dispatched to customer email.` };
+export async function updateSupportSettings(settings: SupportSettings): Promise<SupportSettings> {
+  const res = await fetch("/api/admin/settings", {
+    method: "PUT",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify(settings),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Failed to update support settings.");
+  }
+  return data.data;
+}
+
+export async function startPickupRoute(bookingId: string): Promise<boolean> {
+  const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/start-pickup`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+  });
+  return res.ok;
+}
+
+export async function sendPickupOtp(bookingId: string): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/send-pickup-otp`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { success: false, message: data?.error?.message || "Failed to send pickup OTP." };
+  }
+  return { success: true, message: data.message || "Pickup OTP sent to customer email." };
 }
 
 export async function verifyPickupOtp(
   bookingId: string,
   otp: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!otp || otp.length !== 6) {
+    return { success: false, error: "6-digit verification code is required." };
+  }
+
   try {
-    const res = await fetch(`/api/bookings/${bookingId}/verify-pickup`, {
+    const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/verify-pickup`, {
       method: "POST",
+      credentials: "include",
       headers: getStaffAuthHeaders(),
       body: JSON.stringify({ otp }),
     });
     const data = await res.json().catch(() => null);
     if (res.ok && data?.success) {
-      bookingsState = bookingsState.map((item) =>
-        item.id === bookingId ? { ...item, status: "IN_TRANSIT" as BookingStatus, updatedAt: new Date().toISOString() } : item
-      );
       return { success: true };
     }
-    if (data?.error?.message) {
-      return { success: false, error: data.error.message };
-    }
+    return {
+      success: false,
+      error: data?.error?.message || "Invalid verification code. Please ask the customer for the 6-digit pickup code.",
+    };
   } catch {
-    // Fallback verification below
+    return { success: false, error: "Network error while verifying pickup code." };
   }
-
-  if (!otp || otp.length !== 6) {
-    return { success: false, error: "6-digit OTP code required" };
-  }
-
-  const b = bookingsState.find((item) => item.id === bookingId);
-  const isDemo = process.env.NODE_ENV !== "production" && otp === "123456";
-  const isMatch = (b?.pickupOtp && b.pickupOtp === otp) || isDemo;
-
-  if (!isMatch) {
-    return { success: false, error: "Invalid doorstep verification code. Please request customer to provide the 6-digit OTP." };
-  }
-
-  bookingsState = bookingsState.map((item) => {
-    if (item.id === bookingId) {
-      const updated = { ...item, status: "IN_TRANSIT" as BookingStatus, updatedAt: new Date().toISOString() };
-      delete updated.pickupOtp;
-      return updated;
-    }
-    return item;
-  });
-  return { success: true };
 }
 
-export async function sendCustodyOtp(bookingId: string): Promise<{ success: boolean; otp?: string; message?: string }> {
-  const generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
-  try {
-    const res = await fetch(`/api/bookings/${bookingId}/send-custody-otp`, {
-      method: "POST",
-      headers: getStaffAuthHeaders(),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const code = data.otp || generatedOtp;
-      bookingsState = bookingsState.map((b) =>
-        b.id === bookingId ? { ...b, status: "CUSTODY_OTP_SENT" as BookingStatus, custodyOtp: code } : b
-      );
-      return { success: true, otp: code, message: "Custody OTP dispatched to lab technician" };
-    }
-  } catch {
-    // Fallback
+export async function sendCustodyOtp(bookingId: string): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/send-custody-otp`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { success: false, message: data?.error?.message || "Failed to send custody OTP." };
   }
-
-  bookingsState = bookingsState.map((b) =>
-    b.id === bookingId ? { ...b, status: "CUSTODY_OTP_SENT" as BookingStatus, custodyOtp: generatedOtp } : b
-  );
-  return { success: true, otp: generatedOtp, message: `Custody handover OTP [${generatedOtp}] sent to lab technician.` };
+  return { success: true, message: data.message || "Custody OTP dispatched to lab technician." };
 }
 
 export async function verifyCustodyOtp(
   bookingId: string,
   otp: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!otp || otp.length !== 6) {
+    return { success: false, error: "6-digit verification code is required." };
+  }
+
   try {
-    const res = await fetch(`/api/bookings/${bookingId}/verify-custody`, {
+    const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/verify-custody`, {
       method: "POST",
+      credentials: "include",
       headers: getStaffAuthHeaders(),
       body: JSON.stringify({ otp }),
     });
     const data = await res.json().catch(() => null);
     if (res.ok && data?.success) {
-      bookingsState = bookingsState.map((item) =>
-        item.id === bookingId ? { ...item, status: "IN_REPAIR" as BookingStatus, updatedAt: new Date().toISOString() } : item
-      );
       return { success: true };
     }
-    if (data?.error?.message) {
-      return { success: false, error: data.error.message };
-    }
+    return {
+      success: false,
+      error: data?.error?.message || "Invalid custody code.",
+    };
   } catch {
-    // Fallback verification below
+    return { success: false, error: "Network error while verifying custody code." };
   }
-
-  if (!otp || otp.length !== 6) {
-    return { success: false, error: "6-digit OTP code required" };
-  }
-
-  const b = bookingsState.find((item) => item.id === bookingId);
-  const isDemo = process.env.NODE_ENV !== "production" && otp === "123456";
-  const isMatch = (b?.custodyOtp && b.custodyOtp === otp) || isDemo;
-
-  if (!isMatch) {
-    return { success: false, error: "Invalid custody verification code. Please verify the code displayed on technician console." };
-  }
-
-  bookingsState = bookingsState.map((item) => {
-    if (item.id === bookingId) {
-      const updated = { ...item, status: "IN_REPAIR" as BookingStatus, updatedAt: new Date().toISOString() };
-      delete updated.custodyOtp;
-      return updated;
-    }
-    return item;
-  });
-  return { success: true };
 }
 
 export async function markRepairComplete(
@@ -648,35 +538,29 @@ export async function markRepairComplete(
   finalCostPaise?: number,
   note?: string
 ): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/admin/bookings/${bookingId}/status`, {
-      method: "PATCH",
-      headers: getStaffAuthHeaders(),
-      body: JSON.stringify({ status: "REPAIR_COMPLETE", finalCostPaise, note }),
-    });
-    if (res.ok) return true;
-  } catch {
-    // Fallback below
-  }
-
-  bookingsState = bookingsState.map((b) =>
-    b.id === bookingId
-      ? {
-          ...b,
-          status: "REPAIR_COMPLETE" as BookingStatus,
-          finalCostPaise: finalCostPaise || b.estimatedCostPaise,
-          notes: note ? (b.notes ? `${b.notes} | ${note}` : note) : b.notes,
-          updatedAt: new Date().toISOString(),
-        }
-      : b
-  );
-  return true;
+  const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/repair-complete`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+    body: JSON.stringify({ finalCostPaise, note }),
+  });
+  return res.ok;
 }
 
 export async function startReturnDelivery(bookingId: string): Promise<boolean> {
-  return updateBookingStatus(bookingId, "RETURN_EN_ROUTE", "Device repair complete; return courier departed hub towards customer doorstep");
+  const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/start-return`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+  });
+  return res.ok;
 }
 
 export async function completeDelivery(bookingId: string): Promise<boolean> {
-  return updateBookingStatus(bookingId, "DELIVERED", "Device returned and verified by customer. Service complete.");
+  const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/deliver`, {
+    method: "POST",
+    credentials: "include",
+    headers: getStaffAuthHeaders(),
+  });
+  return res.ok;
 }

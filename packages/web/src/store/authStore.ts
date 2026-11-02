@@ -5,11 +5,28 @@ export interface UserProfile {
   name: string;
   email: string;
   phone?: string | null;
-  role: "CONSUMER" | "EMPLOYEE" | "ADMIN" | "SUPER_ADMIN";
+  role: "CONSUMER" | "EMPLOYEE" | "TECHNICIAN" | "ADMIN" | "SUPER_ADMIN";
   emailVerified?: boolean;
   avatarUrl?: string | null;
   storeId?: string | null;
+  storeIds?: string[];
   createdAt?: string | Date;
+}
+
+export function getRedirectForRole(role?: UserProfile["role"] | string): string {
+  switch (role) {
+    case "SUPER_ADMIN":
+      return "/admin/superadmin";
+    case "ADMIN":
+      return "/admin/dashboard";
+    case "TECHNICIAN":
+      return "/admin/technician";
+    case "EMPLOYEE":
+      return "/admin/delivery";
+    case "CONSUMER":
+    default:
+      return "/flashfix/profile";
+  }
 }
 
 interface AuthStore {
@@ -18,10 +35,30 @@ interface AuthStore {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuth: (user: UserProfile, accessToken: string, refreshToken?: string) => void;
+  setAuth: (user: UserProfile, accessToken?: string, refreshToken?: string) => void;
   updateUser: (data: Partial<UserProfile>) => void;
-  logout: () => void;
-  initAuth: () => void;
+  logout: () => Promise<void>;
+  initAuth: () => Promise<void>;
+}
+
+const STAFF_SESSION_KEY = "flashfix_staff_session";
+
+function syncStaffLocalStorage(user: UserProfile | null, token?: string | null) {
+  if (!user) {
+    localStorage.removeItem(STAFF_SESSION_KEY);
+    return;
+  }
+  if (user.role !== "CONSUMER") {
+    localStorage.setItem(
+      STAFF_SESSION_KEY,
+      JSON.stringify({
+        token: token || "cookie-session",
+        user,
+      })
+    );
+  } else {
+    localStorage.removeItem(STAFF_SESSION_KEY);
+  }
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -32,14 +69,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isLoading: true,
 
   setAuth: (user, accessToken, refreshToken) => {
-    localStorage.setItem("accessToken", accessToken);
+    const token = accessToken || "cookie-session";
+    localStorage.setItem("accessToken", token);
     if (refreshToken) {
       localStorage.setItem("refreshToken", refreshToken);
     }
     localStorage.setItem("ff_user", JSON.stringify(user));
+    syncStaffLocalStorage(user, token);
     set({
       user,
-      accessToken,
+      accessToken: token,
       refreshToken: refreshToken || null,
       isAuthenticated: true,
       isLoading: false,
@@ -51,13 +90,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     if (!current) return;
     const updated = { ...current, ...data };
     localStorage.setItem("ff_user", JSON.stringify(updated));
+    syncStaffLocalStorage(updated, get().accessToken);
     set({ user: updated });
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // ignore network error on logout
+    }
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("ff_user");
+    localStorage.removeItem(STAFF_SESSION_KEY);
     set({
       user: null,
       accessToken: null,
@@ -67,38 +116,50 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     });
   },
 
-  initAuth: () => {
+  initAuth: async () => {
     try {
-      const token = localStorage.getItem("accessToken");
       const userRaw = localStorage.getItem("ff_user");
-      const refreshToken = localStorage.getItem("refreshToken");
+      const token = localStorage.getItem("accessToken");
 
-      if (token && userRaw) {
-        const user = JSON.parse(userRaw) as UserProfile;
+      if (userRaw) {
+        const cachedUser = JSON.parse(userRaw) as UserProfile;
         set({
-          user,
-          accessToken: token,
-          refreshToken,
+          user: cachedUser,
+          accessToken: token || "cookie-session",
           isAuthenticated: true,
           isLoading: false,
         });
+      }
 
-        // Background sync with /api/auth/me if available
-        fetch("/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            if (data?.data || data?.user) {
-              const freshUser = data.data || data.user;
-              localStorage.setItem("ff_user", JSON.stringify(freshUser));
-              set({ user: freshUser });
-            }
-          })
-          .catch(() => {
-            // Keep existing cached user on network failure
+      const headers: Record<string, string> = {};
+      if (token && token !== "cookie-session") {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+        headers,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const freshUser = (data?.user || data?.data) as UserProfile | undefined;
+        if (freshUser) {
+          localStorage.setItem("ff_user", JSON.stringify(freshUser));
+          syncStaffLocalStorage(freshUser, token || "cookie-session");
+          set({
+            user: freshUser,
+            accessToken: token || "cookie-session",
+            isAuthenticated: true,
+            isLoading: false,
           });
-      } else {
+          return;
+        }
+      } else if (res.status === 401) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("ff_user");
+        localStorage.removeItem(STAFF_SESSION_KEY);
         set({
           user: null,
           accessToken: null,
@@ -106,15 +167,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isAuthenticated: false,
           isLoading: false,
         });
+        return;
       }
+
+      set((state) => ({ ...state, isLoading: false }));
     } catch {
-      set({
-        user: null,
-        accessToken: null,
-        refreshToken: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+      set((state) => ({ ...state, isLoading: false }));
     }
   },
 }));

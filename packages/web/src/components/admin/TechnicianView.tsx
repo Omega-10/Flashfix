@@ -110,7 +110,7 @@ export default function TechnicianView({
               </span>
             </div>
             <p className="text-xs text-[#807a75] mt-0.5">
-              Lead Technician: <strong className="text-[#f5f0eb]">Arjun Verma</strong> • Madhapur Flagship Lab
+              Hardware Repair Queue & Custody Verification
             </p>
           </div>
         </div>
@@ -261,7 +261,7 @@ export default function TechnicianView({
                         Customer: {booking.contactName} ({booking.contactPhone})
                       </div>
                       <div className="text-xs text-[#807a75] mt-1">
-                        Pickup Courier: {booking.assignedEmployeeName || "Vikram Reddy"}
+                        Pickup Courier: {booking.assignedEmployeeName || "Assigned Courier"}
                       </div>
                       <div className="text-xs text-[#807a75] mt-0.5">
                         Lab Facility: {STORES.find((s) => s.id === booking.storeId)?.name || booking.storeId}
@@ -363,7 +363,7 @@ export default function TechnicianView({
                       </span>
                     </div>
                     <span className="text-xs font-mono text-[#807a75]">
-                      Carrier: {booking.assignedEmployeeName || "Vikram Reddy"}
+                      Carrier: {booking.assignedEmployeeName || "Assigned Courier"}
                     </span>
                   </div>
 

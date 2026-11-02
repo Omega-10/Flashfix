@@ -17,13 +17,11 @@ import FortixContact from "@/pages/fortix/Contact";
 
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminPage from "@/pages/admin/AdminPage";
-import AdminLogin from "@/pages/admin/AdminLogin";
 
 const router = createBrowserRouter([
-  // Dedicated Admin Login Route (standalone authentication portal)
   {
     path: "/admin/login",
-    element: <AdminLogin />,
+    element: <Navigate to="/login" replace />,
   },
   // Dedicated Admin & Staff Operations Routes (isolated outside RootLayout & Lenis SmoothScroll)
   {
@@ -48,8 +46,8 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/flashfix" replace /> },
       { path: "story", element: <Story /> },
-      // Direct root shortcuts for convenience
-      { path: "login", element: <Navigate to="/flashfix/login" replace /> },
+      // Unified authentication route
+      { path: "login", element: <Login /> },
       { path: "profile", element: <Navigate to="/flashfix/profile" replace /> },
       // Flashfix routes
       { path: "flashfix", element: <FlashfixHome /> },
@@ -57,6 +55,7 @@ const router = createBrowserRouter([
       { path: "flashfix/book", element: <Booking /> },
       { path: "flashfix/login", element: <Login /> },
       { path: "flashfix/profile", element: <Profile /> },
+      { path: "flashfix/track", element: <TrackRepair /> },
       { path: "flashfix/track/:id", element: <TrackRepair /> },
       { path: "flashfix/about", element: <FlashfixAbout /> },
       { path: "flashfix/contact", element: <FlashfixContact /> },

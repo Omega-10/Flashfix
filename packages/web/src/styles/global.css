@@ -3,55 +3,104 @@
 @tailwind utilities;
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   DESIGN TOKENS — CSS custom properties (runtime-switchable)
-   Both Flashfix and Fortix share the same token namespace.
-   Personality is expressed through HOW tokens are combined, not different tokens.
+   FLASHFIX v2 SEMANTIC DESIGN TOKENS
+   Linear/Vercel restraint: structural hairlines, single accent, no glows,
+   and WCAG AA/AAA certified contrast across dark and light themes.
 ────────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Base surfaces */
-  --surface-bg:        #0D0D0D;
-  --surface-elevated:  #1A1A1A;
-  --surface-border:    rgba(255, 255, 255, 0.06);
-  --surface-divider:   rgba(255, 255, 255, 0.08);
+  /* Surfaces */
+  --canvas:            #0a0a0a;
+  --surface-1:          #111111;
+  --surface-2:          #181818;
+  --hairline:           rgba(255, 255, 255, 0.08);
 
-  /* Text hierarchy */
-  --text-primary:      #F5F0EB;
-  --text-secondary:    #A8A09A;
-  --text-muted:        #6B6460;
-  --text-inverse:      #0D0D0D;
+  /* Typography / Ink */
+  --ink:                #f5f0eb;
+  --ink-secondary:      #a8a09a;
+  --ink-muted:          #85807b;
 
-  /* Brand accent — amber/ember core */
-  --accent-amber:      #ef8f0b;
-  --accent-ember:      #e28509;
-  --accent-amber-soft: rgba(239, 143, 11, 0.12);
-  --accent-ember-soft: rgba(234, 88, 12, 0.10);
+  /* Accent (Amber) */
+  --accent:             #ef8f0b;
+  --accent-text:        #ef8f0b;
+  --accent-ink:         #0a0a0a;
 
-  /* Component-level */
-  --radius-sm:   6px;
-  --radius-md:   12px;
-  --radius-lg:   20px;
-  --radius-xl:   32px;
-  --radius-full: 9999px;
+  /* Semantic State Colors */
+  --success:            #10b981;
+  --warning:            #f59e0b;
+  --danger:             #ef4444;
+  --info:               #3b82f6;
+
+  /* Component Radii */
+  --radius-sm:          6px;
+  --radius-md:          8px;
+  --radius-lg:          12px;
+  --radius-xl:          16px;
+  --radius-full:        9999px;
 
   /* Transitions */
-  --ease-expo:   cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dur-fast:    150ms;
-  --dur-mid:     300ms;
-  --dur-slow:    600ms;
+  --ease-expo:          cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce:        cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:           150ms;
+  --dur-mid:            250ms;
+  --dur-slow:           400ms;
+
+  /* Backward Compatibility Aliases */
+  --surface-bg:         var(--canvas);
+  --surface-elevated:   var(--surface-1);
+  --surface-border:     var(--hairline);
+  --surface-divider:    var(--hairline);
+  --text-primary:       var(--ink);
+  --text-secondary:     var(--ink-secondary);
+  --text-muted:         var(--ink-muted);
+  --text-inverse:       #0a0a0a;
+  --accent-amber:       var(--accent);
+  --accent-ember:       var(--accent);
+  --accent-amber-soft:  rgba(239, 143, 11, 0.12);
+  --accent-ember-soft:  rgba(239, 143, 11, 0.10);
 }
 
-/* Light mode overrides */
+/* ──────────────────────────────────────────────────────────────────────────────
+   LIGHT THEME OVERRIDES (WCAG AA/AAA COMPLIANT)
+   Eliminates beige-on-beige illegibility; provides 5.76:1 accent text contrast.
+────────────────────────────────────────────────────────────────────────────── */
+
 .light {
-  --surface-bg:        #F5F0EB;
-  --surface-elevated:  #E8E0D5;
-  --surface-border:    rgba(0, 0, 0, 0.06);
-  --surface-divider:   rgba(0, 0, 0, 0.08);
-  --text-primary:      #0D0D0D;
-  --text-secondary:    #4A4440;
-  --text-muted:        #8A807A;
-  --text-inverse:      #F5F0EB;
+  /* Surfaces */
+  --canvas:            #f5f0eb;
+  --surface-1:          #fffdfa;
+  --surface-2:          #f7f4ef;
+  --hairline:           rgba(0, 0, 0, 0.10);
+
+  /* Typography / Ink */
+  --ink:                #111111;
+  --ink-secondary:      #4a4440;
+  --ink-muted:          #6b6460;
+
+  /* Accent (High contrast deep amber for text, solid amber for fills) */
+  --accent:             #ef8f0b;
+  --accent-text:        #9a5200;
+  --accent-ink:         #0a0a0a;
+
+  /* Semantic State Colors (High contrast on light backgrounds) */
+  --success:            #059669;
+  --warning:            #d97706;
+  --danger:             #dc2626;
+  --info:               #2563eb;
+
+  /* Backward Compatibility Aliases */
+  --surface-bg:         var(--canvas);
+  --surface-elevated:   var(--surface-1);
+  --surface-border:     var(--hairline);
+  --surface-divider:    var(--hairline);
+  --text-primary:       var(--ink);
+  --text-secondary:     var(--ink-secondary);
+  --text-muted:         var(--ink-muted);
+  --text-inverse:       #f5f0eb;
+  --accent-amber:       var(--accent-text);
+  --accent-ember:       var(--accent-text);
+  --accent-amber-soft:  rgba(154, 82, 0, 0.10);
+  --accent-ember-soft:  rgba(154, 82, 0, 0.08);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
@@ -69,113 +118,134 @@
   }
 
   body {
-    background-color: var(--surface-bg);
-    color: var(--text-primary);
-    font-family: "Inter", sans-serif;
-    line-height: 1.6;
-    transition: background-color 350ms var(--ease-expo), color 350ms var(--ease-expo);
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.5;
+    transition: background-color var(--dur-mid) var(--ease-expo), color var(--dur-mid) var(--ease-expo);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  ::selection {
-    background: rgba(239, 143, 11, 0.3);
-    color: var(--text-primary);
+  /* Global Focus Visible Ring — Accessible & High Contrast */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
-  /* Scrollbar — minimal, brand-consistent */
-  ::-webkit-scrollbar        { width: 4px; }
-  ::-webkit-scrollbar-track  { background: var(--surface-bg); }
-  ::-webkit-scrollbar-thumb  { background: var(--accent-amber-soft); border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--accent-amber); }
+  ::selection {
+    background: rgba(239, 143, 11, 0.3);
+    color: var(--ink);
+  }
+
+  /* Minimal scrollbar */
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: var(--canvas); }
+  ::-webkit-scrollbar-thumb  { background: var(--hairline); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   COMPONENT LAYER — reusable patterns
+   ACCESSIBILITY: PREFERS-REDUCED-MOTION
+────────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   COMPONENT LAYER — Restrained Utilities & Backward-Compatible Helpers
 ────────────────────────────────────────────────────────────────────────────── */
 
 @layer components {
 
-  /* ─── Surface cards ───────────────────────────────── */
+  /* ─── Surface cards (restrained, no glow) ───────────── */
   .card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--surface-border);
+    background: var(--surface-1);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    transition: transform var(--dur-mid) var(--ease-expo),
-                box-shadow var(--dur-mid) var(--ease-expo);
+    transition: border-color var(--dur-fast) var(--ease-expo);
   }
   .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+    border-color: rgba(239, 143, 11, 0.3);
   }
 
-  /* ─── Amber glow card (Flashfix hero) ─────────────── */
+  /* Clean restrained card alias — glows purged */
   .card-amber {
     @apply card;
-    box-shadow: 0 0 0 1px rgba(239, 143, 11, 0.15);
+    border-color: rgba(239, 143, 11, 0.25);
   }
   .card-amber:hover {
-    box-shadow: 0 0 0 1px rgba(239, 143, 11, 0.4), 0 8px 40px rgba(239, 143, 11, 0.15);
+    border-color: rgba(239, 143, 11, 0.5);
   }
 
-  /* ─── Buttons ──────────────────────────────────────── */
+  /* ─── Legacy Button Classes (kept for unmigrated code) ── */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     font-family: "Inter", sans-serif;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: -0.01em;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    border: none;
-    transition: all var(--dur-mid) var(--ease-expo);
+    border: 1px solid transparent;
+    transition: all var(--dur-fast) var(--ease-expo);
     white-space: nowrap;
     user-select: none;
+    min-height: 40px;
   }
-  .btn:active { transform: scale(0.97); }
+  .btn:active { transform: scale(0.98); }
   .btn:focus-visible {
-    outline: 2px solid var(--accent-amber);
-    outline-offset: 3px;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   .btn-primary {
     @apply btn;
-    background: linear-gradient(135deg, #ef8f0b 0%, #e28509 100%);
-    color: #0D0D0D;
-    padding: 14px 28px;
-    font-size: 0.9375rem;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: transparent;
+    padding: 10px 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
   }
   .btn-primary:hover {
-    box-shadow: 0 4px 20px rgba(239, 143, 11, 0.45);
-    transform: translateY(-1px);
+    filter: brightness(1.05);
   }
 
   .btn-ghost {
     @apply btn;
     background: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--surface-border);
-    padding: 13px 27px;
-    font-size: 0.9375rem;
+    color: var(--ink);
+    border-color: var(--hairline);
+    padding: 10px 20px;
+    font-size: 0.875rem;
   }
   .btn-ghost:hover {
-    border-color: rgba(239, 143, 11, 0.4);
-    background: var(--accent-amber-soft);
+    background: var(--surface-2);
+    border-color: var(--hairline);
   }
 
   .btn-amber-outline {
     @apply btn;
     background: transparent;
-    color: var(--accent-amber);
-    border: 1px solid var(--accent-amber);
-    padding: 13px 27px;
-    font-size: 0.9375rem;
+    color: var(--accent-text);
+    border-color: var(--accent);
+    padding: 10px 20px;
+    font-size: 0.875rem;
   }
   .btn-amber-outline:hover {
-    background: var(--accent-amber);
-    color: #0D0D0D;
+    background: var(--accent);
+    color: var(--accent-ink);
   }
 
   /* ─── Section container ────────────────────────────── */
@@ -186,203 +256,71 @@
     padding: 0 24px;
   }
 
-  /* ─── Section heading — Flashfix style (condensed, industrial) ─ */
-  .heading-flashfix {
-    font-family: "Barlow Condensed", sans-serif;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: -0.02em;
-    line-height: 0.92;
-  }
-
-  /* ─── Section heading — Fortix style (DM Sans, rounded) ─────── */
-  .heading-fortix {
-    font-family: "DM Sans", sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-  }
-
-  /* ─── Amber gradient text ──────────────────────────── */
-  /* Removed broken text-[var...] class */
-
-  /* ─── Platform badge ───────────────────────────────── */
-  .platform-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 6px 12px;
-    border-radius: var(--radius-full);
-    border: 1px solid var(--surface-border);
-    color: var(--text-muted);
-  }
-
-  /* ─── Flash radius badges ──────────────────────────── */
-  .badge-flash {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, #ef8f0b, #e28509);
-    color: #0D0D0D;
-    font-family: "Barlow Condensed", sans-serif;
-    font-weight: 800;
-    font-size: 0.875rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    padding: 5px 12px;
-    border-radius: var(--radius-full);
-    animation: flashPulse 2s ease-in-out infinite;
-  }
-
-  .badge-next-day {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(239, 143, 11, 0.12);
-    color: var(--accent-amber);
-    border: 1px solid rgba(239, 143, 11, 0.25);
-    font-family: "Inter", sans-serif;
-    font-weight: 600;
-    font-size: 0.8125rem;
-    padding: 5px 12px;
-    border-radius: var(--radius-full);
-  }
-
-  .badge-out-of-range {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(107, 100, 96, 0.15);
-    color: var(--text-muted);
-    border: 1px solid rgba(107, 100, 96, 0.2);
-    font-family: "Inter", sans-serif;
-    font-weight: 500;
-    font-size: 0.8125rem;
-    padding: 5px 12px;
-    border-radius: var(--radius-full);
-  }
-
   /* ─── Divider ──────────────────────────────────────── */
   .divider {
     width: 100%;
     height: 1px;
-    background: var(--surface-divider);
+    background: var(--hairline);
   }
 
   /* ─── Nav link ─────────────────────────────────────── */
   .nav-link {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--ink-secondary);
     text-decoration: none;
     transition: color var(--dur-fast) var(--ease-expo);
     position: relative;
   }
-  .nav-link::after {
-    content: "";
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--accent-amber);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform var(--dur-mid) var(--ease-expo);
-  }
   .nav-link:hover, .nav-link.active {
-    color: var(--text-primary);
-  }
-  .nav-link:hover::after, .nav-link.active::after {
-    transform: scaleX(1);
+    color: var(--ink);
   }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   UTILITY LAYER — one-off helpers
+   UTILITY LAYER
 ────────────────────────────────────────────────────────────────────────────── */
 
 @layer utilities {
-  /* Gradient overlays */
-  .overlay-bottom {
-    background: linear-gradient(to top, var(--surface-bg) 0%, transparent 100%);
-  }
-  .overlay-top {
-    background: linear-gradient(to bottom, var(--surface-bg) 0%, transparent 100%);
-  }
-
-  /* Glass effect — for modals, overlays */
-  .glass {
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    background: rgba(13, 13, 13, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .light .glass {
-    background: rgba(245, 240, 235, 0.85);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  /* Text balance */
   .text-balance { text-wrap: balance; }
   .text-pretty  { text-wrap: pretty; }
 
-  /* Clip — for section reveals */
-  .clip-inset { clip-path: inset(0); }
+  /* Hairline borders */
+  .border-hairline {
+    border-color: var(--hairline);
+  }
 
-  /* Amber gradient background — used broadly across both platforms */
-  /* Removed broken bg-[var...] class */
-
-  /* Accent soft backgrounds */
-  .bg-accent-soft {
-    background: rgba(239, 143, 11, 0.08);
+  /* Glass backdrop (restrained) */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(10, 10, 10, 0.85);
+    border: 1px solid var(--hairline);
+  }
+  .light .glass {
+    background: rgba(255, 253, 250, 0.90);
+    border: 1px solid var(--hairline);
   }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   LEAFLET MAP OVERRIDES — match brand
+   LEAFLET MAP OVERRIDES
 ────────────────────────────────────────────────────────────────────────────── */
 
 .leaflet-container {
-  background: var(--surface-elevated) !important;
+  background: var(--surface-1) !important;
   border-radius: var(--radius-lg);
 }
 .leaflet-tile {
   filter: brightness(0.8) contrast(1.1) saturate(0.9);
 }
 .leaflet-popup-content-wrapper {
-  background: var(--surface-elevated) !important;
-  color: var(--text-primary) !important;
+  background: var(--surface-1) !important;
+  color: var(--ink) !important;
   border-radius: var(--radius-md) !important;
-  border: 1px solid var(--surface-border);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid var(--hairline);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
 }
 .leaflet-popup-tip {
-  background: var(--surface-elevated) !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────────────
-   PAGE TRANSITION HELPERS
-────────────────────────────────────────────────────────────────────────────── */
-
-.page-enter {
-  opacity: 0;
-  transform: translateY(16px);
-}
-.page-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 400ms var(--ease-expo), transform 400ms var(--ease-expo);
-}
-.page-exit {
-  opacity: 1;
-}
-.page-exit-active {
-  opacity: 0;
-  transition: opacity 200ms ease-in;
+  background: var(--surface-1) !important;
 }

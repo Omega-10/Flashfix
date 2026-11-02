@@ -55,6 +55,7 @@ export const users = pgTable(
     avatarUrl: text('avatar_url'),
     storeId: text('store_id'), // Home store for ADMIN and EMPLOYEE
     passwordHash: text('password_hash'),
+    isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -200,6 +201,7 @@ export const otpCodes = pgTable(
     index('idx_otp_email_purpose').on(table.email, table.purpose),
     index('idx_otp_booking_id').on(table.bookingId),
     index('idx_otp_expires_at').on(table.expiresAt),
+    index('idx_otp_codes_lookup').on(table.email, table.purpose, table.verified),
   ]
 );
 
@@ -244,6 +246,14 @@ export const storeAdmins = pgTable(
     index('idx_store_admins_user_id').on(table.userId),
   ]
 );
+
+// 8c. System Settings Table
+export const systemSettings = pgTable('system_settings', {
+  key: text('key').primaryKey(),
+  value: jsonb('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedByUserId: uuid('updated_by_user_id').references(() => users.id),
+});
 
 // 9. Drizzle ORM Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -336,6 +346,13 @@ export const storeAdminsRelations = relations(storeAdmins, ({ one }) => ({
   }),
   user: one(users, {
     fields: [storeAdmins.userId],
+    references: [users.id],
+  }),
+}));
+
+export const systemSettingsRelations = relations(systemSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [systemSettings.updatedByUserId],
     references: [users.id],
   }),
 }));

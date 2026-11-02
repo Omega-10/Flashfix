@@ -1,13 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 export default function FlashfixContact() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [supportInfo, setSupportInfo] = useState({
+    supportEmail: "support@flashfix.in",
+    supportPhone: "+91 80 4821 7700",
+    supportHours: "9 AM – 9 PM, Mon–Sun",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => {
+        const d = body?.data || body;
+        if (d?.supportEmail || d?.supportPhone) {
+          setSupportInfo({
+            supportEmail: d.supportEmail || "support@flashfix.in",
+            supportPhone: d.supportPhone || "+91 80 4821 7700",
+            supportHours: d.supportHours || "9 AM – 9 PM, Mon–Sun",
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSent(true); // demo: no actual submission
+    setSent(true);
   }
 
   return (
@@ -26,14 +47,14 @@ export default function FlashfixContact() {
               TALK TO <span className="text-[var(--accent-amber)]">FLASHFIX</span>
             </h1>
             <p className="text-[var(--text-secondary)] mt-4 mb-8 max-w-sm leading-relaxed">
-              Questions about a repair? Partnership? Franchise inquiry? We're fast offline too.
+              Questions about a repair? Partnership? Franchise inquiry? Reach our support desk directly.
             </p>
 
             <div className="space-y-4">
               {[
-                { label: "Email", value: "hello@flashfix.in", icon: "✉" },
-                { label: "Phone", value: "+91 98765 43210", icon: "📞" },
-                { label: "Hours", value: "9 AM – 9 PM, Mon–Sun", icon: "🕐" },
+                { label: "Email", value: supportInfo.supportEmail, icon: "✉" },
+                { label: "Phone", value: supportInfo.supportPhone, icon: "📞" },
+                { label: "Hours", value: supportInfo.supportHours, icon: "🕐" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-[var(--accent-amber-soft)] border border-[rgba(245,158,11,0.2)] flex items-center justify-center text-sm">
@@ -65,7 +86,7 @@ export default function FlashfixContact() {
                 {[
                   { key: "name" as const, label: "Name", type: "text", placeholder: "Your full name" },
                   { key: "email" as const, label: "Email", type: "email", placeholder: "you@email.com" },
-                  { key: "phone" as const, label: "Phone", type: "tel", placeholder: "+91 98765 43210" },
+                  { key: "phone" as const, label: "Phone", type: "tel", placeholder: "+91 80 4821 7700" },
                 ].map((field) => (
                   <div key={field.key}>
                     <label className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)] block mb-2">

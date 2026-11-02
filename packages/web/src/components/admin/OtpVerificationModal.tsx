@@ -102,11 +102,6 @@ export default function OtpVerificationModal({
     }
   }
 
-  function handleUseDemoCode() {
-    setDigits(["1", "2", "3", "4", "5", "6"]);
-    handleVerify("123456");
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -173,18 +168,6 @@ export default function OtpVerificationModal({
               className="min-h-[48px] w-12 text-center text-lg font-mono font-bold bg-[#1a1a1a] border border-[rgba(255,255,255,0.12)] rounded-xl text-[#f5f0eb] outline-none focus:border-[#ef8f0b] focus:ring-2 focus:ring-[#ef8f0b]/20 transition-all"
             />
           ))}
-        </div>
-
-        {/* Quick Helper Button for Instant Verification */}
-        <div className="mb-5 flex items-center justify-between text-xs">
-          <span className="text-[#807a75]">Demonstration / Lab code:</span>
-          <button
-            type="button"
-            onClick={handleUseDemoCode}
-            className="text-[#ef8f0b] hover:underline font-mono font-semibold"
-          >
-            Use Code: 123456
-          </button>
         </div>
 
         {/* Verification Action Button */}

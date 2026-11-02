@@ -186,8 +186,7 @@ export default function FlashfixHome() {
                     <p className="text-[var(--text-muted)] text-sm mb-2">{store.address}</p>
                     <p className="text-[#ef8f0b] text-xs font-mono mb-4">{store.hours}</p>
                     <div className="flex items-center gap-3 pt-4 border-t border-[var(--surface-border)]">
-                      <span className="text-[var(--text-primary)] text-sm font-bold flex items-center gap-1"><span className="text-[#ef8f0b]">★</span> {store.rating}</span>
-                      <span className="text-[var(--text-muted)] text-xs">({store.reviews})</span>
+                      <span className="text-[var(--text-muted)] text-xs font-mono">{store.city}</span>
                       <span className="text-[var(--text-primary)] bg-[#ef8f0b]/10 text-[#ef8f0b] px-2 py-1 rounded text-xs ml-auto font-mono">{store.distanceKm}km</span>
                     </div>
                   </motion.div>

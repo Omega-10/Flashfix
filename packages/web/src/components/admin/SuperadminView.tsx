@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ShieldAlert,
   Building2,
@@ -14,6 +14,9 @@ import {
   UserCheck,
   X,
   MapPin,
+  Settings,
+  Save,
+  CheckCircle2,
 } from "lucide-react";
 import { BookingRecord, StaffMember, InventoryRecord, StoreOption } from "./types";
 import {
@@ -23,6 +26,8 @@ import {
   deleteStore,
   toggleStoreStatus,
   assignStoreAdmins,
+  getSupportSettings,
+  updateSupportSettings,
 } from "./api";
 import { UserRole } from "@flashfix/shared";
 
@@ -68,6 +73,42 @@ export default function SuperadminView({
   const [newStoreLng, setNewStoreLng] = useState("77.6245");
   const [newStoreAdminIds, setNewStoreAdminIds] = useState<string[]>([]);
 
+  // Customizable Public Support Contact Settings
+  const [supportEmail, setSupportEmail] = useState("support@flashfix.in");
+  const [supportPhone, setSupportPhone] = useState("+91 80 4821 7700");
+  const [supportHours, setSupportHours] = useState("9 AM – 9 PM, Mon–Sun");
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSupportSettings().then((s) => {
+      if (s.supportEmail) setSupportEmail(s.supportEmail);
+      if (s.supportPhone) setSupportPhone(s.supportPhone);
+      if (s.supportHours) setSupportHours(s.supportHours);
+    });
+  }, []);
+
+  async function handleSaveSupportSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingSettings(true);
+    setSettingsSaved(false);
+    setSettingsError(null);
+    try {
+      await updateSupportSettings({
+        supportEmail: supportEmail.trim(),
+        supportPhone: supportPhone.trim(),
+        supportHours: supportHours.trim(),
+      });
+      setSettingsSaved(true);
+      setTimeout(() => setSettingsSaved(false), 3000);
+    } catch (err: any) {
+      setSettingsError(err?.message || "Failed to update support settings.");
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
   // Compute platform-wide totals
   const totalBookings = bookings.length;
   const inRepairTotal = bookings.filter((b) => b.status === "IN_REPAIR" || b.status === "CUSTODY_OTP_SENT").length;
@@ -98,7 +139,8 @@ export default function SuperadminView({
     setStoreError(null);
 
     try {
-      const generatedId = newStoreId.trim() || `store-00${stores.length + 1}`;
+      const slugId = newStoreName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const generatedId = newStoreId.trim() || `hub-${slugId || Date.now().toString(36)}`;
       await createStore({
         id: generatedId,
         name: newStoreName.trim(),
@@ -515,6 +557,81 @@ export default function SuperadminView({
         </div>
       </div>
 
+      {/* ── Public Support Contact Configuration ── */}
+      <div className="bg-[#141414] border border-[rgba(255,255,255,0.08)] rounded-2xl p-5 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-bold text-base text-[#f5f0eb] flex items-center gap-2">
+              <Settings className="w-4 h-4 text-[#ef8f0b]" />
+              <span>Public Support Contact & Operating Hours</span>
+            </h2>
+            <p className="text-xs text-[#807a75]">
+              Customize support email, contact phone number, and operating hours displayed on the public website
+            </p>
+          </div>
+          {settingsSaved && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Saved to live site</span>
+            </span>
+          )}
+        </div>
+
+        {settingsError && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+            {settingsError}
+          </div>
+        )}
+
+        <form onSubmit={handleSaveSupportSettings} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div>
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-[#807a75] mb-1.5">
+              Support Email
+            </label>
+            <input
+              type="email"
+              required
+              value={supportEmail}
+              onChange={(e) => setSupportEmail(e.target.value)}
+              className="w-full h-10 bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-[#807a75] mb-1.5">
+              Contact Phone Number
+            </label>
+            <input
+              type="text"
+              required
+              value={supportPhone}
+              onChange={(e) => setSupportPhone(e.target.value)}
+              className="w-full h-10 bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-[#807a75] mb-1.5">
+              Operating Hours
+            </label>
+            <input
+              type="text"
+              value={supportHours}
+              onChange={(e) => setSupportHours(e.target.value)}
+              className="w-full h-10 bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
+            />
+          </div>
+          <div>
+            <button
+              type="submit"
+              disabled={savingSettings}
+              className="w-full h-10 inline-flex items-center justify-center gap-2 bg-[#ef8f0b] hover:bg-[#d87c09] text-black font-semibold text-xs rounded-xl px-4 transition-all disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{savingSettings ? "Saving..." : "Save Support Details"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
       {/* ── Global Audit & Administrative Overrides ── */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -624,7 +741,7 @@ export default function SuperadminView({
                     type="text"
                     value={newStoreId}
                     onChange={(e) => setNewStoreId(e.target.value)}
-                    placeholder="store-004"
+                    placeholder="hub-whitefield"
                     className="w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.1)] rounded-xl px-3.5 py-2 text-xs text-[#f5f0eb] outline-none focus:border-[#ef8f0b]"
                   />
                 </div>

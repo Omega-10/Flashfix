@@ -48,12 +48,11 @@ export default function FlashfixAbout() {
         </div>
 
         {/* Stats */}
-        <div className="about-reveal grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
+        <div className="about-reveal grid grid-cols-1 sm:grid-cols-3 gap-6 mb-20">
           {[
             { value: "3km", label: "Flash zone radius" },
-            { value: "60 min", label: "Average repair time" },
-            { value: "5", label: "Branches & growing" },
-            { value: "4.8★", label: "Average rating" },
+            { value: "60 min", label: "Target turnaround" },
+            { value: "Same Day", label: "Doorstep pickup & return" },
           ].map((stat) => (
             <div key={stat.label} className="card p-6 text-center">
               <p className="heading-flashfix text-4xl text-[var(--accent-amber)] mb-1">{stat.value}</p>

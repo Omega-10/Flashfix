@@ -13,8 +13,8 @@ export default function InviteEmployeeModal({
 }: InviteEmployeeModalProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"EMPLOYEE" | "ADMIN">("EMPLOYEE");
-  const [storeId, setStoreId] = useState(STORES[0].id);
+  const [role, setRole] = useState<"EMPLOYEE" | "TECHNICIAN" | "ADMIN">("EMPLOYEE");
+  const [storeId, setStoreId] = useState(STORES[0]?.id || "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -120,10 +120,11 @@ export default function InviteEmployeeModal({
             </label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as "EMPLOYEE" | "ADMIN")}
+              onChange={(e) => setRole(e.target.value as "EMPLOYEE" | "TECHNICIAN" | "ADMIN")}
               className="min-h-[44px] w-full bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-xs text-[#f5f0eb] outline-none cursor-pointer focus:border-[#ef8f0b]"
             >
-              <option value="EMPLOYEE">EMPLOYEE (Hardware Technician or Courier)</option>
+              <option value="EMPLOYEE">EMPLOYEE (Delivery Rider)</option>
+              <option value="TECHNICIAN">TECHNICIAN (Lab Workbench)</option>
               <option value="ADMIN">ADMIN (Store Hub Operations Manager)</option>
             </select>
           </div>
