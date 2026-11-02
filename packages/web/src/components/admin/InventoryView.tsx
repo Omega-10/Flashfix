@@ -168,7 +168,7 @@ export default function InventoryView({
                       </div>
                     </td>
                     <td className="px-5 py-4 text-[var(--ink-muted)] text-[11px]">
-                      {store?.name.split(" ")[0] || item.storeId}
+                      {(store?.name || item.storeId || "All Stores").split(" ")[0]}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">

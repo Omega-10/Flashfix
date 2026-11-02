@@ -96,7 +96,8 @@ export default function BookingsView({
     }
   }
 
-  function getStoreName(storeId: string) {
+  function getStoreName(storeId?: string | null): string {
+    if (!storeId) return "Unassigned Hub";
     const s = STORES.find((st) => st.id === storeId);
     return s ? s.name : storeId;
   }

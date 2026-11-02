@@ -838,7 +838,7 @@ export default function TrackRepair() {
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-lg bg-[var(--surface-2)] border border-[var(--hairline)]">
               <div className="flex items-center gap-2 justify-center sm:justify-start">
-                {booking.pickupOtp.split("").map((digit, idx) => (
+                {(booking.pickupOtp || "").split("").map((digit, idx) => (
                   <div
                     key={idx}
                     className="w-10 h-12 sm:w-12 sm:h-14 rounded-lg bg-[var(--surface-1)] border border-[var(--accent)] flex items-center justify-center text-xl sm:text-2xl font-mono font-bold text-[var(--accent)] tabular-nums"

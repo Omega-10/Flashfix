@@ -222,7 +222,7 @@ export default function SuperadminView({
           const addr = hit.address || {};
           const city = addr.city || addr.town || addr.state_district;
           if (city) setNewStoreCity(city);
-          setMapStatusMsg(`Pinned: ${hit.display_name.split(",").slice(0, 2).join(", ")}`);
+          setMapStatusMsg(`Pinned: ${(hit.display_name || "").split(",").slice(0, 2).join(", ") || "Location pinned"}`);
           return;
         }
       }

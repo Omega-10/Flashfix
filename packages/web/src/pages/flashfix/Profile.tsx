@@ -344,7 +344,7 @@ export default function Profile() {
                   </div>
                   <div>
                     <h2 className="font-semibold text-base text-[var(--ink)]">
-                      {user.name || user.email.split("@")[0]}
+                      {user.name || (user.email ? user.email.split("@")[0] : "User")}
                     </h2>
                     <span className="text-xs text-[var(--ink-3)] font-mono">
                       {user.email}

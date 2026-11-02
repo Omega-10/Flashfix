@@ -66,9 +66,10 @@ export default function DashboardView({
     }
   }
 
-  function getStoreName(storeId: string) {
+  function getStoreName(storeId?: string | null): string {
+    if (!storeId) return "Unassigned Hub";
     const s = STORES.find((st) => st.id === storeId);
-    return s ? s.name : storeId;
+    return s?.name || storeId;
   }
 
   return (
@@ -200,7 +201,7 @@ export default function DashboardView({
                   <div className="flex items-center gap-2">
                     <StoreIcon className="w-4 h-4 text-[#ef8f0b]" />
                     <span className="font-mono text-xs font-bold text-[var(--ink)] truncate">
-                      {store.name.split(" ")[0]}
+                      {(store?.name || store?.id || "Hub").split(" ")[0]}
                     </span>
                   </div>
                   <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-3)] text-[var(--ink-muted)]">
@@ -390,7 +391,7 @@ export default function DashboardView({
                 <div className="text-xs text-[var(--ink-secondary)] mt-3 pt-2.5 border-t border-[var(--hairline)] flex items-center justify-between gap-2">
                   <div>
                     <span className="text-[var(--ink)] font-medium block">{b.contactName}</span>
-                    <span className="text-[10px] text-[var(--ink-muted)]">{b.scheduledTime} • {getStoreName(b.storeId).split(" ")[0]}</span>
+                    <span className="text-[10px] text-[var(--ink-muted)]">{b.scheduledTime} • {(getStoreName(b.storeId) || "Hub").split(" ")[0]}</span>
                   </div>
 
                   <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
