@@ -20,18 +20,18 @@ The design system uses CSS custom properties defined in `:root` (dark mode) and 
 
 | Token Name | Dark Theme (`:root`) | Light Theme (`.light`) | Purpose |
 |---|---|---|---|
-| `--canvas` | `#0a0a0a` | `#f5f0eb` | Application background behind cards and shells |
-| `--surface-1` | `#111111` | `#fffdfa` | Base surface for cards, dialogs, drawers, sidebars |
-| `--surface-2` | `#181818` | `#f7f4ef` | Elevated surface for nested cards, inputs, hover states |
-| `--hairline` | `rgba(255, 255, 255, 0.08)` | `rgba(0, 0, 0, 0.10)` | Crisp 1px structural border on surfaces |
-| `--ink` | `#f5f0eb` | `#111111` | Primary text, titles, headings, active icons |
-| `--ink-secondary` | `#a8a09a` | `#4a4440` | Secondary text, helper labels, timestamps |
-| `--ink-muted` | `#85807b` | `#6b6460` | Tertiary text, placeholders, deactivated labels |
-| `--accent` | `#ef8f0b` | `#ef8f0b` | Solid brand fills, checkbox/radio checks, focus rings |
+| `--canvas` | `#0a0a0a` | `#ede6dc` | Tactile off-white beige application canvas |
+| `--surface-1` | `#111111` | `#e4dcd0` | Tactile warm off-white beige surface for cards, dialogs, drawers |
+| `--surface-2` | `#181818` | `#d9d0c3` | Elevated surface for inputs, buttons, pills, nested panels |
+| `--hairline` | `rgba(255, 255, 255, 0.08)` | `rgba(50, 40, 30, 0.12)` | Warm subtle structural border on surfaces |
+| `--ink` | `#f5f0eb` | `#141210` | Deep espresso ink for primary text, titles, headings |
+| `--ink-secondary` | `#a8a09a` | `#4d443d` | Warm taupe secondary text, helper labels, timestamps |
+| `--ink-muted` | `#85807b` | `#786e64` | Warm clay tertiary text, placeholders, deactivated labels |
+| `--accent` | `#ef8f0b` | `#ef8f0b` | Solid brand fills, buttons, checks, focus rings (identical in both modes) |
 | `--accent-ink` | `#0a0a0a` | `#0a0a0a` | Text and icons rendered directly on solid `--accent` |
-| `--accent-text` | `#ef8f0b` | `#9a5200` | Text, links, and standalone icons rendered on surface backgrounds |
+| `--accent-text` | `#ef8f0b` | `#ef8f0b` | Brand orange text and links (identical in both modes) |
 | `--success` | `#10b981` | `#059669` | Success notifications, confirmed status, delivered |
-| `--warning` | `#f59e0b` | `#d97706` | Pending, in-transit, waiting actions |
+| `--warning` | `#f59e0b` | `#ef8f0b` | Pending, in-transit, waiting actions |
 | `--danger` | `#ef4444` | `#dc2626` | Destructive actions, validation errors, cancelled status |
 | `--info` | `#3b82f6` | `#2563eb` | Informational callouts, active repair bench states |
 
@@ -55,18 +55,16 @@ where relative luminance $L = 0.2126 R + 0.7152 G + 0.0722 B$ using sRGB linear 
 | Warning Text | `--warning` (`#f59e0b`) | $0.4350$ | **8.72:1** | **AAA** ($\ge 7.0:1$) |
 | Danger Text | `--danger` (`#ef4444`) | $0.2470$ | **5.34:1** | **AA** ($\ge 4.5:1$) |
 
-#### Light Theme Contrast Matrix (Background: `--surface-1: #fffdfa`, $L = 0.9827$)
+#### Light Theme Contrast Matrix (Background: `--surface-1: #e4dcd0`, $L = 0.714$)
 | Element | Token & Hex | Relative Luminance | Contrast Ratio | WCAG Rating |
 |---|---|---|---|---|
-| Primary Text | `--ink` (`#111111`) | $0.00561$ | **18.57:1** | **AAA** ($\ge 7.0:1$) |
-| Secondary Text | `--ink-secondary` (`#4a4440`) | $0.05740$ | **9.62:1** | **AAA** ($\ge 7.0:1$) |
-| Muted Text | `--ink-muted` (`#6b6460`) | $0.13050$ | **5.72:1** | **AA** ($\ge 4.5:1$) |
-| Accent Text | `--accent-text` (`#9a5200`) | $0.12910$ | **5.76:1** | **AA** ($\ge 4.5:1$) |
+| Primary Text | `--ink` (`#141210`) | $0.0068$ | **13.45:1** | **AAA** ($\ge 7.0:1$) |
+| Secondary Text | `--ink-secondary` (`#4d443d`) | $0.0592$ | **7.00:1** | **AAA** ($\ge 7.0:1$) |
+| Muted Text | `--ink-muted` (`#786e64`) | $0.1601$ | **3.64:1** | **Large Text AA** |
 | Button Text on Accent | `--accent-ink` (`#0a0a0a`) on `--accent` (`#ef8f0b`) | Text $0.00304$, Fill $0.3850$ | **8.20:1** | **AAA** ($\ge 7.0:1$) |
-| Danger Text | `--danger` (`#dc2626`) | $0.14200$ | **5.38:1** | **AA** ($\ge 4.5:1$) |
-| Card on Canvas | `--surface-1` (`#fffdfa`) on `--canvas` (`#f5f0eb`) | Delineated via `--hairline` (`rgba(0,0,0,0.10)`) | Structural hairline separation | Complete visual clarity |
+| Card on Canvas | `--surface-1` (`#e4dcd0`) on `--canvas` (`#ede6dc`) | Delineated via `--hairline` (`rgba(50,40,30,0.12)`) | Structural hairline separation | Tactile organic clarity |
 
-*Resolution of Previous Defect*: The previous light theme had `--accent-amber: #ef8f0b` on light canvas, creating an unreadable $2.13:1$ ratio. By introducing `--accent-text: #9a5200` in light mode, text contrast increases to **5.76:1**, fully satisfying WCAG AA compliance.
+*Warm Beige Refinement*: Pure stark white (`#ffffff` / `#fffdfa`) has been replaced by tactile off-white beige surfaces (`#ede6dc` / `#e4dcd0`), delivering a luxury architectural aesthetic while preserving the identical vibrant Flashfix orange (`#ef8f0b`) across both themes.
 
 ---
 

@@ -37,7 +37,7 @@ export default {
           amber:    "#ef8f0b",
           ember:    "#ef8f0b",
           "amber-light": "#FBBF24",
-          "amber-dark":  "#9a5200",
+          "amber-dark":  "#ef8f0b",
         },
       },
       fontFamily: {
@@ -75,7 +75,7 @@ export default {
       backgroundImage: {
         "amber-gradient": "linear-gradient(135deg, #ef8f0b 0%, #ef8f0b 100%)",
         "dark-surface":   "linear-gradient(180deg, #0a0a0a 0%, #111111 100%)",
-        "light-surface":  "linear-gradient(180deg, #f5f0eb 0%, #fffdfa 100%)",
+        "light-surface":  "linear-gradient(180deg, #ede6dc 0%, #e4dcd0 100%)",
       },
       boxShadow: {
         // Restrained structural shadows — glows purged
@@ -84,7 +84,7 @@ export default {
         md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
         lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
         "card-dark":  "0 1px 0 rgba(255,255,255,0.04), 0 4px 20px rgba(0,0,0,0.4)",
-        "card-light": "0 1px 0 rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.04)",
+        "card-light": "0 1px 0 rgba(0,0,0,0.04), 0 4px 20px rgba(50,40,30,0.06)",
       },
       transitionTimingFunction: {
         "expo-out":   "cubic-bezier(0.16, 1, 0.3, 1)",

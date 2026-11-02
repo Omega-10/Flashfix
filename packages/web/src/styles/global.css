@@ -61,30 +61,31 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   LIGHT THEME OVERRIDES (WCAG AA/AAA COMPLIANT)
-   Eliminates beige-on-beige illegibility; provides 5.76:1 accent text contrast.
+   LIGHT THEME OVERRIDES (TACTILE OFF-WHITE BEIGE & MATCHED ORANGE ACCENT)
+   Warm off-white beige surfaces without stark white glare;
+   Uses the identical vibrant Flashfix orange (#ef8f0b) as dark mode.
 ────────────────────────────────────────────────────────────────────────────── */
 
 .light {
-  /* Surfaces */
-  --canvas:            #f5f0eb;
-  --surface-1:          #fffdfa;
-  --surface-2:          #f7f4ef;
-  --hairline:           rgba(0, 0, 0, 0.10);
+  /* Surfaces — Tactile Off-White Beige */
+  --canvas:            #ede6dc;
+  --surface-1:          #e4dcd0;
+  --surface-2:          #d9d0c3;
+  --hairline:           rgba(50, 40, 30, 0.12);
 
   /* Typography / Ink */
-  --ink:                #111111;
-  --ink-secondary:      #4a4440;
-  --ink-muted:          #6b6460;
+  --ink:                #141210;
+  --ink-secondary:      #4d443d;
+  --ink-muted:          #786e64;
 
-  /* Accent (High contrast deep amber for text, solid amber for fills) */
+  /* Accent (Identical vibrant orange variant as dark mode) */
   --accent:             #ef8f0b;
-  --accent-text:        #9a5200;
+  --accent-text:        #ef8f0b;
   --accent-ink:         #0a0a0a;
 
-  /* Semantic State Colors (High contrast on light backgrounds) */
+  /* Semantic State Colors */
   --success:            #059669;
-  --warning:            #d97706;
+  --warning:            #ef8f0b;
   --danger:             #dc2626;
   --info:               #2563eb;
 
@@ -96,11 +97,11 @@
   --text-primary:       var(--ink);
   --text-secondary:     var(--ink-secondary);
   --text-muted:         var(--ink-muted);
-  --text-inverse:       #f5f0eb;
-  --accent-amber:       var(--accent-text);
-  --accent-ember:       var(--accent-text);
-  --accent-amber-soft:  rgba(154, 82, 0, 0.10);
-  --accent-ember-soft:  rgba(154, 82, 0, 0.08);
+  --text-inverse:       #ede6dc;
+  --accent-amber:       var(--accent);
+  --accent-ember:       var(--accent);
+  --accent-amber-soft:  rgba(239, 143, 11, 0.14);
+  --accent-ember-soft:  rgba(239, 143, 11, 0.10);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
@@ -298,7 +299,7 @@
     border: 1px solid var(--hairline);
   }
   .light .glass {
-    background: rgba(255, 253, 250, 0.90);
+    background: rgba(237, 230, 220, 0.88);
     border: 1px solid var(--hairline);
   }
 }
